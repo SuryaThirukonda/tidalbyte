@@ -55,6 +55,7 @@ const SIZES = ['tiny', 'small', 'medium', 'big'];
 const PLACES = ['water', 'air', 'ground'];
 
 const PLAN_SYSTEM =
+  '/no_think\n' +            // Nemotron Nano 2: answer straight away, no reasoning trace (much faster)
   'You plan scenes for WishWorld, a gentle VR playroom for young children in hospital. A child has said or typed a ' +
   'wish (speech recognition may mishear it). Turn it into ONE friendly object or creature that can be built as a ' +
   'small 3D toy. Reply with JSON only, no other words:\n' +
