@@ -18,6 +18,7 @@ import { createShadows, createJuice, createTrail, disposeTrailMaterial } from '.
 import { createHud } from './hud.js';
 import { createVoice } from './voice.js';
 import { createAutoplay } from './autoplay.js';
+import { createCustomFruit } from './customfruit.js';
 
 const MAX_FLYING = 16;
 const MAX_DEBRIS = 24;
@@ -63,6 +64,8 @@ export function createFrostSlice(ctx) {
   const shadows = createShadows(assets.dot, MAX_FLYING);
   const juice = createJuice(assets.dot);
   stage.add(shadows.mesh, juice.mesh);
+  const custom = createCustomFruit(ctx, { dev, query, log: trace });
+  let toldPending = false;
 
   let hud = null, voice = null, autoplay = null;
   let props = null;
@@ -97,15 +100,15 @@ export function createFrostSlice(ctx) {
       mesh.name = 'Fruit'; mesh.visible = false;
       stage.add(mesh);
       flyingPool.push({
-        mesh, live: false, hazard: false, kind: 0, radius: 0, time: 0, apexTime: 1, gravity: 0, v0y: 0,
-        sx: 0, sy: 0, sz: 0, tx: 0, ty: 0, tz: 0, spinX: 0, spinY: 0, spinZ: 0,
+        mesh, live: false, hazard: false, custom: false, kind: 0, radius: 0, time: 0, apexTime: 1, gravity: 0, v0y: 0,
+        sx: 0, sy: 0, sz: 0, tx: 0, ty: 0, tz: 0, spinX: 0, spinY: 0, spinZ: 0, roll: 0,
       });
     }
     for (let i = 0; i < MAX_DEBRIS; i++) {
       const mesh = new THREE.Mesh(assets.geo.half[0], assets.lit);
       mesh.name = 'FruitHalf'; mesh.visible = false;
       stage.add(mesh);
-      debris.push({ mesh, life: 0, born: 0, vx: 0, vy: 0, vz: 0, spinX: 0, spinY: 0, spinZ: 0 });
+      debris.push({ mesh, life: 0, born: 0, custom: false, vx: 0, vy: 0, vz: 0, spinX: 0, spinY: 0, spinZ: 0 });
     }
   }
 
@@ -175,6 +178,7 @@ export function createFrostSlice(ctx) {
   const _swing = new THREE.Vector3(), _along = new THREE.Vector3(), _normal = new THREE.Vector3(), _n = new THREE.Vector3();
   const _w = new THREE.Matrix4(), _q = new THREE.Quaternion(), _facing = new THREE.Quaternion(), _e = new THREE.Euler();
   const _one = new THREE.Vector3(1, 1, 1);
+  const _eye = new THREE.Vector3(), _cutQ = new THREE.Quaternion(), _side = new THREE.Vector3();
 
   function viewerFlatForward(out) {
     if (typeof ctx.viewerForwardFlat === 'function') ctx.viewerForwardFlat(out);
@@ -227,8 +231,28 @@ export function createFrostSlice(ctx) {
     anchor();                                                // the shell has already stood the player on its origin (VR, desktop)
     stage.visible = true;
     setPhase('ready', 'menu');
-    showMenu(TEXT.title, TEXT.info, TEXT.start);
+    showMenu(TEXT.title, menuInfo(), TEXT.start);
     voice.read(TEXT.intro);
+  }
+
+  const menuInfo = () => (custom.active ? TEXT.infoScanned : TEXT.info);
+
+  /**
+   * A safe moment (no round being played): swap in a fruit scanned on the phone, or go back to the normal
+   * fruit. Scanned fruit still drawn with the old picture are put away first, so nothing uses a freed texture.
+   */
+  function applyFruit(announce = true) {
+    if (!custom.hasPending) return null;
+    for (let i = flying.length - 1; i >= 0; i--) if (flying[i].custom) releaseFlying(i);
+    for (let i = 0; i < debris.length; i++) if (debris[i].custom) { debris[i].life = 0; debris[i].custom = false; debris[i].mesh.visible = false; }
+    const change = custom.takePending();
+    if (toldPending) hud.popups.clear();                     // the "next round" notice has done its job
+    toldPending = false;
+    if (!change) return null;
+    say(change === 'new' ? 'scanned fruit in use' : 'back to the normal fruit');
+    if (phase === 'ready' && hud.menuVisible) hud.showMenu(TEXT.title, menuInfo(), TEXT.start);
+    if (change === 'new' && announce) voice.say(TEXT.fruitReady);
+    return change;
   }
 
   /**
@@ -257,6 +281,7 @@ export function createFrostSlice(ctx) {
   function startRound() {
     if (!built || !started || !active) return;
     sfx.unlock();
+    const fruitChange = applyFruit(false);
     clearFlying();
     score = 0; sliced = 0; maxCombo = 0; hazardsHit = 0; launched = 0;
     lives = RULES.startLives;
@@ -271,6 +296,7 @@ export function createFrostSlice(ctx) {
     if (autoplay) autoplay.reset();
     updateHud();
     voice.sayNow(TEXT.go);                                   // cuts off the menu being read
+    if (fruitChange === 'new') voice.say(TEXT.fruitReady);
   }
 
   function endRound(title) {
@@ -297,8 +323,9 @@ export function createFrostSlice(ctx) {
     for (let i = 0; i < flyingPool.length; i++) if (!flyingPool[i].live) { f = flyingPool[i]; break; }
     if (!f) return null;
     const L = RULES.launch;
-    f.live = true; f.hazard = hazard; f.kind = kind; f.time = 0;
-    f.radius = hazard ? RULES.hazardRadius : FRUITS[kind].radius;
+    const scanned = hazard ? null : custom.active;
+    f.live = true; f.hazard = hazard; f.kind = kind; f.time = 0; f.custom = Boolean(scanned);
+    f.radius = hazard ? RULES.hazardRadius : scanned ? scanned.radius : FRUITS[kind].radius;
     // From the front only: thrown from 1.5 to 2 m ahead, peaking inside arm's reach.
     f.sx = rand(L.startX[0], L.startX[1]); f.sy = L.startY; f.sz = rand(L.startZ[0], L.startZ[1]);
     f.tx = rand(L.targetX[0], L.targetX[1]); f.ty = rand(L.targetY[0], L.targetY[1]); f.tz = rand(L.targetZ[0], L.targetZ[1]);
@@ -307,7 +334,13 @@ export function createFrostSlice(ctx) {
     // Gentle custom gravity so the fruit hangs near its peak, where it can be reached.
     f.gravity = 2 * (f.ty - f.sy) / (f.apexTime * f.apexTime);
     f.v0y = f.gravity * f.apexTime;
-    f.mesh.geometry = hazard ? assets.geo.ice : assets.geo.whole[kind];
+    f.mesh.geometry = hazard ? assets.geo.ice : scanned ? scanned.whole : assets.geo.whole[kind];
+    f.mesh.material = scanned ? scanned.material : assets.lit;
+    if (scanned) {
+      // A flat picture: it faces the player and only rolls, with a little wobble.
+      f.roll = rand(0, Math.PI * 2);
+      f.spinZ = rand(L.scannedRoll[0], L.scannedRoll[1]) * DEG * (Math.random() < 0.5 ? -1 : 1);
+    }
     f.mesh.position.set(f.sx, f.sy, f.sz);
     f.mesh.quaternion.identity();
     f.mesh.scale.set(1, 1, 1);
@@ -315,11 +348,12 @@ export function createFrostSlice(ctx) {
     flying.push(f);
     launched++;
     sfx.play('pop', RULES.volume.pop, _v.set(f.sx, f.sy, f.sz).applyMatrix4(stage.matrixWorld));
-    if (trace) trace('launch', hazard ? 'ice block' : FRUITS[kind].name);
+    if (trace) trace('launch', hazard ? 'ice block' : scanned ? 'scanned fruit' : FRUITS[kind].name);
     return f;
   }
 
   function updateFlying(dt) {
+    ctx.viewerPosition(_eye);
     for (let i = flying.length - 1; i >= 0; i--) {
       const f = flying[i];
       f.time += dt;
@@ -327,7 +361,12 @@ export function createFrostSlice(ctx) {
       const ease = 1 - (1 - u) * (1 - u);
       const y = f.sy + f.v0y * f.time - 0.5 * f.gravity * f.time * f.time;
       f.mesh.position.set(f.sx + (f.tx - f.sx) * ease, y, f.sz + (f.tz - f.sz) * ease);
-      f.mesh.quaternion.multiply(_q.setFromEuler(_e.set(f.spinX * dt, f.spinY * dt, f.spinZ * dt, 'YXZ')));
+      if (f.custom) {
+        f.roll += f.spinZ * dt;
+        f.mesh.lookAt(_eye);
+        f.mesh.rotateY(Math.sin(f.time * 3.1 + f.roll) * RULES.launch.scannedWobble * DEG);
+        f.mesh.rotateZ(f.roll);
+      } else f.mesh.quaternion.multiply(_q.setFromEuler(_e.set(f.spinX * dt, f.spinY * dt, f.spinZ * dt, 'YXZ')));
       if (y < RULES.launch.floorCutoff && f.time > f.apexTime) releaseFlying(i);
     }
   }
@@ -416,6 +455,8 @@ export function createFrostSlice(ctx) {
     const f = flying[index];
     const px = f.mesh.position.x, py = f.mesh.position.y, pz = f.mesh.position.z;
     const hazard = f.hazard, kindIndex = f.kind;
+    const scanned = f.custom ? custom.active : null;
+    if (scanned) _cutQ.copy(f.mesh.quaternion);
     releaseFlying(index);
     haptic(b.hand, hazard ? RULES.haptic.hazard : RULES.haptic.fruit);
     _v.set(px, py, pz).applyMatrix4(stage.matrixWorld);       // where it happened, for the sound
@@ -432,7 +473,7 @@ export function createFrostSlice(ctx) {
       return;
     }
 
-    const kind = FRUITS[kindIndex];
+    const kind = scanned ? scanned.kind : FRUITS[kindIndex];
     // Combo: several fruit in one swing of the same blade.
     b.combo = clock - b.lastSlice < RULES.comboWindow ? b.combo + 1 : 1;
     b.lastSlice = clock;
@@ -457,6 +498,23 @@ export function createFrostSlice(ctx) {
       let d = null;
       for (let i = 0; i < debris.length; i++) { const c = debris[i]; if (c.life <= 0) { d = c; break; } if (!d || c.born < d.born) d = c; }
       d.life = D.life; d.born = clock;
+      d.custom = Boolean(scanned);
+      if (scanned) {
+        // The picture's two halves part sideways, in the picture's own plane, then fall.
+        d.mesh.geometry = scanned.halves[s < 0 ? 0 : 1];
+        d.mesh.material = scanned.material;
+        d.mesh.position.set(px, py, pz);
+        d.mesh.quaternion.copy(_cutQ);
+        d.mesh.scale.set(1, 1, 1);
+        d.mesh.visible = true;
+        _side.set(s, 0, 0).applyQuaternion(_cutQ);
+        d.vx = _swing.x * D.swing + _side.x * D.apart;
+        d.vy = _swing.y * D.swing + _side.y * D.apart + D.up;
+        d.vz = _swing.z * D.swing + _side.z * D.apart;
+        d.spinX = rand(-D.spin, D.spin) * DEG * 0.15; d.spinY = rand(-D.spin, D.spin) * DEG * 0.15; d.spinZ = s * rand(0.3, 1) * D.spin * DEG;
+        continue;
+      }
+      d.mesh.material = assets.lit;
       d.mesh.geometry = assets.geo.half[kindIndex];
       d.mesh.position.set(px + _normal.x * s * kind.radius * D.offset, py + _normal.y * s * kind.radius * D.offset, pz + _normal.z * s * kind.radius * D.offset);
       d.mesh.quaternion.setFromUnitVectors(UP, _n.copy(_normal).multiplyScalar(s));     // dome outward, cut face inward
@@ -553,6 +611,12 @@ export function createFrostSlice(ctx) {
     ctx.camera.getWorldQuaternion(_facing).premultiply(invStageQuat);
     juice.update(dt, _facing);
 
+    if (phase !== 'playing') applyFruit();
+    else if (!toldPending && custom.hasPending && custom.status === 'ready') {
+      toldPending = true;                                    // it joins at the next round; say so without stopping this one
+      hud.popups.add(0, 1.72, 0.9, TEXT.fruitNext, COLORS.slate, _headLocal, 3.5);
+    }
+
     if (phase === 'playing') {
       if (dev) readPerf();
       roundTime += dt;
@@ -599,6 +663,7 @@ export function createFrostSlice(ctx) {
         phase, score, lives, best, sliced, maxCombo, hazardsHit, launched, timeLeft, roundTime, flying: flying.length,
         popups: hud ? hud.popups.shown : 0, juice: juice.emitted, sounds: sfx.played, soundSources: sfx.sources, spoken: voice ? voice.spoken.slice() : [],
         panels: hud ? hud.kind : null, standIns: assets.fallbacks.slice(), triangles: assets.triangles,
+        fruit: custom.status, scanned: Boolean(custom.active), scannedInAir: flying.filter((f) => f.custom).length,
         menu: hud ? hud.menuVisible : false, hud: hud ? hud.hudVisible : false,
         blades: blades.map((b) => b.holder.visible), peak: { calls: perfPeakCalls, triangles: perfPeakTris },
       };
@@ -619,10 +684,12 @@ export function createFrostSlice(ctx) {
       try { if (typeof ctx.setEnvironment === 'function') ctx.setEnvironment(null); } catch { /* the shell's default is fine */ }
       if (!shellMovesHands) listen(true);
       if (!building) building = build().catch((err) => { console.error('[frostslice] could not be built', err); });
+      custom.start();
     },
 
     exit() {
       active = false;
+      custom.stop();
       listen(false);
       if (voice) voice.hush();
       clearFlying(); clearDebris();
@@ -660,6 +727,7 @@ export function createFrostSlice(ctx) {
       for (let i = 0; i < blades.length; i++) blades[i].trail.dispose();
       disposeTrailMaterial();
       shadows.dispose(); juice.dispose();
+      custom.dispose();
       assets.dispose(); sfx.dispose();
       if (dev && window.__frostslice === debug) delete window.__frostslice;
     },

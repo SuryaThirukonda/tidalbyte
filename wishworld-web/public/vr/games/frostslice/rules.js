@@ -47,6 +47,8 @@ export const RULES = {
     targetX: [-0.38, 0.38], targetY: [1.1, 1.55], targetZ: [0.45, 0.62],
     apexTime: [1.0, 1.25],
     spin: 180,                   // degrees per second, each axis
+    scannedRoll: [25, 70],       // a scanned (flat) fruit only rolls, degrees per second
+    scannedWobble: 14,           // and sways about its upright axis by this many degrees
     floorCutoff: 0.15,           // a falling fruit is removed below this height
   },
   shadow: { radiusScale: 1.3, maxHeight: 2.2, lift: 0.012 },
@@ -93,6 +95,9 @@ export const COLORS = {
 export const TEXT = {
   title: 'Frost Slice',
   info: 'Swing the controllers to slice the fruit.\nLeave the ice blocks alone!',
+  infoScanned: 'Swing the controllers to slice your fruit.\nLeave the ice blocks alone!',
+  fruitReady: 'Your scanned fruit is ready!',
+  fruitNext: 'Your scanned fruit is ready! Next round.',
   start: 'Start',
   again: 'Play again',
   hub: 'Hub',

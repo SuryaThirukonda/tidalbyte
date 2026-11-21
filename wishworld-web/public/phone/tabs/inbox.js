@@ -56,6 +56,11 @@ function describeEvent(ev) {
       if (id) return { cls: "gift", icon: "gift", text: `Met ${theName(creatureInfo(id))}${tail}`, creature: creatureInfo(id).id };
       return { cls: "gift", icon: "gift", text: `Opened a gift${tail}` };
     }
+    case "frostslice_fruit": {
+      if (!d.assetUrl) return { cls: "gift", icon: "scan", text: "Frost Slice went back to the normal fruit" };
+      const from = first(d, ["sender"]);
+      return { cls: "gift", icon: "scan", text: `Scanned a fruit for Frost Slice${from ? " (" + from + ")" : ""}` };
+    }
     default: {
       const words = tidy(ev.type);
       const score = first(d, ["score", "points"]);

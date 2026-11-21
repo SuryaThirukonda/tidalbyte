@@ -2,8 +2,7 @@
 // It follows docs/CONTRACT.md route by route so the phone app keeps working on its own.
 
 const PRODUCTION = "https://wishworld-web.netlify.app";
-const isLocal = /^(localhost|127\.0\.0\.1|\[::1\])$/.test(location.hostname) || location.protocol === "file:";
-const base = isLocal ? PRODUCTION : "";
+const base = location.protocol === "file:" ? PRODUCTION : "";
 
 let currentRoom = null;
 
@@ -75,6 +74,12 @@ export const api = {
     if (blobs.length > 1) body.images = await Promise.all(blobs.map((b) => toBase64(b)));
     return (await call("/api/scan", { method: "POST", body })).gift;
   },
+  sendFruit: async ({ sender, pngBlob, method }) => {
+    const body = { room: room(), kind: "fruit", sender, method, image: await toBase64(pngBlob) };
+    return (await call("/api/scan", { method: "POST", body })).fruit;
+  },
+  getFruit: async () => (await call(`/api/scan?room=${q(room())}&kind=fruit`)).fruit || null,
+  clearFruit: async () => { await call("/api/scan", { method: "POST", body: { room: room(), kind: "fruit", action: "clear" } }); return null; },
   scanStatus: async (id) => (await call(`/api/scan-status?id=${q(id)}`)).gift,
   getGifts: (after = 0) => call(`/api/gifts?room=${q(room())}&after=${q(after || 0)}`),
   openGift: async (id) => (await call("/api/gifts/open", { method: "POST", body: { room: room(), id } })).gift,

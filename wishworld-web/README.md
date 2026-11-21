@@ -19,6 +19,10 @@ Decisions and file formats: [`docs/CONTRACT.md`](docs/CONTRACT.md). What the Uni
   hold V = speak a wish, M = menu, 1 to 9 = tabs. Useful parameters: `?mode=desktop|vr|ar`, `&tab=<id>`,
   `&autostart=1`, `&ar=1` (AR look on a grey backdrop), `&stats=1`.
 - **Phone:** scan the QR code on the landing page.
+- **Your own fruit in Frost Slice:** phone **Scan** tab, **Scan Fruit for Frost Slice** (or open
+  `/phone/?room=WISH#scan/fruit`). The background is removed on the phone; only the cut-out is uploaded. Frost Slice
+  throws it instead of the normal fruit, picking up a new one between rounds. On localhost, `?fruit=<url>` on the
+  headset and `?debugImage=<url>&scan=fruit` on the phone load test pictures. Server check: `node tools/fruit.test.mjs`.
 - **No headset (Play in browser):** the landing page's "Play in the browser", or `/vr/?room=WISH&mode=play` (the
   default on the start page when there is no headset). Full screen, the same worlds as a first-person game:
   - mouse and keyboard: the mouse looks (it is captured; Esc pauses), W A S D walk, click uses what the crosshair is on,
@@ -88,4 +92,5 @@ Optional: `HF_TOKEN` (raises the free image-to-3D allowance), `MESH_WORKER_KEY` 
 
 Everything was verified in a desktop browser and with direct API calls. Still to check on hardware: passthrough,
 controllers and frame rate in the Quest browser; the microphone inside an immersive session; the phone camera, tilt
-and WebXR; a real toy scan from a phone; iPhone voice recording.
+and WebXR; a real toy scan from a phone; iPhone voice recording; a real fruit scan from a phone camera and how the
+scanned fruit looks and performs in the Quest browser.

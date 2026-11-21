@@ -54,6 +54,9 @@ Gift object = the `gifts` row as JSON:
 | `POST /api/wish` | `{ room, sender, text }` | `{ gift }` (kind `creature`, `option_id` from `CREATURES`, child-safe `message`) |
 | `POST /api/letter` | `{ room, sender, text, audio?, audioType? }` (`audio` = base64) | `{ gift }` (kind `letter`) |
 | `POST /api/scan` | `{ room, sender, image, imageType? }` (`image` = base64 JPEG, shrunk by the phone) | `{ gift }` (kind `mesh`, status `pending`) |
+| `POST /api/scan` (fruit) | `{ room, kind: "fruit", sender?, method?, image }` (`image` = base64 PNG with transparency, cut out on the phone) | `{ fruit }`; the server re-encodes it (trimmed, at most 512 px, no metadata) and deletes the room's previous fruit |
+| `POST /api/scan` (fruit) | `{ room, kind: "fruit", action: "clear" }` | `{ fruit: null }` Frost Slice goes back to the normal fruit |
+| `GET /api/scan?room=&kind=fruit` | | `{ fruit }` or `{ fruit: null }`; fruit = `{ id, room, type: "frostslice_fruit", assetUrl, width, height, method ("auto"\|"box"\|"oval"), createdAt }` |
 | `GET /api/scan-status?id=` | | `{ gift }` (becomes `ready`; on failure or after 2 minutes becomes a `creature` gift) |
 | `GET /api/gifts?room=&after=` | | `{ gifts: [...], latest }` ready gifts with id > after, oldest first |
 | `POST /api/gifts/open` | `{ room, id }` | `{ gift }` and logs a `gift_opened` event |
@@ -64,7 +67,9 @@ Gift object = the `gifts` row as JSON:
 | `POST /api/guide` | `{ room, question, topic? }` | `{ reply, audio_url? }` the guide's short child-safe answer (Haiku) |
 | `GET /api/health` | | `{ ok, db, has: { anthropic, elevenlabs, fal, blob } }` booleans only |
 
-Event types: `world_visited`, `creature_learned`, `breath_session`, `explore_visited`, `gift_opened`.
+Event types: `world_visited`, `creature_learned`, `breath_session`, `explore_visited`, `gift_opened`,
+`frostslice_fruit` (the room's scanned fruit; the newest row wins, `{ cleared: true }` means normal fruit; only the
+cut-out is stored, never the original photo; written only by `/api/scan`, so `POST /api/events` refuses this type).
 Unknown room codes are created on first use. Text is capped (wish 200 chars, letter 600, sender 40).
 
 ### `/shared/api.js` (browser client, owned by the API builder)
@@ -79,6 +84,9 @@ export const api = {
   sendLetter({ sender, text, audioBlob }),// -> gift
   startScan({ sender, imageBlob }),       // -> gift (pending)
   scanStatus(id),                         // -> gift
+  sendFruit({ sender, pngBlob, method }), // -> fruit (Frost Slice cut-out)
+  getFruit(),                             // -> fruit or null
+  clearFruit(),                           // -> null
   getGifts(after),                        // -> { gifts, latest }
   openGift(id),                           // -> gift
   logEvent(type, detail),                 // -> { ok, id }   (never throws; failures are swallowed)

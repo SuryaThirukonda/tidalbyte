@@ -185,6 +185,31 @@
 .viewer canvas { width: 100% !important; height: 100% !important; display: block; }
 .viewer .viewer-note { position: absolute; inset: auto 0 8px 0; text-align: center; font-size: 15px; color: var(--slate-soft); pointer-events: none; }
 
+/* Scan: toy or fruit */
+.scan-switch { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 4px 0 6px; }
+.scan-switch .btn { min-height: 56px; font-size: 18px; line-height: 1.1; padding: 8px 10px; }
+.scan-switch .btn.on { background: linear-gradient(180deg, #ffe3cf, var(--peach)); box-shadow: 0 3px 0 #a8836f; transform: translateY(2px); }
+.scan-switch .emoji { font-size: 24px; margin-right: 4px; }
+
+/* Scan: fruit */
+.photo-frame.has.cutout-frame, .fruit-done-pic, .fruit-current-img {
+  background-color: #fff;
+  background-image: conic-gradient(#e6edf5 25%, #fff 0 50%, #e6edf5 0 75%, #fff 0);
+  background-size: 22px 22px;
+}
+.cutout-frame img { position: absolute; inset: 0; padding: 10px; }
+.edge-row { display: flex; align-items: center; gap: 10px; margin: 0 0 16px; font-family: var(--font-plain); font-size: 15px; color: var(--slate-soft); }
+.edge-row input { flex: 1 1 auto; accent-color: var(--ribbon); height: 32px; }
+.box-wrap { display: grid; place-items: center; margin-bottom: 14px; }
+.box-canvas { max-width: 100%; border: 2px solid var(--slate); border-radius: 14px; touch-action: none; cursor: crosshair; }
+.fruit-done-pic { width: min(100%, 260px); aspect-ratio: 1 / 1; margin: 4px auto 14px; display: grid; place-items: center; border: 2px solid var(--slate); border-radius: 20px; overflow: hidden; }
+.fruit-done-img { max-width: 86%; max-height: 86%; object-fit: contain; }
+.fruit-current { padding-top: 14px; padding-bottom: 14px; }
+.fruit-current-row { display: flex; align-items: center; gap: 12px; }
+.fruit-current-img { flex: none; width: 60px; height: 60px; object-fit: contain; border: 2px solid var(--ice); border-radius: 14px; }
+.fruit-current-text { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; line-height: 1.2; }
+.fruit-current-text b { font-family: var(--font-heading); font-size: 18px; }
+
 /* ------------------------------------------------------------------ Letter */
 .rec { border: 2px solid var(--ice); border-radius: 18px; background: #fff; padding: 14px; margin-bottom: 16px; }
 .rec-title { font-family: var(--font-heading); font-size: 19px; margin-bottom: 2px; }
