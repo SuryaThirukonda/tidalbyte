@@ -35,6 +35,8 @@ export function createForces(ctx) {
         _tip.copy(at).addScaledVector(_dir, length + 0.04 * k);
         a.tag.position.copy(_tip);
         ctx.ui.faceViewer(a.tag, _world.copy(viewer));
+        // faceViewer writes a world yaw into the local rotation; the stage only ever yaws, so subtract its yaw.
+        if (group.parent) a.tag.rotation.y -= group.parent.rotation.y;
       }
     },
   };
