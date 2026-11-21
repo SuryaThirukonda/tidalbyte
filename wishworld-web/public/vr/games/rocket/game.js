@@ -1,5 +1,5 @@
 // The Bottle Rocket tab: the child's scanned water bottle becomes a rocket they pilot through six missions.
-// Spec: docs/superpowers/specs/2026-11-21-bottle-rocket-design.md. Physics and rules are pure (flight.js, run.js);
+// Spec: docs/superpowers/specs/bottle-rocket-design.md. Physics and rules are pure (flight.js, run.js);
 // this file places things, reads the controls and plays the moments.
 //
 // Phases: choose -> scanning -> ready -> flying -> won | failed -> ready (next or again) ... -> done.

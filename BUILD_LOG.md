@@ -926,3 +926,79 @@ dots only) and `shell.test.mjs`: all checks passed.
 On a headset: the frame rate with a 200,000-triangle surface plus dots on a Quest 2, and how the walking ground
 feels underfoot. The Grand Canyon is so tall for its box that its tabletop model rises well above the base; it
 reads better when walking.
+## Snow Hoops (web headset game)
+
+A Wii Sports Resort style 3-point contest in the web headset view, where the ball is a toy the child scanned. Tab
+`hoops` (`public/vr/tabs/hoops.js`), game in `public/vr/games/hoops/` (start with `game.js`; every number is in
+`rules.js`). A card in the hub's Games menu between Frost Slice and Snow Circuit.
+
+- **Pick your ball.** On entering: the room's saved companions (newest five, from `api.getCompanions()`) and Bubby,
+  each turning above its button, and **Scan something new**, which runs the existing `createToyScan` flow unchanged
+  (viewfinder, phone Scan tab, Bubby on a second press or after 150 s). A new scan also joins the companions, as in
+  the Reef. A companion already following is cloned from the live object; others load through `/shared/models.js`.
+- **The ball.** Any model is cloned, scaled so its largest side is 0.24 m and centred on its pivot
+  (`ballshape.js`). Physics always uses a 0.24 m sphere. The 5 rack balls share the model's geometry and materials;
+  the money ball (5th of each rack) uses one shared gold copy of the materials with a slow glow. A scan of ~19,000
+  triangles shows 3 balls on the rack at once (70,000-triangle budget); Bubby shows all 5.
+- **Throwing.** Hold grip near the front rack ball (waist height, by the right hand; reaching to the left side moves
+  the rack there), swing, let go. Release velocity = least-squares slope of the held point over the last 90 ms
+  (`tracker.js`), multiplied by a 1.4 throw boost (`THROW.boost`), so about 5.4 m/s from the hand reaches the hoop
+  (the ideal arc needs ~7.6 m/s). Aim assist: a throw going up, faster than 2 m/s and within 35 degrees of the hoop is
+  blended 78% toward the ideal 55-degree arc (`THROW.assist`). Let go gently by the rack and the ball goes back.
+  Haptics on grab, release, swish, rim.
+- **Physics** (`physics.js`, hand-written): gravity, light drag, 1/240 s substeps; rim = 24 segments, backboard =
+  bounded plane, floor; a basket = the centre passing down through the opening.
+- **Contest** (`contest.js`): 5 racks x 5 balls at 5 spots on a 4.2 m arc (left corner, left wing, top, right wing,
+  right corner); 1 point, money ball 2, max 30; 60 s clock that keeps running during the white-fade move to the next
+  spot (`rig.setHome`, facing the hoop); balls in the air at the buzzer still count (3 s grace).
+- **Kid-sized court** (agreed): rim 2.6 m high (real: 3.05 m), arc 4.2 m (real: 6.75 m), real rim and ball size.
+- **Sound**: the shell's buzz (buzzer), pop (grab), chime (money basket), success (end); the project has no swish or
+  rim clank, so those and a board thud are short recipes made in `sfx.js`. Guide lines: the intro and the end line are
+  short fixed text-to-speech lines; "Go!" and "Ooh, gold!" (money ball) are recorded lines.
+- **Desktop**: press to pick up, drag up for power (the shot starts at 85% of the ideal speed; a drag of about an
+  eighth of the screen, ~100 px, is the ideal speed) and sideways to aim
+  (a dotted aim line shows the first 0.45 s), let go to shoot. New `input.state.desktopLookEnabled` (default true,
+  reset on every tab switch) lets a tab turn off left-drag look; Snow Hoops turns it off during a round.
+- Pointer rays and companions are off during a round and come back after it. Surroundings: `setEnvironment(null)` and
+  snowfall. One particle system (the basket sparkles).
+- **Penguin crowd** (`crowd.js`): 15 penguins (the library's `penguin.glb`, 132 triangles) behind the hoop and down both
+  sides, out of every ball's path, drawn as one InstancedMesh (one draw call). They sway while waiting and hop and
+  wiggle when a basket goes in, longer for the money ball. No crowd sound (the project has none; motion only, agreed).
+
+### Checked
+
+- `public/vr/games/hoops/dev/rules.test.mjs` (Node, `node --import ./three-loader.mjs rules.test.mjs`): the ideal arc
+  swishes from all five spots; 80% falls short, 115% goes long; a ball rising through the hoop does not count; rim
+  and board bounces; aim assist moves exactly 78% and leaves side, downward and gentle throws alone; from every spot a
+  5.4 m/s throw 2 degrees off line misses on its own and goes in with the boost and assist; the tracker
+  returns a swing's speed; scoring (1 / money 2, a ball counts once), rack progression, the 2.5 s rack wait, a perfect
+  round = 30, the clock and buzzer grace; a 19,200-triangle off-centre model comes out 0.2400 m and centred, clones
+  share geometry and materials, money balls share one gold material. All passed.
+- `public/vr/games/hoops/dev/check.mjs` in the real shell (desktop preview, headless Chrome, `?standins=1`), all
+  five scenarios passed with 0 console errors and 0 warnings:
+  `pick` (a real click on a ball; 0.24 m, centred, 3 rack balls for the 19,220-triangle stand-in; a mouse
+  press, 100 px drag and release scored; a scripted hand path through the tracker was measured exactly and assisted),
+  `scoring` (5 ideal shots = 6 points with the money ball, move to the left wing, 5 short shots = 0, on to rack 3),
+  `timer` (`?round=12`: one buzzer, "Time!", results, intro and "Go!" spoken), `autoplay` (`?autoplay=1&round=20`:
+  18 shots, 12 in, the penguins cheered once per basket, peak 15 draw calls and 61,792 triangles), `again` (Play
+  again by mouse; leaving restores pointers, mouse look and companions; three leave/return cycles hold 22
+  geometries and 14 textures).
+- `public/vr/dev/test/shell.test.mjs`: all shell checks passed. Frost Slice `check.mjs again --shell`: passed.
+- The hub's Games menu shows the three cards.
+- Frame rate in the desktop preview (headless Chrome, autoplay): 90 fps with the penguin crowd shown and 90 with it
+  hidden, the same as Frost Slice. (Screenshots show ~30 fps: that is the capture itself, not the game.)
+
+### Not checked
+
+- **Nothing was run on a headset.** Grip grabbing, the release velocity from real controller tracking, haptics, rack
+  height and reach, comfort of the fades, and 72 fps on a Quest 2 are untested. Headless Chrome frame rates are not
+  headset numbers.
+- **Throw strength and accuracy with real children.** With the 1.4 boost a 5.4 m/s release reaches the hoop. A
+  simulated spread of child-like throws (4.5 to 6.5 m/s, up to 8 degrees off left/right and up/down, 525 throws from
+  the five spots) goes in 19% of the time at 78% assist (9% at 60%, 0% before the boost). Not tried with a child or a
+  headset. Further levers in `rules.js`: `THROW.boost`, `THROW.assist`, `COURT.arcRadius` / `rimHeight`.
+- **Real scans and the server.** The checks ran against a static local server with `?standins=1` (Bubby and a
+  procedural 19,220-triangle stand-in). Loading saved companions from `/api/companions`, and the "Scan something new"
+  path from the phone into this tab, were not run here (the scan code itself is the Reef's, unchanged).
+- AR passthrough (the court is moved around the player instead of the rig), the left-hand rack switch with real
+  controllers, the shell's play mode (pointer lock), and sound (all checks ran muted).

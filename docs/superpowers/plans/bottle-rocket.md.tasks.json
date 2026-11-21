@@ -1,5 +1,5 @@
 {
-  "planPath": "docs/superpowers/plans/2026-11-21-bottle-rocket.md",
+  "planPath": "docs/superpowers/plans/bottle-rocket.md",
   "tasks": [
     {
       "id": 0,
@@ -67,6 +67,5 @@
         6
       ]
     }
-  ],
-  "lastUpdated": "2026-11-21T00:00:00Z"
+  ]
 }

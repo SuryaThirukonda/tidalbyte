@@ -161,6 +161,7 @@ async function boot() {
         input.state.pointersEnabled = true;
         input.state.desktopPointerMode = true;
         input.state.desktopMoveEnabled = true;
+        input.state.desktopLookEnabled = true;
         input.state.reach = 0.5;
         if (!isImmersive()) input.resetDesktopHead();
         if (isAR()) rig.reset();

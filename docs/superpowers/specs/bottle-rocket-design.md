@@ -154,7 +154,7 @@ and 0.3 m below eye height, so it suits someone sitting in bed.
 - Numbers, dashboards and formulas (this could be a later "older kids" mode).
 - Any change to how scanning works.
 
-## As built (2026-11-21)
+## As built
 
 Where the code ended up differing from the design above. The code is the reference.
 

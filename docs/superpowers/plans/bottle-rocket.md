@@ -16,7 +16,7 @@
 - Lesson depth: not answered; ages 6 to 12, "feel it, then name it" (no numbers) was assumed and recorded in the spec.
 - Spec sections 1 and 2: "Looks good". Plan: "Write the plan".
 
-Spec: `docs/superpowers/specs/2026-11-21-bottle-rocket-design.md`.
+Spec: `docs/superpowers/specs/bottle-rocket-design.md`.
 
 **Spec refinements made while planning** (the spec has been updated to match):
 - Controls: thrust is the trigger (laptop: hold the left mouse button). Force arrows toggle on the grip (laptop: G). The A button (push-to-talk), Space (play mode talk) and F (desktop A) are taken by the shell.
@@ -1332,7 +1332,7 @@ export function createControls(ctx) {
 
 ```js
 // The Bottle Rocket tab: the child's scanned water bottle becomes a rocket they pilot through six missions.
-// Spec: docs/superpowers/specs/2026-11-21-bottle-rocket-design.md. Physics and rules are pure (flight.js, run.js);
+// Spec: docs/superpowers/specs/bottle-rocket-design.md. Physics and rules are pure (flight.js, run.js);
 // this file places things, reads the controls and plays the moments.
 //
 // Phases: choose -> scanning -> ready -> flying -> won | failed -> ready (next or again) ... -> done.
