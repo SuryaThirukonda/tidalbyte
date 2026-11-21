@@ -96,3 +96,20 @@ export async function transcribe(bytes, mimeType, fileName) {
   }
   return data && typeof data.text === 'string' ? data.text.trim() : '';
 }
+
+/**
+ * Starts speaking `text` and returns the live response: the MP3 arrives in chunks as it is made, so playback
+ * can begin within a few hundred milliseconds (POST /v1/text-to-speech/{voice}/stream). Throws a UserError
+ * when the service refuses.
+ */
+export async function speakStream(text) {
+  const url = `${API}/v1/text-to-speech/${voiceId()}/stream?output_format=${TTS_FORMAT}&optimize_streaming_latency=3`;
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: { 'xi-api-key': key(), 'Content-Type': 'application/json', Accept: 'audio/mpeg' },
+    body: JSON.stringify({ text, model_id: ttsModel() }),
+    signal: AbortSignal.timeout(25000),
+  });
+  if (!res.ok || !res.body) throw await problem(res, "stream");
+  return res;
+}

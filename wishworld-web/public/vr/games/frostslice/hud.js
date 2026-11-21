@@ -177,14 +177,14 @@ function createPopups(parent, fontFor) {
     label.renderOrder = 9;
     holder.add(plate, label);
     parent.add(holder);
-    pool.push({ holder, plate, label, life: 0, pw: 1, ph: 1, born: 0 });
+    pool.push({ holder, plate, label, life: 0, total: P.life, pw: 1, ph: 1, born: 0 });
   }
   let serial = 0, shown = 0;
   const _m = new THREE.Matrix4(), _q = new THREE.Quaternion(), _z = new THREE.Vector3(0, 0, 1), _up = new THREE.Vector3(0, 1, 0);
 
   return {
-    /** A new pop-up at a stage-frame point, facing `head` (also in the stage frame). */
-    add(x, y, z, text, rgb, head) {
+    /** A new pop-up at a stage-frame point, facing `head` (also in the stage frame). `life` in seconds. */
+    add(x, y, z, text, rgb, head, life = P.life) {
       let p = null;
       for (const c of pool) { if (c.life <= 0) { p = c; break; } if (!p || c.born < p.born) p = c; }   // a free one, else the oldest
       const t = textFor(text, rgb);
@@ -203,7 +203,7 @@ function createPopups(parent, fontFor) {
       p.holder.quaternion.setFromRotationMatrix(_m).multiply(_q.setFromAxisAngle(_z, (Math.random() * 2 - 1) * P.tilt * Math.PI / 180));
       p.holder.scale.setScalar(0.3);
       p.holder.visible = true;
-      p.life = P.life; p.born = ++serial;
+      p.life = p.total = life; p.born = ++serial;
       shown++;
     },
     update(dt) {
@@ -212,11 +212,11 @@ function createPopups(parent, fontFor) {
         if (p.life <= 0) continue;
         p.life -= dt;
         if (p.life <= 0) { p.holder.visible = false; continue; }
-        const age = P.life - p.life;
+        const age = p.total - p.life;
         // pops up past full size, settles, then drifts up and fades
         const size = age < 0.16 ? 0.3 + (1.25 - 0.3) * Math.min(1, age / 0.16) : 1.25 + (1 - 1.25) * Math.min(1, (age - 0.16) / 0.12);
         p.holder.scale.setScalar(size);
-        p.holder.position.y += (age < 0.28 ? 0.08 : 0.3) * dt;
+        p.holder.position.y += (age < 0.28 ? 0.08 : 0.3 / p.total) * dt;
         const alpha = Math.min(1, Math.max(0, p.life / 0.35));
         p.label.material.opacity = alpha;
         const k = 0.5 + 0.5 * alpha;                       // the plate shrinks away as the text fades

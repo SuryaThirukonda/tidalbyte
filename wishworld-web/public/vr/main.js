@@ -26,6 +26,8 @@ import { createMenu } from './core/menu.js';
 import { createTabs } from './core/tabs.js';
 import { createGifts } from './core/gifts.js';
 import { createCompanions } from './core/companions.js';
+import { createAlive } from './core/alive.js';
+import { createPerf } from './core/perf.js';
 
 const params = new URLSearchParams(location.search);
 const $ = (id) => document.getElementById(id);
@@ -46,6 +48,7 @@ async function loadApi() {
       base: '', room: () => code, setRoom: () => code,
       createRoom: offline, sendWish: offline, sendLetter: offline, startScan: offline, scanStatus: offline,
       getGifts: offline, openGift: offline, getInbox: offline, tts: offline, stt: offline, guide: offline, health: offline,
+      sendFruit: offline, getFruit: offline, clearFruit: offline,
       logEvent: async () => ({ ok: false, id: null }),
       pollGifts: () => () => {},
     };
@@ -103,7 +106,14 @@ async function boot() {
   const guide = createGuide({ scene, ui, audio, rig });
   const gifts = createGifts(api);
   // Saved companions follow the child in every tab (see core/companions.js).
-  const companions = createCompanions({ scene, rig, input, audio, api, haptic: (hand, strength, ms) => input.haptic(hand, strength, ms) });
+  // Quest 2 tuning: foveation, refresh rate and dynamic resolution, and the frame rate for the Judge view.
+  const perf = createPerf({ renderer, api, params });
+  // Generated and scanned models bob, look at the child and react to hands; hands are drawn and can poke and pet.
+  const alive = createAlive({ scene, renderer, rig, audio, input, haptic: (hand, strength, ms) => input.haptic(hand, strength, ms) });
+  const companions = createCompanions({
+    scene, rig, input, audio, api, alive, haptic: (hand, strength, ms) => input.haptic(hand, strength, ms),
+    onJoined: (record) => companionJoined(record),
+  });
 
   // ---- ctx: what every tab is given -------------------------------------------------------------------
   const ctx = {
@@ -126,7 +136,7 @@ async function boot() {
     mode: () => mode,
     preferLite,
     params,
-    rig, input, guide, gifts, companions, environment, theme, models, movement,
+    rig, input, guide, gifts, companions, alive, environment, theme, models, movement,
     library,
     say: (text, options) => guide.say(text, options),
     viewerForwardFlat: (out) => rig.viewerForwardFlat(out),
@@ -195,11 +205,14 @@ async function boot() {
     if ((clean === safeRoom() && !force) || roomSwitching) return clean;
     roomSwitching = true;
     try {
+      await flushProfileSave();
       api.setRoom(clean);
       rememberRoom(clean);
       showRoomCode();
       const current = tabs.activeId;
       if (current) tabs.leave();
+      await loadProfiles();
+      renderProfilePicker();
       gifts.reset();
       companions.clear();
       companions.reload();
@@ -221,6 +234,176 @@ async function boot() {
       guide.say((err && err.message) || 'A new room could not be made just now.');
     }
   }
+  // ---- child profiles: who is playing, with their own buddies, mailbox and settings -------------------------
+  // ctx.profile is what tabs use: current, list, save(patch) (applied at once, saved shortly after), switchTo(id),
+  // onChange(fn). Settings: volume, guideVoice, micSensitivity (Calm reads it), following (companion ids).
+  const profileState = { list: [], current: null, listeners: new Set(), pending: {}, timer: null, savingFor: null };
+
+  function applyProfileSettings() {
+    const s = (profileState.current && profileState.current.settings) || {};
+    audio.setVolume(Number.isFinite(s.volume) ? s.volume : 0.8);
+    audio.setVoiceEnabled(s.guideVoice !== false);
+    companions.setFollowing(Array.isArray(s.following) ? s.following : null);
+  }
+  function notifyProfile() {
+    for (const fn of profileState.listeners) { try { fn(profileState.current); } catch (err) { console.warn(err); } }
+  }
+  async function loadProfiles() {
+    try { profileState.list = await api.getProfiles(); } catch (err) {
+      console.warn('[wishworld] profiles are not available:', err && err.message);
+      profileState.list = [];
+    }
+    const wanted = api.profile();
+    profileState.current = profileState.list.find((p) => p.id === wanted) || profileState.list[0] || null;
+    if (profileState.current && api.profile() !== profileState.current.id) api.setProfile(profileState.current.id);
+    applyProfileSettings();
+    notifyProfile();
+    return profileState.current;
+  }
+  /** Send what is waiting to be saved now (before switching room or profile). */
+  async function flushProfileSave() {
+    if (!profileState.timer) return;
+    clearTimeout(profileState.timer);
+    profileState.timer = null;
+    await sendProfileSave();
+  }
+  async function sendProfileSave() {
+    const patch = profileState.pending, id = profileState.savingFor;
+    profileState.pending = {};
+    if (!id || !Object.keys(patch).length) return;
+    try { await api.saveProfileSettings(id, patch); } catch (err) { console.warn('[wishworld] settings not saved:', err && err.message); }
+  }
+  /** Change some settings: applied at once, saved to the profile a moment later (one request for a burst). */
+  function saveProfile(patch, { reloadBuddies = true } = {}) {
+    const p = profileState.current;
+    if (!p) return Promise.resolve();
+    p.settings = { ...p.settings, ...patch };
+    applyProfileSettings();
+    if (reloadBuddies && Object.prototype.hasOwnProperty.call(patch, 'following')) { companions.clear(); companions.reload(); }
+    if (profileState.savingFor !== p.id) { profileState.pending = {}; profileState.savingFor = p.id; }
+    Object.assign(profileState.pending, patch);
+    clearTimeout(profileState.timer);
+    notifyProfile();
+    return new Promise((resolve) => {
+      profileState.timer = setTimeout(() => { profileState.timer = null; sendProfileSave().then(resolve); }, 350);
+    });
+  }
+  /** A new buddy joined (a scan, an opened gift): it follows, and the oldest of the chosen three steps back. */
+  function companionJoined(record) {
+    const p = profileState.current;
+    if (!p || !record || !Array.isArray(p.settings.following) || p.settings.following.includes(record.id)) return;
+    saveProfile({ following: [...p.settings.following, record.id].slice(-companions.maxFollowing) }, { reloadBuddies: false });
+  }
+  let profileSwitching = false;
+  async function switchProfile(id) {
+    const next = profileState.list.find((p) => p.id === id);
+    if (!next || profileSwitching || (profileState.current && profileState.current.id === id)) return;
+    profileSwitching = true;
+    try {
+      await flushProfileSave();
+      api.setProfile(id);
+      profileState.current = next;
+      applyProfileSettings();
+      const current = tabs.activeId;
+      if (current) tabs.leave();
+      gifts.reset();
+      companions.clear();
+      companions.reload();
+      if (current && mode !== 'idle') await tabs.switchTo(current, { fade: false });
+      notifyProfile();
+      renderProfilePicker();
+      audio.chime();
+      guide.say(`Hi ${next.name}!`);
+      ctx.log('profile_switched', { name: next.name });
+    } finally {
+      profileSwitching = false;
+    }
+  }
+  ctx.profile = {
+    get current() { return profileState.current; },
+    get list() { return profileState.list; },
+    save: saveProfile,
+    switchTo: switchProfile,
+    refresh: loadProfiles,
+    onChange(fn) { profileState.listeners.add(fn); return () => profileState.listeners.delete(fn); },
+  };
+
+  // The start page's picker: big cards, one per child, and "Add profile" (a name and an icon; no passwords).
+  let iconKit = null;
+  async function renderProfilePicker() {
+    const box = $('profiles');
+    if (!box) return;
+    try { if (!iconKit) iconKit = await import('/shared/profiles.js'); } catch { box.hidden = true; return; }
+    const cards = profileState.list.map((p) => {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'pcard' + (profileState.current && p.id === profileState.current.id ? ' on' : '');
+      b.setAttribute('role', 'radio');
+      b.setAttribute('aria-checked', profileState.current && p.id === profileState.current.id ? 'true' : 'false');
+      b.dataset.profile = String(p.id);
+      b.append(iconKit.iconBadge(p.icon, p.name, 64));
+      const name = document.createElement('span');
+      name.className = 'pcard-name';
+      name.textContent = p.name;
+      b.append(name);
+      b.addEventListener('click', () => {
+        if (mode !== 'idle') { switchProfile(p.id); return; }
+        api.setProfile(p.id);
+        profileState.current = p;
+        applyProfileSettings();
+        notifyProfile();
+        renderProfilePicker();
+      });
+      return b;
+    });
+    const add = document.createElement('button');
+    add.type = 'button';
+    add.className = 'pcard add';
+    add.innerHTML = '<span class="pf-plus" aria-hidden="true">+</span><span class="pcard-name">Add profile</span>';
+    add.addEventListener('click', () => { const f = $('profileAdd'); f.hidden = !f.hidden; if (!f.hidden) $('profileName').focus(); });
+    if (profileState.list.length >= 8) add.disabled = true;
+    $('profileCards').replaceChildren(...cards, add);
+    const icons = $('profileIcons');
+    if (!icons.childElementCount) {
+      for (const icon of iconKit.allIcons()) {
+        const b = document.createElement('button');
+        b.type = 'button';
+        b.className = 'picon';
+        b.dataset.icon = icon;
+        b.setAttribute('aria-label', icon.replace(':', ' '));
+        b.append(iconKit.iconBadge(icon, '', 40));
+        b.addEventListener('click', () => { for (const x of icons.children) x.classList.toggle('on', x === b); });
+        icons.append(b);
+      }
+      icons.firstElementChild.classList.add('on');
+    }
+    box.hidden = false;
+  }
+  function setupProfileForm() {
+    const form = $('profileAdd');
+    if (!form) return;
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const name = $('profileName').value.trim();
+      const err = $('profileError');
+      err.textContent = '';
+      if (!name) { err.textContent = 'Type a name first.'; return; }
+      const picked = $('profileIcons').querySelector('.picon.on');
+      try {
+        const made = await api.createProfile({ name, icon: picked ? picked.dataset.icon : undefined });
+        api.setProfile(made.id);
+        $('profileName').value = '';
+        form.hidden = true;
+        await loadProfiles();
+        renderProfilePicker();
+      } catch (ex) {
+        err.textContent = (ex && ex.message) || 'That profile could not be added just now.';
+      }
+    });
+  }
+  setupProfileForm();
+  const profilesReady = loadProfiles().then(() => renderProfilePicker());
+
   function showRoomCode() {
     const code = safeRoom();
     $('room').textContent = code;
@@ -347,8 +530,10 @@ async function boot() {
   async function startXR(kind) {
     const { session: s, space } = await requestSession(kind);
     renderer.xr.setReferenceSpaceType(space);
+    perf.beforeSession();
     try { await renderer.xr.setSession(s); } catch (err) { try { await s.end(); } catch { /* already over */ } throw err; }
     session = s;
+    perf.onSession(s);
     // A device may accept an AR session and still show an opaque world; treat that as VR.
     const blend = s.environmentBlendMode || renderer.xr.getEnvironmentBlendMode();
     mode = kind === 'immersive-ar' && blend !== 'opaque' ? 'ar' : 'vr';
@@ -388,6 +573,7 @@ async function boot() {
       onResize();
       environment.refresh();
       menu.rebuild();
+      await profilesReady;
       gifts.start();
       companions.reload();
       rig.setFade(0);
@@ -532,6 +718,8 @@ async function boot() {
       rig.update(dt);
       tabs.update(dt, ctx.elapsed);
       companions.update(dt, ctx.elapsed);
+      alive.update(dt, ctx.elapsed);
+      perf.update(dt);
       guide.update(dt);
       ui.update(dt);
       audio.update();

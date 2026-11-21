@@ -6,6 +6,12 @@ node_modules/
 tools/lidar/cache/
 tools/lidar/.venv/
 *.log
+public/fruit-dev/
+public/_tmp_*.png
+public/_tmp_*.jpg
 
 .vercel
 .env*.local
+
+# Local Netlify folder
+.netlify

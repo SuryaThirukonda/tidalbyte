@@ -25,7 +25,7 @@ export default route('POST', async (req, res) => {
       kind: gift.kind,
       sender: gift.sender,
       option_id: gift.option_id,
-    });
+    }, gift.profile_id);
   }
   send(res, 200, { gift });
 });

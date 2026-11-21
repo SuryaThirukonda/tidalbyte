@@ -5,7 +5,10 @@
 // (it is the sender's own voice and is not transcribed or checked here).
 import { route, send, body, text, roomCode, base64Bytes, UserError } from './_lib/http.js';
 import { ensureRoom, insertGift, giftJson } from './_lib/db.js';
+import { resolveProfile } from './_lib/profiles.js';
 import { checkLetter } from './_lib/haiku.js';
+import { checkSafety } from './_lib/nemotron.js';
+import { record } from './_lib/metrics.js';
 import { save, audioType, randomName } from './_lib/store.js';
 
 const MAX_AUDIO = 2 * 1024 * 1024;
@@ -20,13 +23,20 @@ export default route('POST', async (req, res) => {
   const kind = audio ? audioType(b.audioType) : null;
 
   // Haiku is the one slow call (it never throws). The upload and the room check run beside it.
-  const [checked, audioUrl] = await Promise.all([
+  const [checked, audioUrl, nemo] = await Promise.all([
     checkLetter(note, sender, { hasAudio: Boolean(audio) }),
     audio ? save(`letters/${room}/${randomName()}.${kind.ext}`, audio, kind.type) : null,
     ensureRoom(room),
+    checkSafety(note, 'family letter'),
   ]);
+  // Nemotron's check (the team's GPU) must agree too: a note it flags is replaced by a gentle line.
+  if (nemo && nemo.verdict === 'unsafe') checked.text = `${checked.sender} sent you a letter full of love. A grown-up can read it with you.`;
+  await record(room, 'safety', { by: 'claude', verdict: checked.ok ? 'safe' : 'unsafe', what: 'letter' });
+  if (nemo) await record(room, 'safety', { by: 'nemotron', verdict: nemo.verdict, categories: nemo.categories, ms: nemo.ms, what: 'letter' });
 
+  const profile = await resolveProfile(room, b.profile_id);   // who the gift is for (the default if not said)
   const row = await insertGift({
+    profile_id: profile.id,
     room_code: room,
     sender: checked.sender,
     kind: 'letter',

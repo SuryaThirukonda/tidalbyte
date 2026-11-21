@@ -24,3 +24,8 @@ export function getDeadline() {
   if (p && p.deadline) return new Date(p.deadline);
   return vercel.getDeadline();
 }
+
+/** The platform this request runs on ({ netlify, siteUrl, ... } on Netlify), or null elsewhere. */
+export function platform() {
+  return current.getStore() || null;
+}

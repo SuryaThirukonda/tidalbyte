@@ -16,19 +16,21 @@ import { loadModelUrl, loadCreature } from '/shared/models.js';
 import { createCompanionFollower } from '/shared/movement.js';
 import { buildBubby } from '/shared/toys.js';
 
-/** How many follow at once; the newest ones. The rest stay saved. */
-const MAX_FOLLOWING = 4;
+/** How many follow at once (a Quest 2 keeps its frame rate with three). The rest stay saved. */
+const MAX_FOLLOWING = 3;
 const SIZE = 0.3;
 
 const _head = new THREE.Vector3(), _fwd = new THREE.Vector3();
 
-export function createCompanions({ scene, rig, input, audio, api, haptic = () => {} }) {
+export function createCompanions({ scene, rig, input, audio, api, alive = null, haptic = () => {}, onJoined = null }) {
   const group = new THREE.Group();
   group.name = 'Companions';
   scene.add(group);
 
   const pals = [];                 // { key, record, object, follower }, oldest first
   let visible = true, loading = null, epoch = 0;
+  // Which saved companions follow: a list of companion ids chosen in Settings, or null for "the newest three".
+  let followIds = null;
 
   const keyOf = ({ gift, toy, record }) => {
     if (record) return record.toy ? 'toy:' + record.toy : 'gift:' + record.gift_id;
@@ -58,6 +60,8 @@ export function createCompanions({ scene, rig, input, audio, api, haptic = () =>
     if (known) { known.follower.hop(); return known; }
     object.visible = visible;
     group.add(object);
+    // Scanned toys, generated wishes and Bubby have no animations of their own: give them life (core/alive.js).
+    if (alive && record && (record.model_url || record.toy)) alive.add(object, { motion: record.toy ? 'hop' : 'float', size: SIZE, speaker: true });
     const pal = { key, record, object, follower: null, from: from || null, placed: false, side: 0, slot: -1, baseScale: object.scale.clone() };
     input.addTarget(object, {
       radius: 0.2, ui: false,
@@ -70,7 +74,7 @@ export function createCompanions({ scene, rig, input, audio, api, haptic = () =>
 
   async function modelFor(record) {
     if (record.toy === 'bubby') return buildBubby(SIZE);
-    if (record.kind === 'mesh' && record.model_url) return loadModelUrl(record.model_url, SIZE);
+    if (record.model_url) return loadModelUrl(record.model_url, SIZE);   // a scanned toy, or a wish's generated model
     if (record.kind === 'creature' && record.option_id) {
       const m = await loadCreature(record.option_id);
       // A library creature is shown at companion size, like a scanned toy.
@@ -87,7 +91,9 @@ export function createCompanions({ scene, rig, input, audio, api, haptic = () =>
     if (!api || typeof api.getCompanions !== 'function') return Promise.resolve();
     const mine = ++epoch;
     loading = api.getCompanions().then(async (records) => {
-      const wanted = records.slice(-MAX_FOLLOWING);
+      const wanted = Array.isArray(followIds)
+        ? records.filter((r) => followIds.includes(r.id)).slice(-MAX_FOLLOWING)
+        : records.slice(-MAX_FOLLOWING);
       for (const record of wanted) {
         const key = keyOf({ record });
         if (pals.some((p) => p.key === key)) continue;
@@ -124,13 +130,20 @@ export function createCompanions({ scene, rig, input, audio, api, haptic = () =>
       const pal = attach(model, { key, from });
       if (save && api && typeof api.saveCompanion === 'function' && (gift || toy)) {
         api.saveCompanion(toy ? { toy } : { giftId: gift.id })
-          .then((record) => { if (record) pal.record = record; })
+          .then((record) => {
+            if (!record) return;
+            pal.record = record;
+            if (onJoined) { try { onJoined(record); } catch (err) { console.warn(err); } }
+          })
           .catch((err) => console.warn('[wishworld] companion not saved:', err && err.message));
       }
       return pal;
     },
 
     setVisible(on) { visible = Boolean(on); for (const p of pals) p.object.visible = visible; },
+    /** The companion ids that follow (null: the newest three). Call reload() after to show them. */
+    setFollowing(ids) { followIds = Array.isArray(ids) ? ids.slice(0, MAX_FOLLOWING) : null; },
+    get maxFollowing() { return MAX_FOLLOWING; },
     /** Let every follower go from view (the room changed); reload() brings the new room's. */
     clear() {
       epoch++;

@@ -53,5 +53,16 @@
     "ground": 290221,
     "water": 175311
   },
-  "baseCell": 0.142
+  "baseCell": 0.142,
+  "surface": {
+    "file": "liberty.surface.bin",
+    "n": 320,
+    "cell": 1.0625,
+    "min": -170.0,
+    "scale": 0.01
+  },
+  "floating": {
+    "file": "liberty.floating.bin",
+    "count": 1542
+  }
 }

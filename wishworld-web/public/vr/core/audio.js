@@ -45,7 +45,7 @@ function chirpSynth(pitch) {
 
 export function createAudio({ api = null, camera = null } = {}) {
   let ctx = null;
-  let master = null, sfxBus = null, voiceBus = null, loopBus = null;
+  let master = null, sfxBus = null, voiceBus = null, loopBus = null, voiceMeter = null, meterData = null, level = 0;
   let index = null;                           // audio.json, once loaded
   let indexPromise = null;
   const voiceByKey = new Map();               // key -> { file, seconds }
@@ -53,6 +53,10 @@ export function createAudio({ api = null, camera = null } = {}) {
   const ttsUrls = new Map();                  // key -> Promise<url|null>
   const synthBuffers = new Map();
   let muted = false;
+  let volume = 1;                // the profile's sound volume, 0..1 (Settings)
+  let voiceOn = true;
+  // Full 3D sound only where it is worth its cost: a headset (or a ?hrtf=1 test).
+  const hrtf = /OculusBrowser|Quest|Pico/i.test(navigator.userAgent || '') || /[?&]hrtf=1/.test(location.search);            // the guide's voice; captions still show when it is off (Settings)
 
   // voice channel
   let token = 0;                              // bumps whenever the voice is taken over or hushed
@@ -71,9 +75,12 @@ export function createAudio({ api = null, camera = null } = {}) {
     if (!AC) return null;
     try {
       ctx = new AC({ latencyHint: 'interactive' });
-      master = ctx.createGain(); master.gain.value = muted ? 0 : 1; master.connect(ctx.destination);
+      master = ctx.createGain(); master.gain.value = muted ? 0 : volume; master.connect(ctx.destination);
       sfxBus = ctx.createGain(); sfxBus.connect(master);
       voiceBus = ctx.createGain(); voiceBus.connect(master);
+      // A meter on the voice, so the speaking buddy can move with it (voiceLevel).
+      voiceMeter = ctx.createAnalyser(); voiceMeter.fftSize = 512; voiceBus.connect(voiceMeter);
+      meterData = new Uint8Array(voiceMeter.fftSize);
       loopBus = ctx.createGain(); loopBus.connect(master);
     } catch (err) {
       console.warn('[wishworld] no audio on this device', err && err.message);
@@ -152,10 +159,11 @@ export function createAudio({ api = null, camera = null } = {}) {
     src.connect(gain);
     let tail = gain;
     if (at) {
-      // A cheap equal-power panner: effects come from where they happen, as with Unity's PlayClipAtPoint.
+      // Effects come from where they happen, as with Unity's PlayClipAtPoint. HRTF gives real 3D (above,
+      // behind) in the headset; the cheaper equal-power panner is enough on a laptop or phone.
       const position = at.isObject3D ? at.getWorldPosition(_pos) : at;
       const pan = ctx.createPanner();
-      pan.panningModel = 'equalpower'; pan.distanceModel = 'inverse';
+      pan.panningModel = hrtf ? 'HRTF' : 'equalpower'; pan.distanceModel = 'inverse';
       pan.refDistance = 1.2; pan.rolloffFactor = 0.8; pan.maxDistance = 30;
       if (pan.positionX) { pan.positionX.value = position.x; pan.positionY.value = position.y; pan.positionZ.value = position.z; }
       else pan.setPosition(position.x, position.y, position.z);
@@ -238,7 +246,7 @@ export function createAudio({ api = null, camera = null } = {}) {
         try {
           const el = new Audio(url);
           el.crossOrigin = 'anonymous';
-          el.volume = muted ? 0 : 1;
+          el.volume = muted ? 0 : volume;
           el.onended = finish; el.onerror = finish;
           stopCurrent();
           current = { element: el, finish }; speaking = true;
@@ -269,6 +277,56 @@ export function createAudio({ api = null, camera = null } = {}) {
     });
   }
 
+  /**
+   * The quick path for a line not in the recorded bank: /api/tts-stream answers with the MP3 as it is made, and
+   * it starts playing from the first chunks (MediaSource), through the voice channel so the meter hears it.
+   * Resolves when it has finished; rejects if streaming is not possible, so the caller can fall back.
+   */
+  async function streamVoice(text, mine) {
+    if (!api || typeof api.ttsStream !== 'function') throw new Error('no streaming');
+    const res = await api.ttsStream(text);
+    if (mine !== token) return;
+    const type = res.headers.get('content-type') || '';
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    if (type.includes('json')) { const { url } = await res.json(); if (!url) throw new Error('no url'); if (mine === token) await playVoice(url, mine, text); return; }
+    const MS = globalThis.MediaSource;
+    if (!MS || !MS.isTypeSupported('audio/mpeg') || !res.body || !ensureContext() || ctx.state !== 'running') {
+      const blob = await res.blob();
+      if (mine === token) await playVoice(URL.createObjectURL(blob), mine, text);
+      return;
+    }
+    await new Promise((resolve) => {
+      let done = false;
+      const media = new MS();
+      const el = new Audio();
+      el.src = URL.createObjectURL(media);
+      const finish = () => { if (done) return; done = true; if (current && current.finish === finish) current = null; speaking = Boolean(current); try { URL.revokeObjectURL(el.src); } catch { /* fine */ } resolve(); };
+      el.onended = finish; el.onerror = finish;
+      try { ctx.createMediaElementSource(el).connect(voiceBus); } catch { el.volume = muted ? 0 : volume; }
+      stopCurrent();
+      current = { element: el, finish }; speaking = true;
+      media.addEventListener('sourceopen', async () => {
+        const sb = media.addSourceBuffer('audio/mpeg');
+        const reader = res.body.getReader();
+        let started = false;
+        try {
+          for (;;) {
+            const { done: end, value } = await reader.read();
+            if (end || done) break;
+            await new Promise((ok) => { sb.addEventListener('updateend', ok, { once: true }); sb.appendBuffer(value); });
+            if (!started) {
+              started = true;
+              const p = el.play(); if (p && p.catch) p.catch(finish);
+              for (const fn of listeners) { try { fn(text, 0); } catch { /* listener's problem */ } }
+            }
+          }
+          if (media.readyState === 'open') media.endOfStream();
+        } catch { finish(); }
+      }, { once: true });
+      setTimeout(finish, 30000);
+    });
+  }
+
   async function urlFor(text) {
     await loadIndex();
     const key = voiceKey(text);
@@ -291,9 +349,16 @@ export function createAudio({ api = null, camera = null } = {}) {
    */
   function speak(text, { queue = false } = {}) {
     if (typeof text !== 'string' || !text.trim()) return Promise.resolve();
+    if (!voiceOn) { lastSpoken = text; return Promise.resolve(); }   // voice off: the caption is enough
     const run = async (mine) => {
       try {
         lastSpoken = text;
+        await loadIndex();
+        // Not in the recorded bank: stream it, so it starts almost at once (falls back to the whole-file path).
+        if (!hasLine(text) && api && typeof api.ttsStream === 'function' && !ttsUrls.has(voiceKey(text))) {
+          try { await streamVoice(text, mine); return; } catch { /* the slower path below */ }
+          if (mine !== token) return;
+        }
         const url = await urlFor(text);
         if (mine !== token) return;
         if (!url) { await browserSpeak(text, mine); return; }
@@ -318,6 +383,15 @@ export function createAudio({ api = null, camera = null } = {}) {
     if (!line) return;
     const mine = token;
     playVoice(AUDIO_ROOT + line.file, mine, text);
+  }
+
+  /**
+   * Get a line ready before it is needed (a gift's message while the present is still wrapped): the MP3 is
+   * made, kept and decoded now, so speak() plays it the moment it is asked.
+   */
+  function prefetch(text) {
+    if (typeof text !== 'string' || !text.trim() || hasLine(text)) return;
+    urlFor(text).then((url) => { if (url && ensureContext()) fetchBuffer(url); }).catch(() => {});
   }
 
   /** True when the line is in the recorded voice bank (plays at once, no network call). */
@@ -397,7 +471,11 @@ export function createAudio({ api = null, camera = null } = {}) {
     if (current && current.element) { try { if (paused) current.element.pause(); else current.element.play().catch(() => {}); } catch { /* fine */ } }
   }
 
-  function setMuted(on) { muted = Boolean(on); if (master) master.gain.value = muted ? 0 : 1; }
+  function setMuted(on) { muted = Boolean(on); if (master) master.gain.value = muted ? 0 : volume; }
+  /** Overall volume, 0..1 (the profile's setting). */
+  function setVolume(v) { volume = Math.min(1, Math.max(0, Number(v))); if (!Number.isFinite(volume)) volume = 1; if (master) master.gain.value = muted ? 0 : volume; }
+  /** The guide's voice on or off. Off stops what is being said now and skips lines until it is on again. */
+  function setVoiceEnabled(on) { voiceOn = on !== false; if (!voiceOn) stop(); }
 
   return {
     // the contract
@@ -405,7 +483,23 @@ export function createAudio({ api = null, camera = null } = {}) {
     pop(at = null) { sfx('pop', 0.35, at); },
     speak, playUrl, stop,
     // extras
-    unlock, sfx, chirp, hint, hasLine, lineSeconds, setAmbient, update, setPaused, setMuted, loadIndex,
+    unlock, sfx, chirp, hint, hasLine, lineSeconds, setAmbient, update, setPaused, setMuted, setVolume, setVoiceEnabled, loadIndex,
+    prefetch,
+    get volume() { return volume; },
+    /** How loud the voice is right now, 0..1 (smoothed); call once a frame. The browser voice gets a made-up beat. */
+    get voiceLevel() {
+      let raw = 0;
+      if (voiceMeter && speaking) {
+        voiceMeter.getByteTimeDomainData(meterData);
+        let sum = 0;
+        for (let i = 0; i < meterData.length; i++) { const v = (meterData[i] - 128) / 128; sum += v * v; }
+        raw = Math.min(1, Math.sqrt(sum / meterData.length) * 4);
+        if (current && current.utterance) raw = 0.35 + 0.3 * Math.abs(Math.sin(performance.now() / 90));
+      }
+      level += (raw - level) * (raw > level ? 0.6 : 0.2);
+      return level;
+    },
+    get voiceEnabled() { return voiceOn; },
     /** Resolves when everything said or queued so far has finished. */
     whenIdle() { return chain.catch(() => {}); },
     onLine(fn) { listeners.add(fn); return () => listeners.delete(fn); },

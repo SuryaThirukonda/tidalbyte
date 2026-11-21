@@ -53,5 +53,12 @@
     "ground": 320550,
     "water": 1658
   },
-  "baseCell": 0.69
+  "baseCell": 0.69,
+  "surface": {
+    "file": "washington.surface.bin",
+    "n": 320,
+    "cell": 1.5625,
+    "min": -250.0,
+    "scale": 0.01
+  }
 }

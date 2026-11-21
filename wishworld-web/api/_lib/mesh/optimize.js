@@ -1,5 +1,5 @@
 // Makes a generated model light enough for a Quest 2 and safe for three.js GLTFLoader:
-// about 20,000 triangles or fewer, textures no larger than 1024 px (JPEG unless they need transparency),
+// about 12,000 triangles or fewer (three followers and the reef's gifts share a Quest 2's budget), textures no larger than 1024 px (JPEG unless they need transparency),
 // smooth normals, a plain non-metal material, no Draco or meshopt compression, one self-contained .glb.
 import { NodeIO, PropertyType } from '@gltf-transform/core';
 import { ALL_EXTENSIONS } from '@gltf-transform/extensions';
@@ -7,7 +7,7 @@ import { dedup, weld, simplify, prune, textureCompress, compactPrimitive, unpart
 import { MeshoptSimplifier, MeshoptDecoder } from 'meshoptimizer';
 import sharp from 'sharp';
 
-export const MAX_TRIANGLES = 20000;
+export const MAX_TRIANGLES = 12000;
 export const MAX_TEXTURE = 1024;
 
 let ioPromise = null;

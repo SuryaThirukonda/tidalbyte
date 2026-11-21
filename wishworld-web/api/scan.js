@@ -7,14 +7,22 @@
 // the phone staying on the page: the headset sees the gift through GET /api/gifts once it is `ready`.
 // A scan always ends `ready`, as a mesh or, if nothing worked within two minutes, as a library creature.
 // See api/_lib/mesh/job.js for the order of attempts and GET /api/scan-status for the poll.
+//
+// The same function also carries fruit for Frost Slice (api/_lib/fruit.js), so a Vercel deploy stays within
+// the Hobby plan's 12 functions:
+//   POST /api/scan { room, kind: "fruit", image, sender?, method? } -> { fruit }   image = base64 PNG cut-out
+//   POST /api/scan { room, kind: "fruit", action: "clear" }          -> { fruit: null }
+//   GET  /api/scan?room=&kind=fruit                                   -> { fruit }   null when there is none
 import { waitUntil } from './_lib/runtime.js';
 import sharp from 'sharp';
 import { route, send, body, text, roomCode, base64Bytes, UserError } from './_lib/http.js';
 import { ensureRoom, insertGift, giftJson } from './_lib/db.js';
+import { resolveProfile } from './_lib/profiles.js';
 import { save, randomName } from './_lib/store.js';
 import { safeSender } from './_lib/safety.js';
 import { nameCompanion, companionOf } from './_lib/mesh/job.js';
 import { runScan, invocationEnd } from './_lib/mesh/run.js';
+import { saveFruit, clearFruit, currentFruit, MAX_FRUIT_BYTES } from './_lib/fruit.js';
 
 // Generation runs after the response, inside this invocation, so it wants a long limit (the task stops
 // by itself after about two minutes). NOTE: vercel.json currently sets 60 s for every function and that
@@ -80,9 +88,28 @@ function relayThrough(req) {
   };
 }
 
-export default route('POST', async (req, res) => {
+async function fruit(req, res, b) {
+  const room = roomCode(b.room);
+  if (b.action === 'clear') {
+    await clearFruit(room);
+    return send(res, 200, { fruit: null });
+  }
+  const raw = base64Bytes(b.image, MAX_FRUIT_BYTES);
+  if (!raw) throw new UserError('Take a photo of a fruit first.');
+  const method = typeof b.method === 'string' ? b.method : 'auto';
+  const sender = text(b.sender, 40) ? safeSender(text(b.sender, 40)) : '';
+  send(res, 200, { fruit: await saveFruit(room, raw, { sender, method }) });
+}
+
+export default route(['GET', 'POST'], async (req, res) => {
+  if (req.method === 'GET') {
+    const q = req.query || {};
+    if (q.kind !== 'fruit') throw new UserError('Ask for ?kind=fruit.');
+    return send(res, 200, { fruit: await currentFruit(roomCode(q.room)) });
+  }
   const end = invocationEnd();
   const b = body(req);
+  if (b.kind === 'fruit') return fruit(req, res, b);
   const room = roomCode(b.room);
   const given = Array.isArray(b.images) && b.images.length ? b.images : [b.image];
   if (given.length > MAX_VIEWS) throw new UserError(`Please send at most ${MAX_VIEWS} photos.`);
@@ -108,7 +135,9 @@ export default route('POST', async (req, res) => {
     ensureRoom(room),
   ]);
 
+  const profile = await resolveProfile(room, b.profile_id);   // who the gift is for (the default if not said)
   const row = await insertGift({
+    profile_id: profile.id,
     room_code: room,
     sender,
     kind: 'mesh',

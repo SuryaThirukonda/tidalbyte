@@ -53,5 +53,12 @@
     "ground": 160910,
     "water": 0
   },
-  "baseCell": 2.172
+  "baseCell": 2.172,
+  "surface": {
+    "file": "devilstower.surface.bin",
+    "n": 320,
+    "cell": 2.8125,
+    "min": -450.0,
+    "scale": 0.02
+  }
 }

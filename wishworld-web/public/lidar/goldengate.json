@@ -61,5 +61,16 @@
     "ground": 35885,
     "water": 417669
   },
-  "baseCell": 1.396
+  "baseCell": 1.396,
+  "surface": {
+    "file": "goldengate.surface.bin",
+    "n": 320,
+    "cell": 5.625,
+    "min": -900.0,
+    "scale": 0.05
+  },
+  "floating": {
+    "file": "goldengate.floating.bin",
+    "count": 150000
+  }
 }

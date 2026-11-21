@@ -9,6 +9,7 @@
 //            just below its first id and skip ids already shown. pollGifts in /shared/api.js does this.
 import { route, send, roomCode, UserError } from './_lib/http.js';
 import { sql, giftJson } from './_lib/db.js';
+import { resolveProfile } from './_lib/profiles.js';
 
 const LIMIT = 50;
 
@@ -19,13 +20,19 @@ export default route('GET', async (req, res) => {
   if (!/^\d{1,15}$/.test(raw)) throw new UserError('"after" must be a gift id.');
   const after = Number(raw);
 
+  // ?profile= keeps one child's gifts (rows from before profiles belong to the default one). Without it, all.
+  const wanted = q.profile !== undefined && q.profile !== '' ? await resolveProfile(room, q.profile) : null;
+  const pid = wanted ? wanted.id : null, withNull = wanted ? wanted.isDefault : true;
   const [rows, top, building] = await Promise.all([
     sql`select * from gifts
         where room_code = ${room} and status = 'ready' and id > ${after}
+          and (${pid}::bigint is null or profile_id = ${pid} or (${withNull} and profile_id is null))
         order by id asc limit ${LIMIT}`,
-    sql`select coalesce(max(id), 0) as latest from gifts where room_code = ${room} and status = 'ready'`,
+    sql`select coalesce(max(id), 0) as latest from gifts where room_code = ${room} and status = 'ready'
+          and (${pid}::bigint is null or profile_id = ${pid} or (${withNull} and profile_id is null))`,
     sql`select id from gifts
         where room_code = ${room} and status = 'pending' and created_at > now() - interval '15 minutes'
+          and (${pid}::bigint is null or profile_id = ${pid} or (${withNull} and profile_id is null))
         order by id asc limit 20`,
   ]);
 
