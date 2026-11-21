@@ -104,14 +104,26 @@ namespace WishWorld
             glowUntil = Time.time + 5f;
             Sfx.Play(Sfx.Chirp(def.voicePitch), transform.position, 0.8f);
             Sfx.Play(Sfx.Chime, transform.position, 0.5f);
+            CreatureReaction.For(this).Play();
             bool isNew = AppState.learned.Add(def.id);
             FactCardPanel.Show(def, this, isNew);
             if (WorldController.I != null) WorldController.I.OnLearned(def, isNew);
         }
 
+        /// <summary>Pick up the renderers again after <see cref="CreatureReaction"/> has cut the model into parts.</summary>
+        public void RefreshRenderers()
+        {
+            var list = new System.Collections.Generic.List<Renderer>();
+            foreach (var r in GetComponentsInChildren<Renderer>())
+                if (r.enabled) list.Add(r);
+            renderers = list.ToArray();
+            Apply();
+        }
+
         void Apply()
         {
             if (renderers == null) return;
+            if (mpb == null) mpb = new MaterialPropertyBlock();
             foreach (var r in renderers)
             {
                 if (r == null) continue;
