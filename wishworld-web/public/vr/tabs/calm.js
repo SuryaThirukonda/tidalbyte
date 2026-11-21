@@ -641,10 +641,16 @@ export function createTab(ctx) {
     }
   }
 
+  /** Keep the child profile's setting in step with the slider. */
+  function saveSensitivity() {
+    if (ctx.profile && typeof ctx.profile.save === 'function') ctx.profile.save({ micSensitivity: detector.sensitivity });
+  }
+
   function stepSensitivity(direction) {
     const step = Math.round(detector.sensitivity * 9) + direction;
     detector.sensitivity = Math.max(0, Math.min(9, step)) / 9;
     showSensitivity();
+    saveSensitivity();
     say('sensitivity', detector.sensitivity.toFixed(2), 'margin', detector.marginDb.toFixed(1), 'dB');
   }
 
@@ -677,6 +683,7 @@ export function createTab(ctx) {
   function endSliderDrag() {
     sliderHand = null;
     sliderViaTarget = false;
+    saveSensitivity();
     say('sensitivity', detector.sensitivity.toFixed(2), 'margin', detector.marginDb.toFixed(1), 'dB');
   }
 
@@ -1231,6 +1238,9 @@ export function createTab(ctx) {
     manual.down = false;
     sliderHand = null;
     wasImmersive = ctx.isImmersive();
+    // The child profile's microphone sensitivity (Settings); changes made here are saved back to it.
+    const saved = ctx.profile && ctx.profile.current && ctx.profile.current.settings;
+    if (saved && Number.isFinite(saved.micSensitivity)) detector.sensitivity = Math.max(0, Math.min(1, saved.micSensitivity));
     for (let i = 0; i < fish.length; i++) fish[i].object.visible = true;
     // In VR and the desktop preview the fish get Unity's aquarium around them (sky, light, sea floor), without
     // its background water sound, which the microphone would hear. In AR the shell ignores this: the room stays.

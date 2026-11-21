@@ -1,4 +1,5 @@
-// Phone app shell: room, bottom tab bar, hash routing (#send, #scan, #letter, #inbox, #ar), shared helpers for tabs.
+// Phone app shell: room, which child it is for (profile), bottom tab bar, hash routing (#send, #scan, #letter,
+// #inbox, #ar), shared helpers for tabs. Wishes, scans and letters go to the profile picked in the "For" strip.
 import { h, icon, store, cleanRoomCode, loadApi, loadCreatures, applyTheme } from "/phone/lib.js";
 
 const TABS = [
@@ -83,6 +84,50 @@ function setRoom(code) {
   showRoom();
   toast(`You are now in room ${clean}.`, "good");
   for (const [, tab] of mounted) if (tab.onRoomChange) { try { tab.onRoomChange(clean); } catch (e) { console.warn(e); } }
+  loadProfiles();
+}
+
+// ------------------------------------------------------------------------------------------------ which child
+
+let profiles = [];
+let iconBadge = null;
+
+async function loadProfiles() {
+  const bar = $("forBar"), list = $("forList");
+  if (!api || typeof api.getProfiles !== "function") { bar.hidden = true; return; }
+  try {
+    if (!iconBadge) iconBadge = (await import("/shared/profiles.js")).iconBadge;
+    profiles = await api.getProfiles();
+  } catch (err) {
+    console.warn("[phone] profiles are not available", err);
+    bar.hidden = true;
+    return;
+  }
+  // The remembered choice, if it is still in this room; otherwise the room's default.
+  const chosen = profiles.find((p) => p.id === api.profile()) || profiles[0];
+  if (chosen && api.profile() !== chosen.id) api.setProfile(chosen.id);
+  list.replaceChildren(...profiles.map((p) => {
+    const on = chosen && p.id === chosen.id;
+    const btn = h("button", {
+      class: "forchip" + (on ? " on" : ""), type: "button", role: "radio", "aria-checked": on ? "true" : "false",
+      id: "for-" + p.id, onclick: () => pickProfile(p.id),
+    }, iconBadge(p.icon, p.name, 30), h("span", { class: "forchip-name" }, p.name));
+    return btn;
+  }));
+  bar.hidden = profiles.length === 0;
+}
+
+function pickProfile(id) {
+  if (!api) return;
+  api.setProfile(id);
+  for (const btn of $("forList").children) {
+    const on = btn.id === "for-" + id;
+    btn.classList.toggle("on", on);
+    btn.setAttribute("aria-checked", on ? "true" : "false");
+  }
+  const p = profiles.find((x) => x.id === id);
+  if (p) toast(`Sending to ${p.name}.`, "good", 1800);
+  for (const [, tab] of mounted) if (tab.onProfileChange) { try { tab.onProfileChange(id); } catch (e) { console.warn(e); } }
 }
 
 function setupRoomDialog() {
@@ -136,6 +181,8 @@ const ctx = {
   get api() { return api; },
   toast, sender, go,
   room: () => (api ? api.room() : "WISH"),
+  /** The profile everything is sent to: { id, name } (or null before the list has loaded). */
+  profile: () => (api && profiles.find((p) => p.id === api.profile())) || profiles[0] || null,
   query: new URLSearchParams(location.search),
 };
 
@@ -186,6 +233,7 @@ async function start() {
   api = loadedApi;
   applyTheme(creatures.theme);
   showRoom();
+  loadProfiles();
 
   window.addEventListener("hashchange", () => { const id = tabFromHash(); if (id) show(id); });
   document.addEventListener("visibilitychange", () => {

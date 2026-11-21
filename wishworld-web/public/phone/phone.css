@@ -270,3 +270,14 @@ body.ar-live .topbar { visibility: hidden; }
 @media (min-width: 700px) {
   .app { padding-top: 24px; }
 }
+
+/* Who it is for: one chip per child profile in the room */
+.forbar { display: flex; align-items: center; gap: 10px; margin: -4px 0 12px; }
+.forbar[hidden] { display: none; }
+.forbar-label { font-family: var(--heading, inherit); font-size: 18px; color: var(--slate); flex: none; }
+.forbar-list { display: flex; gap: 8px; overflow-x: auto; padding: 4px 2px 6px; scrollbar-width: none; }
+.forchip { display: inline-flex; align-items: center; gap: 8px; padding: 4px 14px 4px 4px; border-radius: 999px; flex: none;
+  border: 2px solid var(--ice); background: #fff; color: var(--slate); font-size: 17px; cursor: pointer; min-height: 44px; }
+.forchip.on { border-color: var(--slate); background: linear-gradient(#ffe6d6, #ffdcb8); box-shadow: 0 3px 0 #a8836f; }
+.forchip-name { white-space: nowrap; max-width: 9em; overflow: hidden; text-overflow: ellipsis; }
+body.ar-live .forbar { visibility: hidden; }

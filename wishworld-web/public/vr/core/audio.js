@@ -53,6 +53,8 @@ export function createAudio({ api = null, camera = null } = {}) {
   const ttsUrls = new Map();                  // key -> Promise<url|null>
   const synthBuffers = new Map();
   let muted = false;
+  let volume = 1;                // the profile's sound volume, 0..1 (Settings)
+  let voiceOn = true;            // the guide's voice; captions still show when it is off (Settings)
 
   // voice channel
   let token = 0;                              // bumps whenever the voice is taken over or hushed
@@ -71,7 +73,7 @@ export function createAudio({ api = null, camera = null } = {}) {
     if (!AC) return null;
     try {
       ctx = new AC({ latencyHint: 'interactive' });
-      master = ctx.createGain(); master.gain.value = muted ? 0 : 1; master.connect(ctx.destination);
+      master = ctx.createGain(); master.gain.value = muted ? 0 : volume; master.connect(ctx.destination);
       sfxBus = ctx.createGain(); sfxBus.connect(master);
       voiceBus = ctx.createGain(); voiceBus.connect(master);
       loopBus = ctx.createGain(); loopBus.connect(master);
@@ -238,7 +240,7 @@ export function createAudio({ api = null, camera = null } = {}) {
         try {
           const el = new Audio(url);
           el.crossOrigin = 'anonymous';
-          el.volume = muted ? 0 : 1;
+          el.volume = muted ? 0 : volume;
           el.onended = finish; el.onerror = finish;
           stopCurrent();
           current = { element: el, finish }; speaking = true;
@@ -291,6 +293,7 @@ export function createAudio({ api = null, camera = null } = {}) {
    */
   function speak(text, { queue = false } = {}) {
     if (typeof text !== 'string' || !text.trim()) return Promise.resolve();
+    if (!voiceOn) { lastSpoken = text; return Promise.resolve(); }   // voice off: the caption is enough
     const run = async (mine) => {
       try {
         lastSpoken = text;
@@ -397,7 +400,11 @@ export function createAudio({ api = null, camera = null } = {}) {
     if (current && current.element) { try { if (paused) current.element.pause(); else current.element.play().catch(() => {}); } catch { /* fine */ } }
   }
 
-  function setMuted(on) { muted = Boolean(on); if (master) master.gain.value = muted ? 0 : 1; }
+  function setMuted(on) { muted = Boolean(on); if (master) master.gain.value = muted ? 0 : volume; }
+  /** Overall volume, 0..1 (the profile's setting). */
+  function setVolume(v) { volume = Math.min(1, Math.max(0, Number(v))); if (!Number.isFinite(volume)) volume = 1; if (master) master.gain.value = muted ? 0 : volume; }
+  /** The guide's voice on or off. Off stops what is being said now and skips lines until it is on again. */
+  function setVoiceEnabled(on) { voiceOn = on !== false; if (!voiceOn) stop(); }
 
   return {
     // the contract
@@ -405,7 +412,9 @@ export function createAudio({ api = null, camera = null } = {}) {
     pop(at = null) { sfx('pop', 0.35, at); },
     speak, playUrl, stop,
     // extras
-    unlock, sfx, chirp, hint, hasLine, lineSeconds, setAmbient, update, setPaused, setMuted, loadIndex,
+    unlock, sfx, chirp, hint, hasLine, lineSeconds, setAmbient, update, setPaused, setMuted, setVolume, setVoiceEnabled, loadIndex,
+    get volume() { return volume; },
+    get voiceEnabled() { return voiceOn; },
     /** Resolves when everything said or queued so far has finished. */
     whenIdle() { return chain.catch(() => {}); },
     onLine(fn) { listeners.add(fn); return () => listeners.delete(fn); },
