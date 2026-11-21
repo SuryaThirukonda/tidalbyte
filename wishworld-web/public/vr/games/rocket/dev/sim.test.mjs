@@ -138,6 +138,14 @@ MISSIONS.forEach((m, i) => {
   for (let t = 0; t < 10 && !run.failed; t += 1 / 60) stepRun(run, { angles: { pitch: 0, yaw: 0, roll: 0 }, thrust: t < 0.3 }, 1 / 60);
   check(run.failed && run.reason === 'landed', 'a short hop that misses the ring fails as landed');
 }
+for (const [name, p] of [['room', ROOM], ['sky', SKY]]) {
+  const m = MISSIONS.find((x) => x.place === name);
+  const run = createRun(m, p);
+  for (let t = 0; t < 200 && !run.failed && !run.won; t += 1 / 60) {
+    stepRun(run, { angles: { pitch: 0, yaw: 0, roll: 0 }, thrust: t % 0.25 < 0.05 }, 1 / 60);   // 0.05 s taps
+  }
+  check(run.failed && run.reason === 'empty' && run.state.water <= 0, `${name}: tapping until the tank is empty on the pad ends the run as empty (${run.reason})`);
+}
 
 // Later tasks append their sections above this line.
 console.log(failures.length ? `${failures.length} failed` : 'all passed');

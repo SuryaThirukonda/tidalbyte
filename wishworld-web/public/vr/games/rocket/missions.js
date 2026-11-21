@@ -69,4 +69,5 @@ export const FAIL_LINES = {
   far: "Whoa, too far! Let's try again.",
   landed: "Down it came! Try again, you've got this.",
   missed: 'So close! Try to land inside the circle.',
+  empty: "Out of water! Let's fill it up and try again.",
 };

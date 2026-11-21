@@ -36,6 +36,8 @@ export function stepRun(run, controls, dt) {
       if (run.next < mission.rings.length) finish(run, false, 'landed');
       else if (Math.hypot(s.pos[0] - l.at[0], s.pos[2] - l.at[2]) <= l.radius) finish(run, true);
       else finish(run, false, 'missed');
+    } else if (s.launched && !s.cleared && s.water <= 0 && s.pos[1] <= 0) {
+      finish(run, false, 'empty');                 // the tank ran dry while it sat on the pad: it can never take off
     } else if (outOfBounds(s, p)) {
       finish(run, false, 'far');
     }
