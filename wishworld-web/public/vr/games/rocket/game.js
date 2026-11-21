@@ -12,7 +12,7 @@
 
 import * as THREE from 'three';
 import { MISSIONS, FAIL_LINES } from './missions.js';
-import { ROOM, SKY } from './flight.js';
+import { ROOM, SKY, H, stepFixed } from './flight.js';
 import { createRun, stepRun } from './run.js';
 import { autopilot } from './autopilot.js';
 import { createControls } from './controls.js';
@@ -58,22 +58,27 @@ export function createRocketGame(ctx) {
   const forces = createForces(ctx); stage.add(forces.group);       // a direct child of the stage (forces.js undoes its yaw)
   const controls = createControls(ctx);
   const autoOut = { angles: { pitch: 0, yaw: 0, roll: 0 }, thrust: false };
+  // Every HUD press also disarms the launch: thrust needs a fresh press after any button (see update()).
+  const press = (fn) => () => { armed = false; fn(); };
   const hud = createHud(ctx, {
-    scan: () => { phase = 'scanning'; hud.setMessage('Scanning...', 'Take a picture of your water bottle with the phone.'); hud.show(['practice']); toyScan.start(); },
+    scan: press(() => { phase = 'scanning'; hud.setMessage('Scanning...', 'Take a picture of your water bottle with the phone.'); hud.show(['practice']); toyScan.start(); }),
     // While a scan waits for the phone, pressing the practice button brings the fallback (the practice bottle).
-    practice: () => (toyScan.busy ? toyScan.start() : useBody(null)),
-    arrows: () => toggleArrows(),
-    again: () => startMission(index),
-    next: () => startMission(index + 1),
-    outside: () => goOutside(),
-    restart: () => { place = null; startMission(0); },
+    practice: press(() => (toyScan.busy ? toyScan.start() : useBody(null))),
+    arrows: press(() => toggleArrows()),
+    again: press(() => startMission(index)),
+    next: press(() => startMission(index + 1)),
+    outside: press(() => goOutside()),
+    restart: press(() => { place = null; startMission(0); }),
   });
   group.add(hud.group);
 
   let phase = 'choose', index = startAt, run = null, place = null, params = ROOM, body = 'practice';
   let arrowsOn = false, autoWait = 0, buzz = 0, unsubscribe = null, active = false;
   let armed = false;               // the trigger has been let go since the mission was set up (a button press is not a launch)
-  let pendingLine = null;          // said (queued) on the next frame, after whatever the scan is saying
+  const pendingLines = [];         // said (queued) on the next frame, after whatever the scan is saying
+  let gen = 0;                     // bumped on enter and exit, so a fade that outlives the tab does nothing
+  let settle = null;               // after a win or a far fail: the rocket keeps falling (visuals only) until it lands
+  const COAST = { target: null, thrust: false };
   let roomParams = { ...ROOM };
   const skyParams = { ...SKY };
 
@@ -81,7 +86,11 @@ export function createRocketGame(ctx) {
     ctx, ui: ctx.ui, audio: ctx.audio, rig: ctx.rig, parent: group, words: BOTTLE_WORDS,
     fallbackToy: () => ({ model: buildPracticeBottle(), name: 'Practice bottle', greeting: PRACTICE_LINE, greeting2: '' }),
     // The scan speaks its greeting right after this, so the mission's own line waits for it.
-    takeToy(model, gift) { useBody(gift ? model : null, true); },
+    takeToy(model, gift) {
+      if (gift) { useBody(model, true); return; }
+      disposeGeometry(model);                        // the fallback's own copy: the rocket builds its practice bottle
+      useBody(null, true);
+    },
     setScanView(on) { stage.visible = !on; },
     setStatus() {},
   });
@@ -92,10 +101,17 @@ export function createRocketGame(ctx) {
     if (arrowsOn && run) drawForces();
   }
 
+  function disposeGeometry(model) {
+    if (model) model.traverse((o) => { if (o.geometry) o.geometry.dispose(); });   // geometry only: materials may be shared
+  }
+
   function useBody(model, fromScan = false) {
     if (phase === 'outside') return;
     body = rocket.setBody(model);
-    if (model && body === 'practice') ctx.say(PRACTICE_LINE);        // the scan was too thin to be a body
+    if (model && body === 'practice') {                                // the scan was too thin to be a body
+      disposeGeometry(model);
+      if (fromScan) pendingLines.push(PRACTICE_LINE); else ctx.say(PRACTICE_LINE);
+    }
     startMission(index, fromScan);
   }
 
@@ -135,9 +151,10 @@ export function createRocketGame(ctx) {
   async function goOutside() {
     if (phase === 'outside') return;                  // one fade at a time (autoplay calls this every frame)
     phase = 'outside';
+    const token = gen;
     hud.show([]);
     await ctx.rig.fadeTo(1, 0.35);
-    if (!active) return;
+    if (!active || phase !== 'outside' || token !== gen) return;   // the tab was left (or entered again) meanwhile
     placeSky();
     startMission(index + 1);
     ctx.rig.fadeTo(0, 0.5);
@@ -149,7 +166,9 @@ export function createRocketGame(ctx) {
     if (place !== mission.place) (mission.place === 'sky' ? placeSky : placeRoom)();
     params = mission.place === 'sky' ? skyParams : roomParams;
     run = createRun(mission, params);
+    settle = null;
     course.build(mission, params);
+    course.group.visible = true;
     const k = mission.place === 'sky' ? SKY_SCALE : 1;
     rocket.setScale(k);
     rocket.setChute(false);
@@ -163,7 +182,7 @@ export function createRocketGame(ctx) {
     hud.show(['arrows']);
     controls.reset();
     ctx.input.state.pointersEnabled = true;
-    if (queueLine) pendingLine = mission.line; else ctx.say(mission.line);
+    if (queueLine) pendingLines.push(mission.line); else ctx.say(mission.line);
     phase = 'ready';
     armed = false;
     autoWait = 1.2;
@@ -201,7 +220,20 @@ export function createRocketGame(ctx) {
       hud.show(['again']);
       ctx.log('rocket_mission', { mission: mission.id, won: false, reason: run.reason, body });
     }
+    // A win at a ring, or flying off too far, leaves the rocket in the air: let it come down under its parachute.
+    if (!run.state.landed && run.state.launched && (run.won || run.reason === 'far')) settle = { acc: 0, t: 0 };
     autoWait = 1.5;
+  }
+
+  /** After the run is decided: keep the flight going with no thrust (visuals only) until the rocket lands. */
+  function coast(dt) {
+    const s = run.state;
+    settle.acc += Math.min(dt, 0.1); settle.t += dt;
+    while (settle.acc >= H && !s.landed) { settle.acc -= H; stepFixed(s, COAST, params); }
+    showRocket();
+    rocket.setChute(s.chute);
+    if (arrowsOn) drawForces();
+    if (s.landed || settle.t > 30) { settle = null; if (arrowsOn) forces.group.visible = false; }
   }
 
   function autoStep(dt) {
@@ -223,17 +255,22 @@ export function createRocketGame(ctx) {
     name: 'Bottle Rocket', group,
     enter() {
       active = true;
+      gen++;
       ctx.input.state.desktopMoveEnabled = false;      // W A S D steer here
       place = null;
       placeRoom();
       phase = 'choose';
       index = startAt;
-      run = null; pendingLine = null;
+      run = null; settle = null; pendingLines.length = 0;
       stage.visible = true; hud.group.visible = true;
       hud.setMessage('Bottle Rocket', 'Turn your water bottle into a rocket!');
       hud.show(['scan', 'practice']);
+      // Whatever the last visit left (a sky course, a rocket in mid-air) waits out of the way: no course until a
+      // mission starts, and the rocket upright on the pad at room scale.
+      course.group.visible = false;
       rocket.setBody(null);
       rocket.setScale(1); rocket.setChute(false);
+      rocket.object.position.set(0, 0, 0); rocket.object.quaternion.identity();
       forces.group.visible = false;
       if (ctx.gifts) unsubscribe = ctx.gifts.subscribe((gift) => { toyScan.offer(gift); });
       ctx.say('Want to turn your water bottle into a rocket? Scan it with the phone!');
@@ -241,20 +278,26 @@ export function createRocketGame(ctx) {
     },
     exit() {
       active = false;
+      gen++;
       toyScan.cancel();
       if (unsubscribe) { unsubscribe(); unsubscribe = null; }
       ctx.input.state.desktopMoveEnabled = true;
       ctx.input.state.pointersEnabled = true;
       setOutside(false);
-      pendingLine = null;
+      pendingLines.length = 0;
       if (dev && window.__rocket === debug) delete window.__rocket;
     },
     update(dt) {
       if (!active) return;
       toyScan.update(dt);
-      if (pendingLine) { ctx.say(pendingLine, { queue: true }); pendingLine = null; }
+      for (const line of pendingLines) ctx.say(line, { queue: true });
+      pendingLines.length = 0;
       if (autoMode) autoStep(dt);
-      if (phase !== 'ready' && phase !== 'flying') { rocket.update(dt, false); return; }   // let the last spray fall
+      if (phase !== 'ready' && phase !== 'flying') {
+        if (settle && run) coast(dt);
+        rocket.update(dt, false);                     // let the last spray fall
+        return;
+      }
       const input = autoMode ? autopilot(run, autoOut) : controls.read(dt);
       if (phase === 'ready') {
         if (!autoMode && !armed) { armed = !input.thrust; return; }
@@ -271,19 +314,26 @@ export function createRocketGame(ctx) {
       rocket.setChute(s.chute);
       rocket.update(dt, s.firing);
       hud.setWater(s.water);
-      if (s.firing && (buzz -= dt) <= 0) { buzz = 0.12; ctx.haptic('right', 0.2, 40); }
+      const handName = autoMode ? 'right' : controls.hand().name;
+      if (s.firing && (buzz -= dt) <= 0) { buzz = 0.12; ctx.haptic(handName, 0.2, 40); }
       if (arrowsOn) drawForces();
       if (run.next !== passed) {
         course.setProgress(run.next);
         ctx.audio.chime(course.ringObject(passed));
-        ctx.haptic('right', 0.6, 80);
+        ctx.haptic(handName, 0.6, 80);
       }
       run.events.length = 0;
       if (run.won || run.failed) finish();
     },
     onSqueezeStart() { if (phase === 'ready' || phase === 'flying') toggleArrows(); },
     onRecenter() {
-      if (place !== 'room' || phase === 'flying' || phase === 'outside') return;
+      if (phase === 'outside') return;
+      if (place === 'sky') {                          // the course stays put; the card and gauge come back in front
+        ctx.viewerPosition(_head); ctx.rig.viewerForwardFlat(_fwd);
+        hud.place(_head, _fwd);
+        return;
+      }
+      if (place !== 'room' || phase === 'flying') return;
       place = null; placeRoom();
       // A mission waiting on the pad gets a fresh run with the new floor height.
       if (phase === 'ready') { params = roomParams; run = createRun(MISSIONS[index], params); showRocket(); }

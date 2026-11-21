@@ -4,13 +4,22 @@
 import * as THREE from 'three';
 
 const KINDS = [['thrust', '#ff9a5a', 'Thrust'], ['weight', '#6f87b8', 'Weight'], ['lift', '#5fbf73', 'Lift'], ['drag', '#c07ad6', 'Drag']];
-const _dir = new THREE.Vector3(), _tip = new THREE.Vector3(), _world = new THREE.Vector3();
+const ON_TOP = 30;                   // drawn after the rocket, the course and the HUD panels
+const _dir =new THREE.Vector3(), _tip = new THREE.Vector3(), _world = new THREE.Vector3();
 
 export function createForces(ctx) {
   const group = new THREE.Group(); group.name = 'Forces';
   const arrows = KINDS.map(([key, color, label]) => {
     const arrow = new THREE.ArrowHelper(new THREE.Vector3(0, 1, 0), new THREE.Vector3(), 0.1, color, 0.03, 0.02);
     const tag = ctx.ui.makeTextPanel(label, { width: 0.16, fontSize: 0.026, background: null, color });
+    // Always on top: thrust starts at the nozzle and points up through the bottle, so it would hide inside the body.
+    for (const o of [arrow, tag]) {
+      o.traverse((m) => {
+        if (!m.material) return;
+        m.renderOrder = ON_TOP;
+        for (const mat of Array.isArray(m.material) ? m.material : [m.material]) { mat.depthTest = false; mat.depthWrite = false; }
+      });
+    }
     group.add(arrow, tag);
     return { key, arrow, tag };
   });
