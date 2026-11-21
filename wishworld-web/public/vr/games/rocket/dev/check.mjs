@@ -4,7 +4,8 @@
 //   node check.mjs <scenario> <out-dir> [--base http://localhost:8106]
 //     start     the choose screen, then the practice bottle on the pad
 //     autoplay  ?autoplay=1: the autopilot flies all six missions; one picture per mission in flight
-// Exits 1 on a failure, including any console error from the page.
+// Exits 1 on a failure, including any console error from the page (failed /api requests aside: a static server
+// has no API). Don't point it at tools/local-dev.mjs: that forwards /api to production.
 // Set BROWSER to another Chromium (for example Edge) if Chrome will not start headless.
 
 import { mkdirSync } from 'node:fs';
@@ -68,8 +69,11 @@ try {
 } catch (err) {
   check(false, String(err && err.message ? err.message : err));
 } finally {
-  const errors = browser.errors();
-  check(errors.length === 0, `no console errors (${errors.length})`);
+  // A static server has no /api: the shell's calls to it (profiles, gifts, text-to-speech, metrics) fail by design
+  // here and are not the game's errors. Every other console error fails the check.
+  const apiMiss = (e) => /Failed to load resource/.test(e.text) && /\/api\//.test(e.text + ' ' + (e.url || ''));
+  const errors = browser.errors().filter((e) => !apiMiss(e));
+  check(errors.length === 0, `no console errors (${errors.length}, not counting /api calls a static server cannot answer)`);
   for (const e of errors) console.log('  [console error] ' + e.text);
   await browser.close();
 }
