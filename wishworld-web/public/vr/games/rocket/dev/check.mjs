@@ -29,6 +29,15 @@ let shots = 0, failed = false;
 const shot = async (name) => { const f = join(out, `${scenario}-${String(++shots).padStart(2, '0')}-${name}.png`); await browser.screenshot(f); console.log('  saved ' + f); };
 const state = async () => JSON.parse(await browser.evaluate('JSON.stringify(window.__rocket ? window.__rocket.state() : null)'));
 const check = (ok, what) => { console.log(`  ${ok ? 'PASS' : 'FAIL'}  ${what}`); if (!ok) failed = true; };
+// Turn the desktop camera (in place) toward the rocket so it is in the picture; harmless if it is already there.
+const aim = () => browser.evaluate(`(() => {
+  const ctx = window.wishworld.ctx, d = ctx.input.desk, r = ctx.scene.getObjectByName('Rocket');
+  if (!r || !d) return false;
+  const p = new ctx.THREE.Vector3(); r.getWorldPosition(p);
+  const dx = p.x - d.pos.x, dy = p.y - d.pos.y, dz = p.z - d.pos.z;
+  d.yaw = Math.atan2(-dx, -dz); d.pitch = Math.atan2(dy, Math.hypot(dx, dz));
+  return true;
+})()`);
 const calls = () => browser.evaluate('window.wishworld.renderer.info.render.calls');
 
 try {
@@ -45,7 +54,8 @@ try {
   } else {
     for (let i = 0; i < 6; i++) {
       await browser.until(`window.__rocket.state().mission === ${i} && window.__rocket.state().phase === 'flying'`, 60000, 100);
-      await sleep(i < 4 ? 1500 : 3000);
+      await sleep(i < 4 ? 500 : 1200);
+      if (i >= 4) await aim();
       await shot(`mission-${i + 1}`);
       if (i === 0) { const c = await calls(); check(c < 60, `draw calls in flight: ${c}`); }
       await browser.until(`['won', 'failed', 'done'].includes(window.__rocket.state().phase)`, 90000, 100);
