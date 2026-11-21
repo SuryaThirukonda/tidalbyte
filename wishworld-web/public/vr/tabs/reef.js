@@ -14,11 +14,13 @@
 //     behind it. See /vr/core/toyscan.js.
 
 import * as THREE from 'three';
-import { loadCreature, loadModelUrl, loadGLB, loadManifest, setGlow, MeshBuilder } from '/shared/models.js';
+import { loadCreature, loadModelUrl, loadGLB, loadManifest, setGlow, MeshBuilder, lighting } from '/shared/models.js';
+import { createSchool } from '/vr/core/school.js';
 import { createMover, seededRandom } from '/shared/movement.js';
 import { createShadowPool } from '/vr/core/fx.js';
 import { colors } from '/vr/core/theme.js';
 import { createToyScan, isScanCommand } from '/vr/core/toyscan.js';
+import { watchWish } from '/vr/core/wishmodels.js';
 
 export const meta = { id: 'reef', label: 'Reef', order: 1 };
 
@@ -55,6 +57,10 @@ export function createTab(ctx) {
   group.name = 'Reef';
 
   const swimmers = new THREE.Group(); swimmers.name = 'Creatures';
+  // A school of small fish all around, drawn as two instanced meshes (two draw calls for every fish).
+  const school = createSchool({ count: ctx.preferLite ? 90 : 180 });
+  group.add(school.group);
+  const _schoolHead = new THREE.Vector3();
   group.add(swimmers);
   const shadows = createShadowPool(40);
   group.add(shadows.mesh);
@@ -146,7 +152,24 @@ export function createTab(ctx) {
     if (mine !== epoch || !active) return [];
     const creature = objects[0].userData.creature;
     const spots = plan(creature, count);
+    // A wish's own generated model replaces the library stand-in once it is built (or straight away if it is).
+    if (options && options.gift) for (const o of objects) wishSwap(options.gift, o, creature);
     return objects.map((o, i) => addCreature(o, creature, spots[i], options));
+  }
+
+  function wishSwap(gift, holder, creature) {
+    const mine = epoch;
+    watchWish(gift, holder, {
+      api: ctx.api, size: (creature && creature.size) || 0.3,
+      isAlive: () => mine === epoch && active,
+      onSwap: (model, latest) => {
+        if (ctx.alive) ctx.alive.add(holder, { motion: (latest.plan && latest.plan.motion) || 'swim', size: (creature && creature.size) || 0.3, creature });
+        setGlow(holder, 1);
+        setTimeout(() => setGlow(holder, 0), 900);
+        audio.chime(holder.getWorldPosition(new THREE.Vector3()));
+        if (ctx.companions) ctx.companions.hopAll();
+      },
+    });
   }
 
   function trimGiftCreatures() {
@@ -366,13 +389,18 @@ export function createTab(ctx) {
     giftPanel.setText(own ? 'Your wish came true! Open it to see what is inside.' : 'A gift for you! Open it to see what is inside.');
     giftButton.setLabel('Open');
     if (giftCard.visible) ui.replay(giftCard); else giftCard.visible = true;
+    // Make the sender's words now, while the present is still wrapped, so they are heard the moment it opens.
+    if (audio.prefetch) audio.prefetch((gift.message || '').trim() || 'This is for you!');
     audio.chime(c.spot);
     ctx.haptic('both', 0.3, 60);
     if (ctx.companions) ctx.companions.hopAll();
     // Have what is inside ready before the lid comes off.
     try {
       if (gift.kind === 'mesh') c.model = await loadModelUrl(gift.model_url, 0.3);
-      else { c.model = await loadCreature(gift.option_id || 'clownfish'); c.creature = c.model.userData.creature; }
+      else {
+        c.model = await loadCreature(gift.option_id || 'clownfish'); c.creature = c.model.userData.creature;
+        wishSwap(gift, c.model, c.creature);
+      }
     } catch (err) {
       console.warn('[wishworld] reef: the gift could not be loaded, showing its message only.', err && err.message);
       c.model = null;
@@ -648,9 +676,11 @@ export function createTab(ctx) {
       const wish = Boolean(ctx.handoff && ctx.handoff.wish);
       ctx.handoff = null;
       if (!ar) ctx.setEnvironment(WORLD, { scenery: true });
+      lighting.caustic.value = ar ? 0 : 0.9;        // moving light patterns underwater (not over a real room)
 
       // The place is wherever the viewer is standing and facing as they arrive.
       rig.viewerPosition(_head); rig.viewerForwardFlat(_fwd);
+      school.gather(_schoolHead.set(_head.x, rig.floorY(), _head.z));
       if (ar && _head.lengthSq() > 1e-6) { center.set(_head.x, rig.floorY(), _head.z); forward.copy(_fwd); }
       else { center.set(0, rig.floorY(), 0); forward.set(0, 0, -1); }
       placeInfo();
@@ -684,6 +714,7 @@ export function createTab(ctx) {
 
     exit() {
       active = false; epoch++;
+      lighting.caustic.value = 0;
       if (unsubscribe) { unsubscribe(); unsubscribe = null; }
       if (recording) { recording = false; try { if (recorder && recorder.state !== 'inactive') { recorder.onstop = null; recorder.stop(); } } catch { /* gone */ } }
       recorder = null; chunks = []; busy = false;
@@ -701,6 +732,9 @@ export function createTab(ctx) {
 
     update(dt, elapsed) {
       clock = elapsed;
+      lighting.time.value = elapsed;
+      rig.viewerPosition(_schoolHead);
+      school.update(dt, elapsed, { center: center, head: _schoolHead, hands: ctx.alive ? ctx.alive.tips() : [] });
       updateCreatures(dt);
       updateCeremony(dt);
       toyScan.update(dt);

@@ -22,7 +22,7 @@ const SIZE = 0.3;
 
 const _head = new THREE.Vector3(), _fwd = new THREE.Vector3();
 
-export function createCompanions({ scene, rig, input, audio, api, haptic = () => {}, onJoined = null }) {
+export function createCompanions({ scene, rig, input, audio, api, alive = null, haptic = () => {}, onJoined = null }) {
   const group = new THREE.Group();
   group.name = 'Companions';
   scene.add(group);
@@ -60,6 +60,8 @@ export function createCompanions({ scene, rig, input, audio, api, haptic = () =>
     if (known) { known.follower.hop(); return known; }
     object.visible = visible;
     group.add(object);
+    // Scanned toys, generated wishes and Bubby have no animations of their own: give them life (core/alive.js).
+    if (alive && record && (record.model_url || record.toy)) alive.add(object, { motion: record.toy ? 'hop' : 'float', size: SIZE, speaker: true });
     const pal = { key, record, object, follower: null, from: from || null, placed: false, side: 0, slot: -1, baseScale: object.scale.clone() };
     input.addTarget(object, {
       radius: 0.2, ui: false,
@@ -72,7 +74,7 @@ export function createCompanions({ scene, rig, input, audio, api, haptic = () =>
 
   async function modelFor(record) {
     if (record.toy === 'bubby') return buildBubby(SIZE);
-    if (record.kind === 'mesh' && record.model_url) return loadModelUrl(record.model_url, SIZE);
+    if (record.model_url) return loadModelUrl(record.model_url, SIZE);   // a scanned toy, or a wish's generated model
     if (record.kind === 'creature' && record.option_id) {
       const m = await loadCreature(record.option_id);
       // A library creature is shown at companion size, like a scanned toy.

@@ -21,6 +21,8 @@ export const lighting = {
   sunDirection: { value: new THREE.Vector3(0.3214, 0.766, 0.5567) }, // towards the sun, world space (Unity sun at 50, -30, 0)
   sunColor: { value: new THREE.Color(1, 1, 1) },                     // colour x intensity, linear
   ambient: { value: new THREE.Color(0.62, 0.62, 0.62) },             // flat ambient; Unity uses the numbers as they are
+  caustic: { value: 0 },                                             // underwater light patterns, 0..1 (the reef turns them on)
+  time: { value: 0 },                                                // seconds, for the caustics
 };
 
 const DEFAULT_SUN = new THREE.Vector3(0.3214, 0.766, 0.5567);
@@ -63,6 +65,7 @@ export function toLinear(c, out = new THREE.Color()) {
 const VERT = /* glsl */ `
 varying vec3 vColor;
 varying vec3 vViewPos;
+varying vec3 vWorldPos;
 #ifdef WW_MASK
 attribute float _bodymask;
 varying float vMask;
@@ -89,6 +92,11 @@ void main() {
   #include <begin_vertex>
   #include <project_vertex>
   vViewPos = -mvPosition.xyz;
+  vec4 wp = vec4(transformed, 1.0);
+  #ifdef USE_INSTANCING
+  wp = instanceMatrix * wp;
+  #endif
+  vWorldPos = (modelMatrix * wp).xyz;
   #ifdef WW_SMOOTH
   vec3 n = normal;
   #ifdef USE_INSTANCING
@@ -106,6 +114,9 @@ uniform vec3 uSunDir;
 uniform vec3 uSunColor;
 uniform vec3 uAmbient;
 uniform float uAmbientBoost;
+uniform float uCaustic;
+uniform float uTime;
+varying vec3 vWorldPos;
 uniform float uGlow;
 uniform vec3 uGlowColor;
 uniform vec3 uTint;
@@ -150,7 +161,20 @@ void main() {
   #endif
   vec3 l = normalize((viewMatrix * vec4(uSunDir, 0.0)).xyz);
   float ndl = clamp(dot(n, l), 0.0, 1.0) * 0.5 + 0.5;
+  #ifdef WW_SMOOTH
+  // Toon bands for smooth (generated and scanned) models, so they share the library's flat-lit look.
+  float q = ndl * 3.0;
+  ndl = mix(ndl, (floor(q) + smoothstep(0.4, 0.6, fract(q))) / 3.0, 0.8);
+  #endif
   vec3 lit = albedo * (uSunColor * ndl * ndl * 0.62 + uAmbient * (0.4 + uAmbientBoost * 0.6));
+  if (uCaustic > 0.0) {
+    // Moving underwater light: crossing sine waves over the world's xz, brightest on upward-facing surfaces.
+    vec2 p = vWorldPos.xz * 1.7 + vWorldPos.y * 0.3;
+    float c = sin(p.x * 3.1 + uTime * 1.3) + sin(p.y * 2.7 - uTime * 1.1) + sin((p.x + p.y) * 2.3 + uTime * 0.9) + sin((p.x - p.y) * 3.7 - uTime * 1.6);
+    float caust = pow(clamp(1.0 - abs(c) * 0.5, 0.0, 1.0), 4.0);
+    float up = clamp(dot(n, normalize((viewMatrix * vec4(0.0, 1.0, 0.0, 0.0)).xyz)) * 0.5 + 0.5, 0.0, 1.0);
+    lit += albedo * caust * uCaustic * 0.6 * up;
+  }
   lit += uGlowColor * uGlow * (0.3 + 0.7 * albedo);
   #ifdef USE_FOG
   // Unity's fog: a straight line between near and far, mixed in linear light. (three.js's own fog chunk
@@ -187,6 +211,8 @@ export function createVertexLitMaterial({
     uSunColor: lighting.sunColor,
     uAmbient: lighting.ambient,
     uAmbientBoost: { value: 0.35 },
+    uCaustic: lighting.caustic,
+    uTime: lighting.time,
     uGlow: { value: 0 },
     uGlowColor: { value: new THREE.Color().setRGB(1, 0.85, 0.6, THREE.SRGBColorSpace) },
     uTint: { value: new THREE.Color(1, 1, 1) },
@@ -230,6 +256,8 @@ function ownMaterials(object) {
       copy.uniforms.uSunDir = lighting.sunDirection;
       copy.uniforms.uSunColor = lighting.sunColor;
       copy.uniforms.uAmbient = lighting.ambient;
+      copy.uniforms.uCaustic = lighting.caustic;
+      copy.uniforms.uTime = lighting.time;
       copy.userData.wwVertexLit = true;
       seen.set(o.material, copy);
       own.push(copy);
@@ -238,6 +266,35 @@ function ownMaterials(object) {
   });
   object.userData.wwOwn = own;
   return own;
+}
+
+// ---------------------------------------------------------------------------------------------- outlines
+
+const OUTLINES = !/[?&]outline=0/.test(globalThis.location ? location.search : '');
+let outlineMaterial = null;
+/**
+ * A dark outline round every mesh of a creature (the toon look shared by library and generated models): a
+ * back-facing shell a few percent larger, sharing the mesh's geometry. It never takes pointer hits.
+ */
+export function addOutline(object, { scale = 1.045 } = {}) {
+  if (!OUTLINES || !object || object.userData.outlined) return object;
+  object.userData.outlined = true;
+  if (!outlineMaterial) outlineMaterial = new THREE.MeshBasicMaterial({ color: 0x22303f, side: THREE.BackSide, fog: true });
+  const meshes = [];
+  object.traverse((o) => { if (o.isMesh && !o.isInstancedMesh && !o.isSkinnedMesh && o.geometry && !o.userData.isOutline) meshes.push(o); });
+  for (const m of meshes) {
+    const g = m.geometry;
+    if (!g.boundingBox) g.computeBoundingBox();
+    const c = g.boundingBox.getCenter(new THREE.Vector3());
+    const shell = new THREE.Mesh(g, outlineMaterial);
+    shell.userData.isOutline = true;
+    shell.raycast = () => {};
+    shell.scale.setScalar(scale);
+    shell.position.copy(c).multiplyScalar(1 - scale);   // grow about the mesh's middle, not its origin
+    shell.renderOrder = -1;
+    m.add(shell);
+  }
+  return object;
 }
 
 /** The fact-card highlight: 0 = none, about 0.25 = pointed at, 0.55 = talking. */
@@ -605,12 +662,12 @@ export async function loadCreature(id) {
       const holder = normalize(model, creature.size, { ground: creature.move === 'walk' });
       holder.name = creature.id;
       holder.userData.creature = creature;
-      return holder;
+      return addOutline(holder);
     }
   } catch (err) {
     console.warn('[wishworld] using a stand-in for', id, err && err.message);
   }
-  return fallbackCreature(creature);
+  return addOutline(fallbackCreature(creature));
 }
 
 /**
@@ -627,7 +684,7 @@ export async function loadModelUrl(url, targetSize = 0.3) {
   if (triangles === 0) throw new Error('That model is empty.');
   const holder = normalize(model, targetSize);
   holder.userData.triangles = Math.round(triangles);
-  return holder;
+  return addOutline(holder);
 }
 
 // ---------------------------------------------------------------------------------------------- stand-ins

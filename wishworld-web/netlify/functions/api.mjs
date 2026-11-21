@@ -19,6 +19,8 @@ import scanStatus from '../../api/scan-status.js';
 import scan from '../../api/scan.js';
 import voice from '../../api/voice.js';
 import wish from '../../api/wish.js';
+import metrics from '../../api/metrics.js';
+import { ttsStream } from '../../api/_lib/ttsstream.js';
 
 const HANDLERS = {
   companions,
@@ -34,6 +36,7 @@ const HANDLERS = {
   scan,
   voice,
   wish,
+  metrics,
 };
 
 /** Same as vercel.json's rewrites: name -> [handler name, extra query]. */
@@ -124,6 +127,12 @@ export default async (request, context) => {
   const name = url.pathname.replace(/^\/(?:\.netlify\/functions\/api|api)\/?/, '').replace(/\/+$/, '').replace(/\.js$/, '');
   let [target, extraQuery] = ALIASES[name] || [name, {}];
   if (name.startsWith('files/')) { target = 'files'; extraQuery = { key: decodeURIComponent(name.slice(6)) }; }
+  if (name === 'tts-stream') {
+    // Streams its body, so it returns a web Response itself instead of going through the (req, res) adapter.
+    const platform = { netlify: true, siteUrl: (context.site && context.site.url) || url.origin, deadline: started + LIMIT_MS, waitUntil: (p) => context.waitUntil(Promise.resolve(p)) };
+    try { return await withPlatform(platform, () => ttsStream(request)); }
+    catch (err) { console.error('[tts-stream]', err); return new Response(JSON.stringify({ error: 'The voice could not start.' }), { status: 500, headers: { 'content-type': 'application/json' } }); }
+  }
   const handler = target === 'files' ? files : HANDLERS[target];
   if (!handler) return notFound();
 

@@ -198,6 +198,11 @@ export const api = {
     return (await post('/api/wish', { room: room(), sender, text, profile_id: profile() ?? undefined })).gift;
   },
 
+  /** A wish gift's latest state; model_url appears once its own 3D model is generated. -> gift */
+  async getWish(id) {
+    return (await get('/api/wish?' + query({ id }), { timeoutMs: 15000 })).gift;
+  },
+
   /** Send a note, with an optional voice recording (a Blob from MediaRecorder). -> gift (kind "letter") */
   async sendLetter({ sender, text, audioBlob } = {}) {
     const payload = { room: room(), sender, text, profile_id: profile() ?? undefined };
@@ -258,6 +263,24 @@ export const api = {
   /** Mark a gift as opened by the child (the parent sees it in Inbox). -> gift */
   async openGift(id) {
     return (await post('/api/gifts/open', { room: room(), id })).gift;
+  },
+
+  /**
+   * Speak a line, streamed: resolves to the fetch Response, either audio/mpeg arriving as it is made or JSON
+   * { url } when the line is already kept. Rejects when the network fails.
+   */
+  async ttsStream(text) {
+    return fetch(base + '/api/tts-stream', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ text }) });
+  },
+
+  /** The headset's measured frame rate, for the Judge view (core/perf.js). Resolves even on failure. */
+  async reportFps(sample) {
+    try { await post('/api/metrics', { room: room(), ...sample }, { timeoutMs: 8000 }); } catch { /* a missed sample is fine */ }
+  },
+
+  /** The Judge view's numbers for this room (/judge/). */
+  async getMetrics() {
+    return get('/api/metrics?' + query({ room: room() }), { timeoutMs: 10000 });
   },
 
   /** Log activity for the parent's Inbox. Never throws: on failure it resolves to { ok: false }. */

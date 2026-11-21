@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>WishWorld Judge View</title>
+<style>
+  :root { --bg: #0f1724; --card: #172235; --line: #26354f; --text: #e8eef7; --muted: #8fa3c0; --good: #6fd3a1; --warn: #f5c26b; --bad: #f28b82; --accent: #ffb88c; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text); font: 15px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif; }
+  header { display: flex; align-items: baseline; gap: 16px; flex-wrap: wrap; padding: 18px 24px 8px; }
+  h1 { margin: 0; font-size: 22px; letter-spacing: .2px; }
+  .muted { color: var(--muted); }
+  .live { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: var(--muted); }
+  .live i { width: 8px; height: 8px; border-radius: 50%; background: var(--good); display: inline-block; }
+  .live.stale i { background: var(--bad); }
+  main { padding: 8px 24px 32px; display: grid; gap: 14px; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; min-width: 0; }
+  .card h2 { margin: 0 0 8px; font-size: 13px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .6px; }
+  .big { font-size: 34px; font-weight: 700; font-variant-numeric: tabular-nums; }
+  .sub { font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; }
+  .wide { grid-column: 1 / -1; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; font-variant-numeric: tabular-nums; }
+  td, th { padding: 5px 4px; border-top: 1px solid var(--line); text-align: left; }
+  th { color: var(--muted); font-weight: 500; border-top: 0; }
+  .ok { color: var(--good); } .no { color: var(--bad); } .mid { color: var(--warn); }
+  svg { width: 100%; height: 70px; display: block; }
+  .pill { display: inline-block; padding: 1px 8px; border-radius: 999px; background: #22324c; font-size: 12px; margin: 2px 4px 2px 0; }
+  form { display: inline-flex; gap: 6px; }
+  input { background: var(--card); color: var(--text); border: 1px solid var(--line); border-radius: 8px; padding: 4px 8px; width: 90px; text-transform: uppercase; }
+  button { background: var(--accent); color: #1b1b1b; border: 0; border-radius: 8px; padding: 4px 10px; font-weight: 600; cursor: pointer; }
+  @media (max-width: 600px) { header, main { padding-left: 16px; padding-right: 16px; } }
+</style>
+</head>
+<body>
+<header>
+  <h1>WishWorld · Judge view</h1>
+  <span class="muted" id="room">Room</span>
+  <form id="roomForm"><input id="roomInput" maxlength="8" aria-label="Room code"><button>Show</button></form>
+  <span class="live" id="live"><i></i><span>Connecting…</span></span>
+</header>
+<main>
+  <section class="card"><h2>Time to first model</h2><div class="big" id="first">–</div><div class="sub" id="firstSub">wish received → library creature on its way</div></section>
+  <section class="card"><h2>Time to generated model</h2><div class="big" id="gen">–</div><div class="sub" id="genSub">wish received → its own 3D model</div><div id="routes"></div></section>
+  <section class="card"><h2>Wish cache</h2><div class="big" id="cache">–</div><div class="sub" id="cacheSub">repeat wishes served instantly</div></section>
+  <section class="card"><h2>Headset frame rate</h2><div class="big" id="fps">–</div><div class="sub" id="fpsSub">no headset reporting yet</div><svg id="fpsChart" viewBox="0 0 300 70" preserveAspectRatio="none" aria-label="Frame rate over time"></svg></section>
+  <section class="card"><h2>Safety checks</h2><div class="big" id="safety">–</div><div class="sub" id="safetySub">every wish and family letter</div><div id="checkers"></div></section>
+  <section class="card"><h2>Model triangles</h2><div class="big" id="tris">–</div><div class="sub">median after optimisation (Quest 2 budget 12,000)</div></section>
+  <section class="card wide"><h2>Recent safety results</h2><table><thead><tr><th>When</th><th>What</th><th>Checker</th><th>Result</th><th>Time</th></tr></thead><tbody id="safetyRows"><tr><td colspan="5" class="muted">None yet</td></tr></tbody></table></section>
+  <section class="card wide"><h2>Recent models</h2><table><thead><tr><th>When</th><th>Kind</th><th>Triangles before</th><th>After</th><th>Saved</th></tr></thead><tbody id="triRows"><tr><td colspan="5" class="muted">None yet</td></tr></tbody></table></section>
+</main>
+<script type="module">
+const $ = (id) => document.getElementById(id);
+const params = new URLSearchParams(location.search);
+let room = (params.get('room') || localStorage.getItem('wishworld.room') || 'WISH').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 8) || 'WISH';
+$('roomInput').value = room;
+$('roomForm').addEventListener('submit', (e) => { e.preventDefault(); const r = $('roomInput').value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 8); if (r) { room = r; history.replaceState(null, '', '?room=' + r); tick(); } });
+
+const sec = (ms) => (ms === null || ms === undefined ? '–' : ms < 1000 ? `${Math.round(ms)} ms` : `${(ms / 1000).toFixed(1)} s`);
+const ago = (at) => { const s = Math.max(0, (Date.now() - Date.parse(at)) / 1000); return s < 60 ? `${Math.round(s)} s ago` : s < 3600 ? `${Math.round(s / 60)} min ago` : `${Math.round(s / 3600)} h ago`; };
+const cell = (text, cls = '') => { const td = document.createElement('td'); td.textContent = text; if (cls) td.className = cls; return td; };
+const row = (...cells) => { const tr = document.createElement('tr'); tr.append(...cells); return tr; };
+const pills = (obj) => Object.entries(obj).map(([k, v]) => { const s = document.createElement('span'); s.className = 'pill'; s.textContent = `${k}: ${v}`; return s; });
+
+function render(d) {
+  $('room').textContent = 'Room ' + d.room;
+  $('first').textContent = sec(d.firstModel.last);
+  $('firstSub').textContent = d.firstModel.count ? `median ${sec(d.firstModel.median)} over ${d.firstModel.count} wishes` : 'no wishes yet';
+  $('gen').textContent = sec(d.generatedModel.last);
+  $('genSub').textContent = d.generatedModel.count ? `median ${sec(d.generatedModel.median)} over ${d.generatedModel.count} models` : 'no generated models yet';
+  $('routes').replaceChildren(...pills(d.generatedModel.routes || {}));
+  const c = d.cache;
+  $('cache').textContent = c.rate === null ? '–' : `${Math.round(c.rate * 100)}%`;
+  $('cacheSub').textContent = `${c.hits} hits, ${c.misses} misses`;
+  const f = d.fps.last;
+  $('fps').textContent = f ? `${f.fps} fps` : '–';
+  $('fps').className = 'big ' + (!f ? '' : f.fps >= (f.target || 72) * 0.95 ? 'ok' : f.fps >= (f.target || 72) * 0.8 ? 'mid' : 'no');
+  $('fpsSub').textContent = f ? `target ${f.target || '?'} Hz · resolution ×${f.scale ?? 1} · ${f.device}${f.xr ? ' in VR' : ' (not in VR)'} · ${ago(f.at)}` : 'no headset reporting yet';
+  const pts = d.fps.recent.slice(0, 40).reverse();
+  const svg = $('fpsChart');
+  if (pts.length > 1) {
+    const max = Math.max(90, ...pts.map((p) => p.fps));
+    const xy = pts.map((p, i) => `${(i / (pts.length - 1)) * 300},${70 - (p.fps / max) * 64}`).join(' ');
+    const target = 70 - ((pts[pts.length - 1].target || 72) / max) * 64;
+    svg.innerHTML = `<line x1="0" x2="300" y1="${target}" y2="${target}" stroke="#ffb88c" stroke-dasharray="4 4" stroke-width="1"/><polyline fill="none" stroke="#6fd3a1" stroke-width="2" points="${xy}"/>`;
+  } else svg.innerHTML = '';
+  const s = d.safety;
+  $('safety').textContent = `${s.checks}`;
+  $('safetySub').textContent = `${s.unsafe} flagged and stopped before reaching the child`;
+  $('checkers').replaceChildren(...Object.entries(s.byChecker).map(([k, v]) => { const p = document.createElement('span'); p.className = 'pill'; p.textContent = `${k}: ${v.safe} safe · ${v.unsafe} unsafe`; return p; }));
+  $('safetyRows').replaceChildren(...(s.recent.length ? s.recent.map((r) => row(cell(ago(r.at)), cell(r.what || ''), cell(r.by || ''), cell(r.verdict + (r.categories ? ` (${r.categories})` : ''), r.verdict === 'unsafe' ? 'no' : 'ok'), cell(r.ms ? sec(r.ms) : '–'))) : [row(cell('None yet', 'muted'))]));
+  $('tris').textContent = d.triangles.medianAfter ? d.triangles.medianAfter.toLocaleString() : '–';
+  $('triRows').replaceChildren(...(d.triangles.recent.length ? d.triangles.recent.map((t) => row(cell(ago(t.at)), cell(t.what || ''), cell(Number(t.before).toLocaleString()), cell(Number(t.after).toLocaleString(), 'ok'), cell(t.before ? `${Math.round((1 - t.after / t.before) * 100)}%` : '–'))) : [row(cell('None yet', 'muted'))]));
+}
+
+let failures = 0;
+async function tick() {
+  try {
+    const res = await fetch('/api/metrics?room=' + encodeURIComponent(room), { cache: 'no-store' });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    render(await res.json());
+    failures = 0;
+    $('live').className = 'live'; $('live').lastElementChild.textContent = 'Live · updates every 3 s';
+  } catch (err) {
+    failures++;
+    $('live').className = 'live stale'; $('live').lastElementChild.textContent = 'Not connected, retrying';
+  }
+}
+tick();
+setInterval(tick, 3000);
+</script>
+</body>
+</html>

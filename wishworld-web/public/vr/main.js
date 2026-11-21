@@ -26,6 +26,8 @@ import { createMenu } from './core/menu.js';
 import { createTabs } from './core/tabs.js';
 import { createGifts } from './core/gifts.js';
 import { createCompanions } from './core/companions.js';
+import { createAlive } from './core/alive.js';
+import { createPerf } from './core/perf.js';
 
 const params = new URLSearchParams(location.search);
 const $ = (id) => document.getElementById(id);
@@ -104,8 +106,12 @@ async function boot() {
   const guide = createGuide({ scene, ui, audio, rig });
   const gifts = createGifts(api);
   // Saved companions follow the child in every tab (see core/companions.js).
+  // Quest 2 tuning: foveation, refresh rate and dynamic resolution, and the frame rate for the Judge view.
+  const perf = createPerf({ renderer, api, params });
+  // Generated and scanned models bob, look at the child and react to hands; hands are drawn and can poke and pet.
+  const alive = createAlive({ scene, renderer, rig, audio, input, haptic: (hand, strength, ms) => input.haptic(hand, strength, ms) });
   const companions = createCompanions({
-    scene, rig, input, audio, api, haptic: (hand, strength, ms) => input.haptic(hand, strength, ms),
+    scene, rig, input, audio, api, alive, haptic: (hand, strength, ms) => input.haptic(hand, strength, ms),
     onJoined: (record) => companionJoined(record),
   });
 
@@ -130,7 +136,7 @@ async function boot() {
     mode: () => mode,
     preferLite,
     params,
-    rig, input, guide, gifts, companions, environment, theme, models, movement,
+    rig, input, guide, gifts, companions, alive, environment, theme, models, movement,
     library,
     say: (text, options) => guide.say(text, options),
     viewerForwardFlat: (out) => rig.viewerForwardFlat(out),
@@ -524,8 +530,10 @@ async function boot() {
   async function startXR(kind) {
     const { session: s, space } = await requestSession(kind);
     renderer.xr.setReferenceSpaceType(space);
+    perf.beforeSession();
     try { await renderer.xr.setSession(s); } catch (err) { try { await s.end(); } catch { /* already over */ } throw err; }
     session = s;
+    perf.onSession(s);
     // A device may accept an AR session and still show an opaque world; treat that as VR.
     const blend = s.environmentBlendMode || renderer.xr.getEnvironmentBlendMode();
     mode = kind === 'immersive-ar' && blend !== 'opaque' ? 'ar' : 'vr';
@@ -710,6 +718,8 @@ async function boot() {
       rig.update(dt);
       tabs.update(dt, ctx.elapsed);
       companions.update(dt, ctx.elapsed);
+      alive.update(dt, ctx.elapsed);
+      perf.update(dt);
       guide.update(dt);
       ui.update(dt);
       audio.update();

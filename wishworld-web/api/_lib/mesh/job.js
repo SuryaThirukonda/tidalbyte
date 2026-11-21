@@ -12,6 +12,7 @@
 import { sql, getGift } from '../db.js';
 import { save, randomName } from '../store.js';
 import { optimizeGlb } from './optimize.js';
+import { record } from '../metrics.js';
 
 /** A scan that is still pending this long after its row was created becomes a library creature. */
 export const TIMEOUT_MS = 120000;
@@ -98,6 +99,7 @@ export async function storeModel(id, rawGlb, route, { yaw = 0 } = {}) {
     where id = ${id} and status = 'pending' and kind = 'mesh'
     returning *`;
   console.log(`[scan ${id}] ${route}: ${before.triangles} -> ${after.triangles} triangles, ${after.bytes} bytes${rows.length ? '' : ' (not used: the gift was already finished)'}`);
+  if (rows.length) await record(rows[0].room_code, 'model_triangles', { before: before.triangles, after: after.triangles, bytes: after.bytes, what: 'scan' });
   return rows[0] || null;
 }
 

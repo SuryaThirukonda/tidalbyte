@@ -20,12 +20,12 @@ const MAX_TEXT = 400;
 const MAX_AUDIO = 2 * 1024 * 1024;
 
 /** Same idea as the Unity VoiceBank key: case and spacing do not make a new recording. */
-function lineKey(line) {
+export function lineKey(line) {
   return line.toLowerCase().split(/\s+/).filter(Boolean).join(' ');
 }
 
 /** Cap at 400 characters without stopping in the middle of a word. */
-function cap(value) {
+export function cap(value) {
   const all = typeof value === 'string' ? value.replace(/\s+/g, ' ').trim() : '';
   if (all.length <= MAX_TEXT) return all;
   const cut = all.slice(0, MAX_TEXT);
@@ -33,6 +33,13 @@ function cap(value) {
   if (stop > MAX_TEXT / 2) return cut.slice(0, stop + 1);
   const space = cut.lastIndexOf(' ');
   return space > MAX_TEXT / 2 ? cut.slice(0, space) : cut;
+}
+
+/** Where a line's MP3 is kept (shared with the streaming route, api/_lib/ttsstream.js). */
+export function ttsPath(line) {
+  const voice = voiceId();
+  const model = ttsModel();
+  return `tts/${voice}/${model}/${sha256(voice, model, TTS_FORMAT, lineKey(line)).slice(0, 40)}.mp3`;
 }
 
 const tts = route('POST', async (req, res) => {

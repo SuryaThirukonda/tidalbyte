@@ -38,6 +38,7 @@ export function giftJson(row) {
     model_url: row.model_url,
     job_id: row.job_id,
     status: row.status,
+    plan: row.plan || null,
     opened_at: row.opened_at,
     profile_id: row.profile_id === null || row.profile_id === undefined ? null : Number(row.profile_id),
   };
