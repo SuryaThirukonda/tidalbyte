@@ -4,7 +4,7 @@
 
 import { ROOM, SKY, H, createState, stepFixed } from '../flight.js';
 import { attitudeTarget } from '../attitude.js';
-import { crossesRing, rollMatches } from '../rings.js';
+import { crossesRing, rollMatches, ringBasis } from '../rings.js';
 import { DEG, qRotate } from '../math.js';
 import { MISSIONS } from '../missions.js';
 import { createRun, stepRun } from '../run.js';
@@ -105,6 +105,15 @@ check(near(noseOf(attitudeTarget({ pitch: 30 * DEG, yaw: 90 * DEG, roll: 0 }, AL
   }
   check(!rollMatches(slot, flat), 'a slot at 60 degrees does not fit an unrolled rocket');
   check(Boolean(fits) && crossesRing([0, 0.6, -1.2], [0, 0.6, -1.4], slot, fits), 'rolled to match, the rocket fits through the slot');
+  // Points in the slot's plane at in-plane offset (du, dv), with a step from just before to just after the plane.
+  const u = [0, 0, 0], v = [0, 0, 0];
+  ringBasis(slot, u, v);
+  const at = (du, dv, side) => [0, 1, 2].map((k) => slot.at[k] + u[k] * du + v[k] * dv + slot.facing[k] * side);
+  const step = (du, dv, q) => crossesRing(at(du, dv, -0.1), at(du, dv, 0.1), slot, q);
+  const c = Math.cos(60 * DEG), sn = Math.sin(60 * DEG);
+  check(Boolean(fits) && step(0.2 * c, 0.2 * sn, fits), 'a slot crossing 0.2 m along its long side (60 degrees) counts');
+  check(Boolean(fits) && !step(0.2, 0, fits), 'a slot crossing at u = 0.2, v = 0 (past the short side) does not count');
+  check(!step(0, 0, flat), 'a mis-rolled rocket through the centre of the slot does not count');
 }
 
 console.log('missions');
@@ -131,12 +140,18 @@ MISSIONS.forEach((m, i) => {
     away.thrust = run.state.pos[1] < 0.5;
     stepRun(run, away, 1 / 60);
   }
-  check(run.failed && (run.reason === 'far' || run.reason === 'landed'), `flying away fails (${run.reason})`);
+  check(run.failed && run.reason === 'far', `flying away fails as far (${run.reason})`);
 }
 {
   const run = createRun(MISSIONS[0], ROOM);
   for (let t = 0; t < 10 && !run.failed; t += 1 / 60) stepRun(run, { angles: { pitch: 0, yaw: 0, roll: 0 }, thrust: t < 0.3 }, 1 / 60);
   check(run.failed && run.reason === 'landed', 'a short hop that misses the ring fails as landed');
+}
+{
+  const far = { id: 'test-missed', place: 'sky', unlocked: { pitch: false, yaw: false, roll: false }, rings: [], landing: { at: [50, 0, -50], radius: 5 } };
+  const run = createRun(far, SKY);
+  for (let t = 0; t < 30 && !run.failed && !run.won; t += 1 / 60) stepRun(run, { angles: { pitch: 0, yaw: 0, roll: 0 }, thrust: t < 0.5 }, 1 / 60);
+  check(run.failed && run.reason === 'missed', `landing outside the landing circle after the rings fails as missed (${run.reason}, landed on ${run.state.landedOn})`);
 }
 for (const [name, p] of [['room', ROOM], ['sky', SKY]]) {
   const m = MISSIONS.find((x) => x.place === name);
