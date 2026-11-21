@@ -13,6 +13,8 @@
 //   POST /api/companions { room, id, remove: true }-> { removed }     let one go (hidden, so a gift does not come
 //                                                                      back as a candidate; saving it again restores it)
 //   POST /api/companions { room, id, name }        -> { companion }   rename one
+//   POST /api/companions { room, gift_id, forget: true } -> { removed }  delete a scan (the gift and any buddy made
+//                                                                      from it are hidden; nothing is erased)
 //
 // companion: { id, name, toy, gift_id, kind ("mesh" | "creature" | "toy"), model_url, option_id, created_at }
 // Saving the same toy twice returns the saved one. The table is created on first use.
@@ -105,6 +107,15 @@ export default route(['GET', 'POST'], async (req, res) => {
   const b = body(req);
   const room = roomCode(b.room);
   const profile = await resolveProfile(room, b.profile_id);
+
+  if (b.forget) {
+    const giftId = Number(b.gift_id);
+    if (!Number.isSafeInteger(giftId) || giftId <= 0) throw new UserError('"gift_id" must be a gift id.');
+    const gone = await sql`update gifts set status = 'removed' where id = ${giftId} and room_code = ${room}
+      and kind in ('mesh', 'creature') and (profile_id = ${profile.id} or (${profile.isDefault} and profile_id is null)) returning id`;
+    await sql`update companions set hidden = true where gift_id = ${giftId} and room_code = ${room}`;
+    return send(res, 200, { removed: gone.length > 0 });
+  }
 
   if (b.remove || b.name !== undefined) {
     const id = Number(b.id);

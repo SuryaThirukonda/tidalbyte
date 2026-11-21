@@ -19,6 +19,7 @@ import { createHud } from './hud.js';
 import { createVoice } from './voice.js';
 import { createAutoplay } from './autoplay.js';
 import { createCustomFruit } from './customfruit.js';
+import { createToyFruit, TOY_RADIUS } from './toyfruit.js';
 
 const MAX_FLYING = 16;
 const MAX_DEBRIS = 24;
@@ -27,6 +28,12 @@ const DEG = Math.PI / 180;
 const UP = new THREE.Vector3(0, 1, 0);
 
 const rand = (a, b) => a + Math.random() * (b - a);
+const NO_GEOMETRY = new THREE.BufferGeometry();   // a pool mesh carrying a scanned toy draws nothing itself
+
+/** Takes a scanned toy (a child object) off a pooled mesh. */
+function dropToy(holder) {
+  if (holder.toy) { holder.mesh.remove(holder.toy); holder.toy = null; }
+}
 
 function distToSegment(px, py, pz, ax, ay, az, bx, by, bz) {
   const abx = bx - ax, aby = by - ay, abz = bz - az;
@@ -65,6 +72,7 @@ export function createFrostSlice(ctx) {
   const juice = createJuice(assets.dot);
   stage.add(shadows.mesh, juice.mesh);
   const custom = createCustomFruit(ctx, { dev, query, log: trace });
+  const toyFruit = createToyFruit(ctx);
   let toldPending = false;
 
   let hud = null, voice = null, autoplay = null;
@@ -115,15 +123,16 @@ export function createFrostSlice(ctx) {
   function releaseFlying(i) {
     const f = flying[i];
     f.live = false; f.mesh.visible = false;
+    dropToy(f);
     for (let j = i; j < flying.length - 1; j++) flying[j] = flying[j + 1];
     flying.length--;
   }
   function clearFlying() {
-    for (let i = 0; i < flying.length; i++) { flying[i].live = false; flying[i].mesh.visible = false; }
+    for (let i = 0; i < flying.length; i++) { flying[i].live = false; flying[i].mesh.visible = false; dropToy(flying[i]); }
     flying.length = 0;
     pendingHead = 0; pendingCount = 0;
   }
-  function clearDebris() { for (let i = 0; i < debris.length; i++) { debris[i].life = 0; debris[i].mesh.visible = false; } }
+  function clearDebris() { for (let i = 0; i < debris.length; i++) { debris[i].life = 0; debris[i].mesh.visible = false; dropToy(debris[i]); } }
 
   // ---- blades ------------------------------------------------------------------------------------------------
   const blades = [];
@@ -324,8 +333,10 @@ export function createFrostSlice(ctx) {
     if (!f) return null;
     const L = RULES.launch;
     const scanned = hazard ? null : custom.active;
+    // Now and then one of the child's own scans (Settings, Scans: "Fruit: yes") instead of a fruit.
+    const toy = hazard || scanned ? null : toyFruit.maybePick();
     f.live = true; f.hazard = hazard; f.kind = kind; f.time = 0; f.custom = Boolean(scanned);
-    f.radius = hazard ? RULES.hazardRadius : scanned ? scanned.radius : FRUITS[kind].radius;
+    f.radius = hazard ? RULES.hazardRadius : scanned ? scanned.radius : toy ? TOY_RADIUS : FRUITS[kind].radius;
     // From the front only: thrown from 1.5 to 2 m ahead, peaking inside arm's reach.
     f.sx = rand(L.startX[0], L.startX[1]); f.sy = L.startY; f.sz = rand(L.startZ[0], L.startZ[1]);
     f.tx = rand(L.targetX[0], L.targetX[1]); f.ty = rand(L.targetY[0], L.targetY[1]); f.tz = rand(L.targetZ[0], L.targetZ[1]);
@@ -334,8 +345,10 @@ export function createFrostSlice(ctx) {
     // Gentle custom gravity so the fruit hangs near its peak, where it can be reached.
     f.gravity = 2 * (f.ty - f.sy) / (f.apexTime * f.apexTime);
     f.v0y = f.gravity * f.apexTime;
-    f.mesh.geometry = hazard ? assets.geo.ice : scanned ? scanned.whole : assets.geo.whole[kind];
+    f.mesh.geometry = hazard ? assets.geo.ice : scanned ? scanned.whole : toy ? NO_GEOMETRY : assets.geo.whole[kind];
     f.mesh.material = scanned ? scanned.material : assets.lit;
+    dropToy(f);
+    if (toy) { f.toy = toy; f.mesh.add(toy); }
     if (scanned) {
       // A flat picture: it faces the player and only rolls, with a little wobble.
       f.roll = rand(0, Math.PI * 2);
@@ -348,7 +361,7 @@ export function createFrostSlice(ctx) {
     flying.push(f);
     launched++;
     sfx.play('pop', RULES.volume.pop, _v.set(f.sx, f.sy, f.sz).applyMatrix4(stage.matrixWorld));
-    if (trace) trace('launch', hazard ? 'ice block' : scanned ? 'scanned fruit' : FRUITS[kind].name);
+    if (trace) trace('launch', hazard ? 'ice block' : scanned ? 'scanned fruit' : toy ? 'toy ' + toy.userData.toyName : FRUITS[kind].name);
     return f;
   }
 
@@ -456,7 +469,8 @@ export function createFrostSlice(ctx) {
     const px = f.mesh.position.x, py = f.mesh.position.y, pz = f.mesh.position.z;
     const hazard = f.hazard, kindIndex = f.kind;
     const scanned = f.custom ? custom.active : null;
-    if (scanned) _cutQ.copy(f.mesh.quaternion);
+    const toyTemplate = f.toy ? f.toy.userData.toyTemplate : null;
+    if (scanned || toyTemplate) _cutQ.copy(f.mesh.quaternion);
     releaseFlying(index);
     haptic(b.hand, hazard ? RULES.haptic.hazard : RULES.haptic.fruit);
     _v.set(px, py, pz).applyMatrix4(stage.matrixWorld);       // where it happened, for the sound
@@ -499,6 +513,24 @@ export function createFrostSlice(ctx) {
       for (let i = 0; i < debris.length; i++) { const c = debris[i]; if (c.life <= 0) { d = c; break; } if (!d || c.born < d.born) d = c; }
       d.life = D.life; d.born = clock;
       d.custom = Boolean(scanned);
+      dropToy(d);
+      if (toyTemplate) {
+        // A scanned toy: two smaller copies tumble apart across the cut.
+        d.mesh.geometry = NO_GEOMETRY;
+        d.mesh.material = assets.lit;
+        d.toy = toyTemplate.clone(true);
+        d.toy.scale.multiplyScalar(0.62);
+        d.mesh.add(d.toy);
+        d.mesh.position.set(px + _normal.x * s * TOY_RADIUS * 0.5, py + _normal.y * s * TOY_RADIUS * 0.5, pz + _normal.z * s * TOY_RADIUS * 0.5);
+        d.mesh.quaternion.copy(_cutQ);
+        d.mesh.scale.set(1, 1, 1);
+        d.mesh.visible = true;
+        d.vx = _swing.x * D.swing + _normal.x * s * D.apart;
+        d.vy = _swing.y * D.swing + _normal.y * s * D.apart + D.up;
+        d.vz = _swing.z * D.swing + _normal.z * s * D.apart;
+        d.spinX = rand(-D.spin, D.spin) * DEG; d.spinY = rand(-D.spin, D.spin) * DEG; d.spinZ = rand(-D.spin, D.spin) * DEG;
+        continue;
+      }
       if (scanned) {
         // The picture's two halves part sideways, in the picture's own plane, then fall.
         d.mesh.geometry = scanned.halves[s < 0 ? 0 : 1];
@@ -535,7 +567,7 @@ export function createFrostSlice(ctx) {
       const d = debris[i];
       if (d.life <= 0) continue;
       d.life -= dt;
-      if (d.life <= 0) { d.mesh.visible = false; continue; }
+      if (d.life <= 0) { d.mesh.visible = false; dropToy(d); continue; }
       d.vy -= D.gravity * dt;
       d.mesh.position.x += d.vx * dt; d.mesh.position.y += d.vy * dt; d.mesh.position.z += d.vz * dt;
       d.mesh.quaternion.multiply(_q.setFromEuler(_e.set(d.spinX * dt, d.spinY * dt, d.spinZ * dt, 'YXZ')));
@@ -685,6 +717,7 @@ export function createFrostSlice(ctx) {
       if (!shellMovesHands) listen(true);
       if (!building) building = build().catch((err) => { console.error('[frostslice] could not be built', err); });
       custom.start();
+      toyFruit.refresh();
     },
 
     exit() {

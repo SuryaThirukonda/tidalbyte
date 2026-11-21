@@ -9,6 +9,28 @@ import { loadModelUrl } from '/shared/models.js';
 const POLL_MS = 3000;
 const GIVE_UP_MS = 170000;
 
+/** "a purple teapot!" -> "Purple teapot" */
+function title(text) {
+  const t = String(text || '').replace(/^(i wish for|i want|a|an|the)\s+/i, '').replace(/[.!?]+$/, '').trim();
+  return t ? t.charAt(0).toUpperCase() + t.slice(1, 40) : 'Your wish';
+}
+
+/**
+ * The creature description to show for a gift: its stand-in's for an ordinary gift, but for a wish that is
+ * (being) built as its own model, the wish's own name and a fact about it, so a teapot is never called a cow.
+ */
+export function wishCreature(gift, creature) {
+  if (!gift || !(wishPending(gift) || wishReady(gift))) return creature;
+  const subject = (gift.plan && gift.plan.subject) || gift.wish || '';
+  return {
+    ...(creature || {}),
+    id: 'wish-' + gift.id,
+    name: title(subject),
+    fact: `Made just for you from a wish${gift.sender ? ' by ' + gift.sender : ''}. Nobody else has one quite like it!`,
+    voicePitch: (creature && creature.voicePitch) || 1,
+  };
+}
+
 /** True for a wish whose own model is still being made. */
 export function wishPending(gift) {
   const job = String((gift && gift.job_id) || '');

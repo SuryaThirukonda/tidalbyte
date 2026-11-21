@@ -317,6 +317,13 @@ export const api = {
     return (await post('/api/companions', payload, { timeoutMs: 15000 })).removed;
   },
 
+  /** Delete a scan (a scanned or generated model): the gift and any buddy made from it go away. -> true if done */
+  async forgetScan(giftId) {
+    const payload = { room: room(), gift_id: giftId, forget: true };
+    if (profile()) payload.profile_id = profile();
+    return (await post('/api/companions', payload, { timeoutMs: 15000 })).removed;
+  },
+
   /** Give a saved companion a new name. -> companion */
   async renameCompanion(id, name) {
     const payload = { room: room(), id, name };

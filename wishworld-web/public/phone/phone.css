@@ -311,3 +311,43 @@ body.ar-live .forbar { visibility: hidden; }
 .buddies .buddy-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
 .buddies .buddy-edit { margin-top: 8px; }
 .buddies .buddy-edit .field { width: 100%; }
+
+/* ---------------------------------------------------------------- more colour: every tab has its own */
+:root { --accent: #ffb88c; --accent-deep: #c9683a; }
+body[data-tab="send"]   { --accent: #ff9f7a; --accent-deep: #c4552f; }
+body[data-tab="scan"]   { --accent: #5fc9c0; --accent-deep: #23827a; }
+body[data-tab="letter"] { --accent: #f48fb1; --accent-deep: #b4446d; }
+body[data-tab="inbox"]  { --accent: #b39ddb; --accent-deep: #6a4fa3; }
+body[data-tab="ar"]     { --accent: #8fd16a; --accent-deep: #4c8a2b; }
+
+.ribbon { background-color: var(--accent-deep); transition: background-color .3s; }
+.ribbon::before, .ribbon::after { background: color-mix(in srgb, var(--accent-deep) 80%, #000); }
+.card { border-top: 6px solid var(--accent); }
+.card.snowcap { border-top-width: 2px; }
+.tab.on { background: linear-gradient(180deg, #fff, var(--accent)); }
+#tabbtn-send .tab-ico   { color: #e8704a; }
+#tabbtn-scan .tab-ico   { color: #23a094; }
+#tabbtn-letter .tab-ico { color: #d0507e; }
+#tabbtn-inbox .tab-ico  { color: #7d5fc0; }
+#tabbtn-ar .tab-ico     { color: #4c9a2b; }
+.btn.primary { background: linear-gradient(180deg, #fff1e6 0%, var(--accent) 100%); }
+
+/* The beach / snow switch, beside the room chip */
+.themechip { margin-left: auto; width: 46px; height: 46px; border-radius: 50%; border: 2px solid var(--slate);
+  background: var(--snow-white); font-size: 22px; line-height: 1; cursor: pointer; box-shadow: 0 3px 0 var(--shade); }
+.themechip:active { transform: translateY(2px); box-shadow: 0 1px 0 var(--shade); }
+
+/* ---------------------------------------------------------------- the summer beach look */
+:root[data-theme="beach"] {
+  --sky-top: #2fa8e0; --sky: #7fd3f5; --horizon: #fff0c8; --snow: #fff6dd; --snow-white: #fffaf0;
+  --snow-under: #f1cf8f; --frost: #ffe8b3; --panel: #fff8ea; --button: #ffe3b8; --ice: #f2b46b;
+  --ribbon: #e8665a; --shade: #c98f5c; --slate: #3b3550; --slate-soft: #6b5f7d;
+}
+:root[data-theme="beach"] .ww-sky::before { background: radial-gradient(closest-side, rgba(255, 236, 140, 0.9), rgba(255, 210, 90, 0)); top: 14%; left: 78%; width: 70vmax; height: 70vmax; }
+:root[data-theme="beach"] .ww-hills path:nth-child(1) { fill: #2bb3c8; }   /* the sea */
+:root[data-theme="beach"] .ww-hills path:nth-child(2) { fill: #f6d690; }   /* wet sand */
+:root[data-theme="beach"] .ww-hills path:nth-child(3) { fill: #fbe6b4; }   /* dry sand */
+:root[data-theme="beach"] .ww-snowfall { display: none; }
+:root[data-theme="beach"] .card { background: linear-gradient(180deg, #fffdf6 0%, #fff1d6 100%); }
+:root[data-theme="beach"] .card.snowcap::before { display: none; }
+:root[data-theme="beach"] .tabbar { background: #fffaf0; }

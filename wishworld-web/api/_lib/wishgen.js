@@ -153,7 +153,8 @@ export const WISH_ORDER = ['brev', 'hf', 'fal'];
 // ---------- the task ----------
 
 async function finish(id, room, key, subject, raw, route, startedAt) {
-  const { glb, before, after } = await optimizeGlb(raw, {});
+  // Stable Fast 3D and TripoSR (the free route) build models facing -Z; the headset expects +Z.
+  const { glb, before, after } = await optimizeGlb(raw, { yaw: route === 'hf' ? Math.PI : 0 });
   const url = await save(`wishes/model-${id}-${randomName()}.glb`, glb, 'model/gltf-binary');
   const ms = Date.now() - startedAt;
   const rows = await sql`

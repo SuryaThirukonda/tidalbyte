@@ -154,6 +154,27 @@ function setupRoomDialog() {
 
 // ------------------------------------------------------------------------------------------------ tabs
 
+// ------------------------------------------------------------------------------------------------ beach or snow
+
+/** The phone's look: the cold snowy one (default) or a summer beach. Kept on this phone. */
+function setupThemeToggle() {
+  const btn = $("themeChip");
+  if (!btn) return;
+  const show = () => {
+    const beach = document.documentElement.dataset.theme === "beach";
+    btn.textContent = beach ? "\u2744\uFE0F" : "\u2600\uFE0F";
+    btn.setAttribute("aria-label", beach ? "Switch to the snowy look" : "Switch to the summer beach look");
+  };
+  btn.addEventListener("click", () => {
+    const beach = document.documentElement.dataset.theme !== "beach";
+    if (beach) document.documentElement.dataset.theme = "beach"; else delete document.documentElement.dataset.theme;
+    store.set("ww_theme", beach ? "beach" : "snow");
+    toast(beach ? "Summer beach look." : "Snowy look.", "good", 1400);
+    show();
+  });
+  show();
+}
+
 function buildTabbar() {
   tabbar.setAttribute("role", "tablist");
   for (const t of TABS) {
@@ -226,6 +247,7 @@ async function show(id) {
 
 async function start() {
   buildTabbar();
+  setupThemeToggle();
   setupRoomDialog();
   showRoom();
 

@@ -23,17 +23,23 @@ export async function listChoices(ctx, { standIns = false } = {}) {
     console.warn('[hoops] saved companions are not available:', err && err.message);
   }
   const out = [], seen = new Set();
+  // Scans hidden in Settings stay out of the ball picker ("g<gift id>", "bubby").
+  const settings = (ctx.profile && ctx.profile.current && ctx.profile.current.settings) || {};
+  const hidden = Array.isArray(settings.hiddenScans) ? settings.hiddenScans : [];
+  const isHidden = (r) => hidden.includes(r.toy === 'bubby' ? 'bubby' : 'g' + r.gift_id);
   for (let i = (records || []).length - 1; i >= 0 && out.length < MAX_LISTED; i--) {
     const r = records[i];
-    if (!r) continue;
+    if (!r || isHidden(r)) continue;
     const key = keyOf(r);
     if (seen.has(key)) continue;
-    const kind = r.toy === 'bubby' ? 'bubby' : r.kind === 'mesh' && r.model_url ? 'mesh' : r.kind === 'creature' && r.option_id ? 'creature' : null;
+    // A generated wish is a creature gift with its own model: it is thrown as that model.
+    const kind = r.toy === 'bubby' ? 'bubby' : r.model_url ? 'mesh' : r.kind === 'creature' && r.option_id ? 'creature' : null;
     if (!kind) continue;
     seen.add(key);
     out.push({ key, label: String(r.name || 'My toy').split(',')[0].slice(0, 18), kind, record: r });
   }
-  if (!seen.has(bubby.key)) out.push(bubby);
+  if (!seen.has(bubby.key) && !hidden.includes('bubby')) out.push(bubby);
+  if (!out.length) out.push(bubby);      // never an empty picker
   return out;
 }
 

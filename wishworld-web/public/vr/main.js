@@ -245,6 +245,7 @@ async function boot() {
     audio.setVolume(Number.isFinite(s.volume) ? s.volume : 0.8);
     audio.setVoiceEnabled(s.guideVoice !== false);
     companions.setFollowing(Array.isArray(s.following) ? s.following : null);
+    if (companions.setHidden) companions.setHidden(Array.isArray(s.hiddenScans) ? s.hiddenScans : []);
   }
   function notifyProfile() {
     for (const fn of profileState.listeners) { try { fn(profileState.current); } catch (err) { console.warn(err); } }
@@ -280,7 +281,8 @@ async function boot() {
     if (!p) return Promise.resolve();
     p.settings = { ...p.settings, ...patch };
     applyProfileSettings();
-    if (reloadBuddies && Object.prototype.hasOwnProperty.call(patch, 'following')) { companions.clear(); companions.reload(); }
+    const has = (k) => Object.prototype.hasOwnProperty.call(patch, k);
+    if (reloadBuddies && (has('following') || has('hiddenScans'))) { companions.clear(); companions.reload(); }
     if (profileState.savingFor !== p.id) { profileState.pending = {}; profileState.savingFor = p.id; }
     Object.assign(profileState.pending, patch);
     clearTimeout(profileState.timer);

@@ -20,7 +20,7 @@ import { createMover, seededRandom } from '/shared/movement.js';
 import { createShadowPool } from '/vr/core/fx.js';
 import { colors } from '/vr/core/theme.js';
 import { createToyScan, isScanCommand } from '/vr/core/toyscan.js';
-import { watchWish } from '/vr/core/wishmodels.js';
+import { watchWish, wishCreature } from '/vr/core/wishmodels.js';
 
 export const meta = { id: 'reef', label: 'Reef', order: 1 };
 
@@ -150,8 +150,9 @@ export function createTab(ctx) {
     const mine = epoch;
     const objects = await Promise.all(Array.from({ length: count }, () => loadCreature(id)));
     if (mine !== epoch || !active) return [];
-    const creature = objects[0].userData.creature;
-    const spots = plan(creature, count);
+    const standIn = objects[0].userData.creature;
+    const spots = plan(standIn, count);
+    const creature = options && options.gift ? wishCreature(options.gift, standIn) : standIn;
     // A wish's own generated model replaces the library stand-in once it is built (or straight away if it is).
     if (options && options.gift) for (const o of objects) wishSwap(options.gift, o, creature);
     return objects.map((o, i) => addCreature(o, creature, spots[i], options));
@@ -398,7 +399,7 @@ export function createTab(ctx) {
     try {
       if (gift.kind === 'mesh') c.model = await loadModelUrl(gift.model_url, 0.3);
       else {
-        c.model = await loadCreature(gift.option_id || 'clownfish'); c.creature = c.model.userData.creature;
+        c.model = await loadCreature(gift.option_id || 'clownfish'); c.creature = wishCreature(gift, c.model.userData.creature);
         wishSwap(gift, c.model, c.creature);
       }
     } catch (err) {

@@ -155,12 +155,14 @@ export function createTab(ctx) {
   gamesBanner.position.set(0, 0.36, 0);
   games.add(gamesBanner);
   ui.popIn(gamesBanner, { bob: 0.006, bobSpeed: 0.9 });
-  const frostCard = card(games, 'Frost Slice', 'Slice the flying fruit', go('frostslice'), { width: 0.5 });
-  frostCard.position.set(-0.54, 0, 0);
-  const hoopsCard = card(games, 'Snow Hoops', 'Shoot your toy!', go('hoops'), { width: 0.5 });
-  hoopsCard.position.set(0, 0, 0);
-  const snowCard = card(games, 'Snow Circuit', 'Race a snowy track', go('snowcircuit'), { width: 0.5 });
-  snowCard.position.set(0.54, 0, 0);
+  const frostCard = card(games, 'Frost Slice', 'Slice the flying fruit', go('frostslice'), { width: 0.42 });
+  frostCard.position.set(-0.69, 0, 0);
+  const hoopsCard = card(games, 'Snow Hoops', 'Shoot your toy!', go('hoops'), { width: 0.42 });
+  hoopsCard.position.set(-0.23, 0, 0);
+  const snowCard = card(games, 'Snow Circuit', 'Race a snowy track', go('snowcircuit'), { width: 0.42 });
+  snowCard.position.set(0.23, 0, 0);
+  const rocketCard = card(games, 'Bottle Rocket', 'Fly your own rocket', go('rocket'), { width: 0.42 });
+  rocketCard.position.set(0.69, 0, 0);
   const back = ui.makeButton('Back', () => show('main'), { width: 0.3, height: 0.11, textHeight: 0.045 });
   back.position.set(0, -0.3, 0);
   games.add(back);
@@ -181,6 +183,7 @@ export function createTab(ctx) {
     frostCard.setEnabled(has('frostslice'));
     hoopsCard.setEnabled(has('hoops'));
     snowCard.setEnabled(has('snowcircuit'));
+    rocketCard.setEnabled(has('rocket'));
     const waiting = ctx.gifts ? ctx.gifts.waitingLetters() : 0;
     mailCard.setSubtitle(waiting === 1 ? 'One new letter!' : waiting > 1 ? `${waiting} new letters!` : 'Letters for you');
   }

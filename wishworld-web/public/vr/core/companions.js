@@ -31,6 +31,9 @@ export function createCompanions({ scene, rig, input, audio, api, alive = null, 
   let visible = true, loading = null, epoch = 0;
   // Which saved companions follow: a list of companion ids chosen in Settings, or null for "the newest three".
   let followIds = null;
+  // Scans hidden in Settings ("g<gift id>", "bubby"): they never follow.
+  let hiddenKeys = [];
+  const hiddenRecord = (r) => hiddenKeys.includes(r.toy === 'bubby' ? 'bubby' : 'g' + r.gift_id);
 
   const keyOf = ({ gift, toy, record }) => {
     if (record) return record.toy ? 'toy:' + record.toy : 'gift:' + record.gift_id;
@@ -91,9 +94,10 @@ export function createCompanions({ scene, rig, input, audio, api, alive = null, 
     if (!api || typeof api.getCompanions !== 'function') return Promise.resolve();
     const mine = ++epoch;
     loading = api.getCompanions().then(async (records) => {
+      const visibleRecords = records.filter((r) => !hiddenRecord(r));
       const wanted = Array.isArray(followIds)
-        ? records.filter((r) => followIds.includes(r.id)).slice(-MAX_FOLLOWING)
-        : records.slice(-MAX_FOLLOWING);
+        ? visibleRecords.filter((r) => followIds.includes(r.id)).slice(-MAX_FOLLOWING)
+        : visibleRecords.slice(-MAX_FOLLOWING);
       for (const record of wanted) {
         const key = keyOf({ record });
         if (pals.some((p) => p.key === key)) continue;
@@ -144,6 +148,8 @@ export function createCompanions({ scene, rig, input, audio, api, alive = null, 
     /** The companion ids that follow (null: the newest three). Call reload() after to show them. */
     setFollowing(ids) { followIds = Array.isArray(ids) ? ids.slice(0, MAX_FOLLOWING) : null; },
     get maxFollowing() { return MAX_FOLLOWING; },
+    /** Scan keys hidden in Settings; call reload() after to apply. */
+    setHidden(keys) { hiddenKeys = Array.isArray(keys) ? keys.slice() : []; },
     /** Let every follower go from view (the room changed); reload() brings the new room's. */
     clear() {
       epoch++;

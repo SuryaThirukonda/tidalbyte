@@ -73,6 +73,10 @@ export default route(['GET', 'POST'], async (req, res) => {
     if (better) optionId = better.id;
   }
   const subject = safe ? (plan && plan.subject) || picked.wish : null;
+  // The library creature only stands in while the real thing is built, so the words name the wish itself.
+  const message = safe
+    ? `${picked.sender || 'Someone'} wished for ${subject.replace(/[.!?]+$/, '')}, made just for you!`
+    : picked.message;
 
   const profile = await resolveProfile(room, b.profile_id);   // who the gift is for (the default if not said)
   const row = await insertGift({
@@ -82,7 +86,7 @@ export default route(['GET', 'POST'], async (req, res) => {
     kind: 'creature',
     wish: picked.wish, // the typed words if they were fine; otherwise only the name of what is coming
     option_id: optionId,
-    message: picked.message,
+    message,
     status: 'ready',
     job_id: safe ? 'wish:queued' : 'wish:library',
   });

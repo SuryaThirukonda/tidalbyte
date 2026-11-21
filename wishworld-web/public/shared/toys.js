@@ -7,7 +7,15 @@
 // generated low-poly mesh. The photographs are not in the repository and nothing here was captured.
 
 import * as THREE from 'three';
-import { MeshBuilder } from '/shared/models.js';
+import { MeshBuilder, loadModelUrl } from '/shared/models.js';
+
+/** Bubby made from photos of the real plush (tools/bubby-model.mjs). The blocky one stands in until it loads. */
+export const BUBBY_MODEL = '/models/bubby.glb';
+let scanned = null;
+function scannedBubby() {
+  if (!scanned) scanned = loadModelUrl(BUBBY_MODEL, 1).catch((err) => { console.warn('[wishworld] Bubby model', err && err.message); return null; });
+  return scanned;
+}
 
 export const BUBBY = {
   id: 'bubby',
@@ -87,7 +95,19 @@ export function buildBubby(size = 0.3) {
   const holder = new THREE.Group();
   holder.name = 'Bubby';
   holder.add(mesh);
-  holder.scale.setScalar(size / Math.max(extent.x, extent.y, extent.z, 1e-6));
+  const longest = Math.max(extent.x, extent.y, extent.z, 1e-6);
+  holder.scale.setScalar(size / longest);
   holder.userData.toy = BUBBY;
+  // Swap in the model made from the real plush when it has loaded, where the blocky one is now (it may have been
+  // wrapped in a pivot by then, see /vr/core/alive.js). Same size: the template is 1 m, the holder scales it.
+  scannedBubby().then((template) => {
+    if (!template || !mesh.parent) return;
+    const real = template.clone(true);
+    real.scale.multiplyScalar(longest);
+    const parent = mesh.parent;
+    parent.remove(mesh);
+    parent.add(real);
+    holder.userData.scanned = true;
+  });
   return holder;
 }

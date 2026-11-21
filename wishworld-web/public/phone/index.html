@@ -14,6 +14,10 @@
 <script type="importmap">{ "imports": {
   "three": "/vendor/three/build/three.module.js",
   "three/addons/": "/vendor/three/examples/jsm/" } }</script>
+<script>
+  // The look is chosen before the page draws, so it never flashes the other one.
+  try { if (localStorage.getItem('ww_theme') === 'beach') document.documentElement.dataset.theme = 'beach'; } catch (e) {}
+</script>
 <script type="module" src="/phone/app.js"></script>
 </head>
 <body>
@@ -29,6 +33,7 @@
 <div class="app" id="app">
   <header class="topbar">
     <a class="brand title" href="/" aria-label="WishWorld home">WishWorld</a>
+    <button class="themechip" id="themeChip" type="button" aria-label="Switch to the summer beach look" title="Beach or snow">&#9728;&#65039;</button>
     <button class="roomchip" id="roomChip" type="button" aria-label="Change room">
       <span class="roomchip-label">Room</span>
       <span class="roomchip-code" id="roomCode">WISH</span>

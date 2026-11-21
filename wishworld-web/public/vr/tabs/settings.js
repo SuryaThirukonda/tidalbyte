@@ -7,14 +7,22 @@
 //   Sound            volume, and the guide's voice on or off (captions stay).
 //   Calm microphone  how easily the Calm tab hears a breath.
 //   Profiles         switch to another child in this room.
+//
+// A second page, "Scans" (button at the top right): every scanned or generated model and Bubby, each with
+//   Shown / Hidden   hidden ones stay out of the games (Snow Hoops balls, Frost Slice fruit) and stop following
+//   Fruit yes / no   Frost Slice throws the ones marked fruit, between its own fruit
+//   Delete           (two taps) the scan is gone from the room for this child
 
 import * as THREE from 'three';
 import { colors } from '/vr/core/theme.js';
+import { loadModelUrl, loadCreature } from '/shared/models.js';
+import { buildBubby } from '/shared/toys.js';
 
 export const meta = { id: 'settings', label: 'Settings', order: 8 };
 
 const MAX_FOLLOWING = 3;
-const MAX_ROWS = 7;
+const MAX_ROWS = 6;               // buddies a page (Prev / Next for the rest)
+const PREVIEW = 0.075;            // metres across, the little turning model on each row
 // Names a child can pick in the headset, where there is no keyboard. Shown six at a time.
 const NAMES = [
   'Sunny', 'Pip', 'Bubbles', 'Biscuit', 'Ziggy', 'Coco', 'Pebble', 'Maple', 'Nugget', 'Waffles', 'Juniper', 'Sprout',
@@ -64,12 +72,23 @@ export function createTab(ctx) {
   micUp.position.set(X + 0.17, -0.04, 0.006);
   const micHint = ui.makeLabel('More = hears softer breaths', { width: 0.5, height: 0.045, size: 0.022 });
   micHint.position.set(X, -0.105, 0.006);
-  board.add(volumeLabel, volumeDown, volumeUp, voiceButton, micLabel, micDown, micUp, micHint);
+  // Page one (buddies, sound, microphone, profiles) and page two (scans).
+  const mainPage = new THREE.Group();
+  const scanPage = new THREE.Group();
+  scanPage.visible = false;
+  board.add(mainPage, scanPage);
+  mainPage.add(volumeLabel, volumeDown, volumeUp, voiceButton, micLabel, micDown, micUp, micHint);
 
   const profileButtons = new THREE.Group();
-  board.add(profileButtons);
+  mainPage.add(profileButtons);
   const buddyRows = new THREE.Group();
-  board.add(buddyRows);
+  mainPage.add(buddyRows);
+  const scanRows = new THREE.Group();
+  scanPage.add(scanRows);
+  let page = 'main';
+  const pageButton = ui.makeButton('Scans', () => setPage(page === 'main' ? 'scans' : 'main'), { width: 0.2, height: 0.075, textHeight: 0.03 });
+  pageButton.position.set(W / 2 - 0.16, H / 2 - 0.085, 0.006);
+  board.add(pageButton);
   const status = ui.makeLabel('', { width: W - 0.12, height: 0.06, size: 0.026 });
   status.position.set(0, -H / 2 + 0.055, 0.006);
   board.add(status);
@@ -80,11 +99,50 @@ export function createTab(ctx) {
   let editing = null;           // the buddy being renamed or let go, or null for the list
   let confirmGo = false;        // "Let go" asks once more before it happens
   let nameStart = 0;            // which six of NAMES are showing
+  let scans = [];               // [{ key: 'bubby' | 'g<gift id>', name, giftId, companionId, rec }]
+  let buddyPage = 0;
+  let confirmDelete = null;     // the scan whose Delete was tapped once
 
   // ---------- helpers ----------
   const settings = () => (ctx.profile && ctx.profile.current ? ctx.profile.current.settings : {});
   const save = (patch) => (ctx.profile ? ctx.profile.save(patch) : Promise.resolve());
   function say(text) { status.setText(text || ''); }
+
+  // ---------- previews: a small turning copy of each model, so a row shows what it is ----------
+  const previewTemplates = new Map();       // key -> Promise<Object3D | null>
+  const spinning = [];
+  function templateFor(rec) {
+    const key = rec.toy ? 'toy:' + rec.toy : rec.model_url ? 'url:' + rec.model_url : rec.option_id ? 'creature:' + rec.option_id : null;
+    if (!key) return Promise.resolve(null);
+    if (!previewTemplates.has(key)) {
+      const p = (async () => {
+        if (rec.toy === 'bubby') return buildBubby(1);
+        if (rec.model_url) return loadModelUrl(rec.model_url, 1);
+        return loadCreature(rec.option_id);
+      })().catch(() => null);
+      previewTemplates.set(key, p);
+    }
+    return previewTemplates.get(key);
+  }
+  /** Puts a preview of `rec`'s model at (x, y) in `group` once it has loaded. */
+  function addPreview(group, rec, x, y) {
+    if (!rec) return;
+    const slot = new THREE.Group();
+    slot.position.set(x, y, 0.05);
+    group.add(slot);
+    templateFor(rec).then((template) => {
+      if (!template || !slot.parent) return;
+      const copy = template.clone(true);
+      const box = new THREE.Box3().setFromObject(copy), size = box.getSize(new THREE.Vector3()), mid = box.getCenter(new THREE.Vector3());
+      const k = PREVIEW / (Math.max(size.x, size.y, size.z) || 1);
+      copy.scale.multiplyScalar(k);
+      copy.position.sub(mid.multiplyScalar(k));
+      const turn = new THREE.Group();
+      turn.add(copy);
+      slot.add(turn);
+      spinning.push(turn);
+    });
+  }
 
   function clearGroup(g) {
     while (g.children.length) {
@@ -93,13 +151,19 @@ export function createTab(ctx) {
       if (ctx.input && ctx.input.removeTarget) ctx.input.removeTarget(c);   // buttons are pointer targets
       c.removeFromParent();
     }
+    for (let i = spinning.length - 1; i >= 0; i--) {
+      let o = spinning[i];
+      while (o && o !== board) o = o.parent;
+      if (!o) spinning.splice(i, 1);
+    }
   }
 
   /** Who follows: the saved list, or (none saved yet) the newest three buddies. */
   function following() {
     const list = settings().following;
     if (Array.isArray(list)) return list.slice(0, MAX_FOLLOWING);
-    return buddies.filter((b) => b.companionId).map((b) => b.companionId).slice(-MAX_FOLLOWING);
+    // Nothing chosen yet: the three newest saved buddies follow (as /vr/core/companions.js does).
+    return buddies.filter((b) => b.companionId).map((b) => b.companionId).sort((a, b) => a - b).slice(-MAX_FOLLOWING);
   }
 
   // ---------- drawing ----------
@@ -133,23 +197,34 @@ export function createTab(ctx) {
       buddyRows.add(empty);
       return;
     }
-    buddies.slice(0, MAX_ROWS).forEach((b, i) => {
+    // Who follows first (so they are always in sight), then the newest saved buddies, then gifts that could be.
+    const rank = (b) => (b.companionId && follow.includes(b.companionId) ? 0 : b.companionId ? 1 : 2);
+    const ordered = buddies.slice().sort((a, b) => rank(a) - rank(b) || (b.companionId || b.giftId || 0) - (a.companionId || a.giftId || 0));
+    const pages = Math.max(1, Math.ceil(ordered.length / MAX_ROWS));
+    buddyPage = Math.min(buddyPage, pages - 1);
+    ordered.slice(buddyPage * MAX_ROWS, buddyPage * MAX_ROWS + MAX_ROWS).forEach((b, i) => {
       const y = 0.235 - i * 0.092;
       const on = b.companionId && follow.includes(b.companionId);
-      const label = ui.makeLabel(b.name, { width: 0.26, height: 0.07, size: 0.03, align: 'left' });
-      label.position.set(-0.5, y, 0.006);
+      addPreview(buddyRows, b.rec, -0.6, y);
+      const label = ui.makeLabel(b.name, { width: 0.2, height: 0.07, size: 0.029, align: 'left' });
+      label.position.set(-0.44, y, 0.006);
       const toggle = ui.makeButton(on ? 'Follows me' : 'Stays here', () => toggleFollow(b), {
-        width: 0.22, height: 0.075, textHeight: 0.026, fill: on ? colors.peach : undefined,
+        width: 0.2, height: 0.075, textHeight: 0.025, fill: on ? colors.peach : undefined,
       });
-      toggle.position.set(-0.245, y, 0.006);
-      const edit = ui.makeButton('Edit', () => openEditor(b), { width: 0.1, height: 0.075, textHeight: 0.024 });
-      edit.position.set(-0.075, y, 0.006);
+      toggle.position.set(-0.215, y, 0.006);
+      const edit = ui.makeButton('Edit', () => openEditor(b), { width: 0.09, height: 0.075, textHeight: 0.024 });
+      edit.position.set(-0.06, y, 0.006);
       buddyRows.add(label, toggle, edit);
     });
-    if (buddies.length > MAX_ROWS) {
-      const more = ui.makeLabel(`and ${buddies.length - MAX_ROWS} more`, { width: 0.5, height: 0.05, size: 0.024 });
-      more.position.set(-0.33, 0.235 - MAX_ROWS * 0.092, 0.006);
-      buddyRows.add(more);
+    if (pages > 1) {
+      const y = 0.235 - MAX_ROWS * 0.092 - 0.01;
+      const prev = ui.makeButton('Prev', () => { buddyPage = (buddyPage + pages - 1) % pages; drawBuddies(); }, { width: 0.14, height: 0.07, textHeight: 0.026 });
+      prev.position.set(-0.5, y, 0.006);
+      const where = ui.makeLabel(`${buddyPage + 1} of ${pages}`, { width: 0.16, height: 0.05, size: 0.026 });
+      where.position.set(-0.33, y, 0.006);
+      const next = ui.makeButton('Next', () => { buddyPage = (buddyPage + 1) % pages; drawBuddies(); }, { width: 0.14, height: 0.07, textHeight: 0.026 });
+      next.position.set(-0.16, y, 0.006);
+      buddyRows.add(prev, where, next);
     }
   }
 
@@ -188,7 +263,93 @@ export function createTab(ctx) {
     buddyRows.add(go, back);
   }
 
-  function drawAll() { drawSound(); drawProfiles(); drawBuddies(); }
+  // ---------- page two: scans ----------
+  const keyList = (name) => (Array.isArray(settings()[name]) ? settings()[name] : []);
+  const MAX_SCAN_ROWS = 6;
+
+  function drawScans() {
+    clearGroup(scanRows);
+    const hidden = keyList('hiddenScans'), fruit = keyList('sliceToys');
+    scans.slice(0, MAX_SCAN_ROWS).forEach((sc, i) => {
+      const y = 0.235 - i * 0.1;
+      const isHidden = hidden.includes(sc.key), isFruit = fruit.includes(sc.key);
+      addPreview(scanRows, sc.rec, -0.6, y);
+      const label = ui.makeLabel(sc.name, { width: 0.3, height: 0.07, size: 0.03, align: 'left' });
+      label.position.set(-0.39, y, 0.006);
+      const shown = ui.makeButton(isHidden ? 'Hidden' : 'Shown', () => toggleKey('hiddenScans', sc), {
+        width: 0.22, height: 0.075, textHeight: 0.027, fill: isHidden ? undefined : colors.peach,
+      });
+      shown.position.set(-0.08, y, 0.006);
+      const asFruit = ui.makeButton(isFruit ? 'Fruit: yes' : 'Fruit: no', () => toggleKey('sliceToys', sc), {
+        width: 0.24, height: 0.075, textHeight: 0.027, fill: isFruit ? colors.peach : undefined,
+      });
+      asFruit.position.set(0.18, y, 0.006);
+      scanRows.add(label, shown, asFruit);
+      if (sc.giftId) {
+        const sure = confirmDelete === sc.key;
+        const del = ui.makeButton(sure ? 'Sure?' : 'Delete', () => deleteScan(sc), { width: 0.18, height: 0.075, textHeight: 0.027, fill: sure ? colors.peach : undefined });
+        del.position.set(0.43, y, 0.006);
+        scanRows.add(del);
+      }
+    });
+    if (scans.length > MAX_SCAN_ROWS) {
+      const more = ui.makeLabel(`and ${scans.length - MAX_SCAN_ROWS} more (the newest are shown)`, { width: 0.8, height: 0.05, size: 0.024 });
+      more.position.set(-0.05, 0.235 - MAX_SCAN_ROWS * 0.1, 0.006);
+      scanRows.add(more);
+    }
+  }
+
+  function setPage(next) {
+    page = next;
+    mainPage.visible = page === 'main';
+    scanPage.visible = page === 'scans';
+    pageButton.setLabel(page === 'main' ? 'Scans' : 'Back');
+    confirmDelete = null;
+    if (page === 'scans') {
+      panel.setText('Scans', 0);
+      panel.setText('Hidden ones stay out of the games. Frost Slice throws the ones marked fruit.', 1);
+      for (const i of [2, 3, 4]) panel.setText('', i);
+      drawScans();
+    } else {
+      panel.setText('Buddies', 0); panel.setText('Sound', 2); panel.setText('Calm microphone', 3); panel.setText('Who is playing?', 4);
+      drawAll();
+    }
+    say('');
+  }
+
+  async function toggleKey(name, sc) {
+    const list = keyList(name);
+    const on = !list.includes(sc.key);
+    const patch = { [name]: on ? [...list, sc.key] : list.filter((k) => k !== sc.key) };
+    // A hidden scan stops following too.
+    if (name === 'hiddenScans' && on && sc.companionId && following().includes(sc.companionId)) patch.following = following().filter((id) => id !== sc.companionId);
+    await save(patch);
+    say(name === 'hiddenScans' ? `${sc.name} is ${on ? 'hidden from the games' : 'back in the games'}.` : `${sc.name} ${on ? 'will be thrown in Frost Slice' : 'stays out of Frost Slice'}.`);
+    drawScans();
+  }
+
+  async function deleteScan(sc) {
+    if (confirmDelete !== sc.key) { confirmDelete = sc.key; say(`Tap Sure? to delete ${sc.name}.`); drawScans(); return; }
+    confirmDelete = null;
+    try {
+      await ctx.api.forgetScan(sc.giftId);
+    } catch (err) {
+      say((err && err.message) || 'That scan could not be deleted just now.');
+      return;
+    }
+    const patch = {
+      hiddenScans: keyList('hiddenScans').filter((k) => k !== sc.key),
+      sliceToys: keyList('sliceToys').filter((k) => k !== sc.key),
+    };
+    if (sc.companionId) patch.following = following().filter((id) => id !== sc.companionId);
+    scans = scans.filter((x) => x !== sc);
+    buddies = buddies.filter((b) => b.giftId !== sc.giftId);
+    await save(patch);
+    say(`${sc.name} was deleted.`);
+    drawScans();
+  }
+
+  function drawAll() { drawSound(); drawProfiles(); if (page === 'scans') drawScans(); else drawBuddies(); }
 
   // ---------- loading ----------
   async function loadBuddies() {
@@ -196,15 +357,21 @@ export function createTab(ctx) {
     try {
       const data = await ctx.api.getBuddies();
       if (mine !== epoch) return;
-      const saved = (data.companions || []).map((c) => ({ key: 'c' + c.id, name: c.name, companionId: c.id, giftId: c.gift_id }));
-      const gifts = (data.gifts || []).map((g) => ({ key: 'g' + g.id, name: g.name, companionId: null, giftId: g.id }));
+      const saved = (data.companions || []).map((c) => ({ key: 'c' + c.id, name: c.name, companionId: c.id, giftId: c.gift_id, rec: c }));
+      const gifts = (data.gifts || []).map((g) => ({ key: 'g' + g.id, name: g.name, companionId: null, giftId: g.id, rec: g }));
       buddies = [...saved, ...gifts];
+      // Scans: Bubby, then every scanned or generated model, newest first.
+      const models = [
+        ...(data.companions || []).filter((c) => c.model_url && c.gift_id).map((c) => ({ key: 'g' + c.gift_id, name: c.name, giftId: c.gift_id, companionId: c.id, rec: c })),
+        ...(data.gifts || []).filter((g) => g.model_url).map((g) => ({ key: 'g' + g.id, name: g.name, giftId: g.id, companionId: null, rec: g })),
+      ].sort((a, b) => b.giftId - a.giftId);
+      scans = [{ key: 'bubby', name: 'Bubby', giftId: null, companionId: null, rec: { toy: 'bubby' } }, ...models];
     } catch (err) {
       if (mine !== epoch) return;
       buddies = [];
       say('Buddies could not be loaded just now.');
     }
-    drawBuddies();
+    if (page === 'scans') drawScans(); else drawBuddies();
   }
 
   // ---------- changes (each is saved at once) ----------
@@ -235,10 +402,6 @@ export function createTab(ctx) {
       drawBuddies();
       return;
     }
-    if (follow.length >= MAX_FOLLOWING) {
-      say(`${MAX_FOLLOWING} buddies can follow at once. Turn one off first.`);
-      return;
-    }
     let id = b.companionId;
     if (!id) {
       try {
@@ -251,8 +414,15 @@ export function createTab(ctx) {
       if (!id) return;
       b.companionId = id;
     }
-    await save({ following: [...follow, id] });
-    say(`${b.name} follows you now.`);
+    // At the limit, the buddy that has followed longest stays here instead (no need to turn one off first).
+    let swapped = null;
+    let next = [...follow, id];
+    if (next.length > MAX_FOLLOWING) {
+      const out = next.shift();
+      swapped = buddies.find((x) => x.companionId === out);
+    }
+    await save({ following: next });
+    say(swapped ? `${b.name} follows you now. ${swapped.name} stays here.` : `${b.name} follows you now.`);
     drawBuddies();
   }
 
@@ -341,8 +511,9 @@ export function createTab(ctx) {
       place();
       placed = !ctx.isAR();
       say('');
-      buddies = [];
+      buddies = []; scans = [];
       editing = null; confirmGo = false;
+      if (page !== 'main') setPage('main');
       drawAll();
       loadBuddies();
       if (ctx.profile && ctx.profile.onChange) unlisten = ctx.profile.onChange(() => { if (active) drawAll(); });
@@ -352,8 +523,9 @@ export function createTab(ctx) {
       active = false; epoch++;
       if (unlisten) { unlisten(); unlisten = null; }
     },
-    update() {
+    update(dt) {
       if (!placed) { rig.viewerPosition(_head); if (_head.lengthSq() > 1e-6) { place(); placed = true; } }
+      for (const t of spinning) t.rotation.y += (dt || 0.016) * 0.9;
     },
     onRecenter() { place(); },
     onSelectStart() {}, onSelectEnd() {}, onSqueezeStart() {}, onSqueezeEnd() {},

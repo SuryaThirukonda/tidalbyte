@@ -101,12 +101,14 @@ export function mount(root, ctx) {
     const move = String((info.raw && (info.raw.move || info.raw.motion)) || "").toLowerCase();
     const verb = { swim: "swimming", fly: "flying", walk: "walking", float: "floating", hover: "floating", orbit: "spinning" }[move] || "coming";
     const said = gift.message && String(gift.message).trim();
-    const pic = thumb(gift.option_id, 132);
+    // A wish being made into its own 3D model: say so, instead of naming the creature that stands in for it.
+    const making = /^wish:/.test(String(gift.job_id || "")) && gift.job_id !== "wish:library";
+    const pic = making ? h("div", { class: "big-emoji pop", "aria-hidden": "true" }, "\u2728") : thumb(gift.option_id, 132);
     pic.classList.add("pop");
     fill(done,
       h("div", { class: "ribbon-row" }, h("h1", { class: "ribbon" }, "Wish sent")),
       pic,
-      h("p", { class: "done-line", id: "send-done-line" }, `Your ${plainName(info)} is ${verb} over.`),
+      h("p", { class: "done-line", id: "send-done-line" }, making ? `Your ${String(gift.wish || "wish").replace(/[.!?]+$/, "")} is being made!` : `Your ${plainName(info)} is ${verb} over.`),
       said ? h("p", { class: "quote", id: "send-done-message" }, said) : null,
       h("p", { class: "done-sub muted" }, `From ${senderName}, to room ${ctx.room()}.`),
       h("button", { class: "btn primary big block", type: "button", id: "send-again", onclick: again }, "Send another wish"),

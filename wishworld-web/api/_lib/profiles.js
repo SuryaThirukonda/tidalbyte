@@ -30,10 +30,14 @@ export function cleanSettings(raw) {
     const list = Array.isArray(s.following) ? s.following : [];
     out.following = [...new Set(list.map(Number).filter((n) => Number.isSafeInteger(n) && n > 0))].slice(0, MAX_FOLLOWING);
   }
+  // Scans by key ("bubby", or "g<gift id>"): hidden from the games and followers, or thrown as Frost Slice fruit.
+  const keys = (v) => [...new Set((Array.isArray(v) ? v : []).map(String).filter((k) => /^(bubby|g\d{1,15})$/.test(k)))].slice(0, 40);
+  if (s.hiddenScans !== undefined) out.hiddenScans = keys(s.hiddenScans);
+  if (s.sliceToys !== undefined) out.sliceToys = keys(s.sliceToys);
   return out;
 }
 
-export const DEFAULT_SETTINGS = { volume: 0.8, guideVoice: true, micSensitivity: 0.5, following: null };
+export const DEFAULT_SETTINGS = { volume: 0.8, guideVoice: true, micSensitivity: 0.5, following: null, hiddenScans: [], sliceToys: [] };
 
 export function profileJson(row, defaultId) {
   return {
