@@ -1,0 +1,47 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: faabf2c084f699a1189ba002eb73dab1, type: 3}
+  m_Name: aquarium
+  m_EditorClassIdentifier: Assembly-CSharp::WishWorld.WorldDefinition
+  id: aquarium
+  displayName: Aquarium
+  keywords:
+  - aquarium
+  - ocean
+  - under the sea
+  - reef
+  skyTexture: {fileID: 2800000, guid: 4fa5e598bd194ff8fb1dc7e9fb644bab, type: 3}
+  skyPrompt: underwater coral reef, sun rays through blue water, friendly, stylized
+  ground: 2
+  groundColor: {r: 0.86, g: 0.78, b: 0.58, a: 1}
+  scenery: Scenery/aquarium
+  sunDirection: {x: 0, y: 0, z: 0}
+  fogStart: 0.08
+  fogColor: {r: 0.1, g: 0.47, b: 0.68, a: 1}
+  fogEnd: 62
+  lightColor: {r: 0.75, g: 0.92, b: 1, a: 1}
+  lightIntensity: 0.95
+  ambientColor: {r: 0.46, g: 0.64, b: 0.78, a: 1}
+  ambientKind: 0
+  guideIntro: Welcome to the aquarium! Touch a creature to learn about it.
+  showInMenu: 1
+  creatures:
+  - creature: {fileID: 11400000, guid: 1cdf0b89166fab37a93659e096270fce, type: 2}
+    count: 8
+  - creature: {fileID: 11400000, guid: 3f596ba9ddabdb16ca7be1d7c89e97f2, type: 2}
+    count: 1
+  - creature: {fileID: 11400000, guid: 774baf5cc1c5d1320a591d5e1ce0adde, type: 2}
+    count: 1
+  - creature: {fileID: 11400000, guid: 42088133327314a1b92ce2de5e140596, type: 2}
+    count: 4
+  - creature: {fileID: 11400000, guid: 1b3030351e9a2c7fd9df5558d22a2a72, type: 2}
+    count: 1

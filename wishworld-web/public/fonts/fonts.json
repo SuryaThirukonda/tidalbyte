@@ -1,0 +1,41 @@
+{
+  "note": "The fonts the Unity game uses, with their licence files beside them. Roles follow WWTheme / WWFont in the game.",
+  "fonts": {
+    "title": {
+      "file": "MountainsofChristmas-Bold.ttf",
+      "family": "Mountains of Christmas",
+      "weight": 700,
+      "use": "Titles: ribbons, menu titles, the countdown",
+      "author": "Tart Workshop",
+      "licence": "Apache 2.0",
+      "licenceFile": "MountainsOfChristmas_Apache2_LICENSE.txt"
+    },
+    "heading": {
+      "file": "BerkshireSwash-Regular.ttf",
+      "family": "Berkshire Swash",
+      "weight": 400,
+      "use": "Headings and buttons",
+      "author": "Brian J. Bonislawsky, Astigmatic",
+      "licence": "SIL OFL 1.1",
+      "licenceFile": "BerkshireSwash_OFL.txt"
+    },
+    "body": {
+      "file": "Almendra-Regular.ttf",
+      "family": "Almendra",
+      "weight": 400,
+      "use": "Body text: captions, fact cards, labels",
+      "author": "Ana Sanfelippo",
+      "licence": "SIL OFL 1.1",
+      "licenceFile": "Almendra_OFL.txt"
+    },
+    "plain": {
+      "file": "LiberationSans.ttf",
+      "family": "Liberation Sans",
+      "weight": 400,
+      "use": "Numbers on the race dashboard and the score panel",
+      "author": "Red Hat (shipped with TextMesh Pro)",
+      "licence": "SIL OFL 1.1",
+      "licenceFile": "LiberationSans_OFL.txt"
+    }
+  }
+}

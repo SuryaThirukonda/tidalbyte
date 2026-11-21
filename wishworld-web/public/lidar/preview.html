@@ -1,0 +1,152 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lidar preview</title>
+<link rel="icon" href="data:,">
+<style>
+  html, body { margin: 0; height: 100%; background: #0b1622; color: #e8f1f8; font: 14px/1.4 system-ui, sans-serif; overflow: hidden; }
+  canvas { display: block; }
+  #info { position: fixed; left: 12px; top: 10px; max-width: 460px; pointer-events: none; text-shadow: 0 1px 2px #000; }
+  #info h1 { font-size: 18px; margin: 0 0 2px; }
+  #info p { margin: 2px 0; opacity: .85; }
+  #nav { position: fixed; right: 12px; top: 10px; }
+  #nav a { color: #9fd0ff; margin-left: 10px; }
+  #err { color: #ff9b9b; }
+</style>
+<script type="importmap">{ "imports": {
+  "three": "/vendor/three/build/three.module.js",
+  "three/addons/": "/vendor/three/examples/jsm/" } }</script>
+</head>
+<body>
+<div id="info"><h1 id="name">Loading…</h1><p id="stats"></p><p id="facts"></p><p id="err"></p></div>
+<div id="nav"><a href="?place=liberty">Statue of Liberty</a><a href="?place=niagara">Niagara Falls</a></div>
+<script type="module">
+// Desktop check for /lidar/<place>.bin + .json. Shows the place the way the headset does: a
+// diorama 1 m across. Drag to orbit, wheel to zoom, [ and ] change the point size, B toggles the base.
+// Optional query: ?place=liberty|niagara &az=deg &el=deg &dist=m &size=pointSizeMultiplier &base=0 &n=maxPoints
+import * as THREE from "three";
+import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+
+const q = new URLSearchParams(location.search);
+const place = q.get("place") === "niagara" ? "niagara" : "liberty";
+const $ = (id) => document.getElementById(id);
+
+/** Load one place. Returns { meta, geometry } with positions in metres (Int16 * scale applied by the material). */
+async function loadLidar(name) {
+  const [meta, buf] = await Promise.all([
+    fetch(`/lidar/${name}.json`).then((r) => { if (!r.ok) throw new Error(`${name}.json: HTTP ${r.status}`); return r.json(); }),
+    fetch(`/lidar/${name}.bin`).then((r) => { if (!r.ok) throw new Error(`${name}.bin: HTTP ${r.status}`); return r.arrayBuffer(); }),
+  ]);
+  const n = meta.count;
+  if (buf.byteLength !== n * 9) throw new Error(`${name}.bin is ${buf.byteLength} bytes, expected ${n * 9}`);
+  const geometry = new THREE.BufferGeometry();
+  // Int16 positions stay Int16 on the GPU (6 bytes a point); the shader multiplies by `scale`.
+  geometry.setAttribute("position", new THREE.BufferAttribute(new Int16Array(buf, 0, n * 3), 3));
+  geometry.setAttribute("color", new THREE.BufferAttribute(new Uint8Array(buf, n * 6, n * 3), 3, true));
+  const { min, max } = meta.bounds, s = meta.scale;
+  geometry.boundingBox = new THREE.Box3(new THREE.Vector3(...min).divideScalar(s), new THREE.Vector3(...max).divideScalar(s));
+  geometry.boundingSphere = geometry.boundingBox.getBoundingSphere(new THREE.Sphere());
+  return { meta, geometry };
+}
+
+/** Round, world-sized points. Colours in the file are sRGB and are written straight to the screen. */
+function makeMaterial(meta, pointMetres) {
+  return new THREE.ShaderMaterial({
+    uniforms: { uScale: { value: meta.scale }, uSize: { value: pointMetres }, uPx: { value: 1 } },
+    vertexShader: `
+      uniform float uScale, uSize, uPx;
+      attribute vec3 color;
+      varying vec3 vColor;
+      void main() {
+        vColor = color;
+        vec4 mv = modelViewMatrix * vec4(position * uScale, 1.0);
+        gl_Position = projectionMatrix * mv;
+        // uSize is metres in the model; the model-view matrix carries the diorama's scale
+        float world = uSize * length(modelViewMatrix[0].xyz);
+        gl_PointSize = clamp(world * uPx * projectionMatrix[1][1] / -mv.z, 1.5, 64.0);
+      }`,
+    fragmentShader: `
+      varying vec3 vColor;
+      void main() {
+        vec2 c = gl_PointCoord - 0.5;
+        if (dot(c, c) > 0.25) discard;
+        gl_FragColor = vec4(vColor, 1.0);
+      }`,
+  });
+}
+
+const renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true });
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.setClearColor(0x0b1622);
+document.body.appendChild(renderer.domElement);
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(50, 1, 0.01, 50);
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true;
+
+let material = null, base = null;
+function resize() {
+  renderer.setSize(innerWidth, innerHeight);
+  camera.aspect = innerWidth / innerHeight;
+  camera.updateProjectionMatrix();
+  if (material) material.uniforms.uPx.value = renderer.domElement.height / 2;
+}
+addEventListener("resize", resize);
+resize();
+
+try {
+  const { meta, geometry } = await loadLidar(place);
+  const { min, max } = meta.bounds;
+  const across = Math.max(max[0] - min[0], max[2] - min[2]);
+  const maxPoints = Number(q.get("n")) || meta.count;
+  geometry.setDrawRange(0, Math.min(meta.count, maxPoints));
+
+  // typical gap between neighbouring points, used as the point size
+  const spacing = Math.sqrt((max[0] - min[0]) * (max[2] - min[2]) / Math.min(meta.count, maxPoints));
+  material = makeMaterial(meta, spacing * 1.5 * (Number(q.get("size")) || 1));
+  material.uniforms.uPx.value = renderer.domElement.height / 2;
+
+  const diorama = new THREE.Group();
+  diorama.scale.setScalar(1 / across);                // 1 m across, like the headset
+  const points = new THREE.Points(geometry, material);
+  diorama.add(points);
+  // A plain dark slab under the model. It is not lidar data. Calm water and vertical walls return
+  // no lidar, so the slab shows through there as deep water or shadow instead of the room.
+  base = new THREE.Mesh(new THREE.BoxGeometry(max[0] - min[0], across * 0.02, max[2] - min[2]),
+    new THREE.MeshBasicMaterial({ color: place === "niagara" ? 0x0b3a41 : 0x13222e }));
+  base.position.set((min[0] + max[0]) / 2, min[1] - across * 0.011, (min[2] + max[2]) / 2);
+  base.visible = q.get("base") !== "0";
+  diorama.add(base);
+  scene.add(diorama);
+
+  // az: compass direction the camera sits in, seen from the model (0 = south, 90 = east, 180 = north, 270 = west)
+  const view = place === "niagara" ? { az: 200, el: 35 } : { az: 125, el: 24 };
+  const az = THREE.MathUtils.degToRad(Number(q.get("az") ?? view.az)), el = THREE.MathUtils.degToRad(Number(q.get("el") ?? view.el));
+  const dist = Number(q.get("dist")) || 1.25;
+  const ty = Number(q.get("ty") ?? (max[1] / across) * 0.3);
+  controls.target.set(Number(q.get("tx")) || 0, ty, Number(q.get("tz")) || 0);
+  camera.position.set(controls.target.x + dist * Math.cos(el) * Math.sin(az), ty + dist * Math.sin(el), controls.target.z + dist * Math.cos(el) * Math.cos(az));
+  controls.update();
+
+  $("name").textContent = meta.name;
+  $("stats").textContent = `${meta.count.toLocaleString()} points · ${(meta.count * 9 / 1e6).toFixed(2)} MB · ` +
+    `${Math.round(max[0] - min[0])} × ${Math.round(max[2] - min[2])} m, ${Math.round(max[1])} m tall · shown 1 m across`;
+  $("facts").textContent = (meta.facts || []).join("  ");
+  addEventListener("keydown", (ev) => {
+    if (ev.key === "]") material.uniforms.uSize.value *= 1.15;
+    if (ev.key === "[") material.uniforms.uSize.value /= 1.15;
+    if (ev.key.toLowerCase() === "b") base.visible = !base.visible;
+  });
+  document.title = `${meta.name} · lidar preview`;
+} catch (err) {
+  $("name").textContent = "Could not load " + place;
+  $("err").textContent = err.message;
+  console.error(err);
+}
+
+renderer.setAnimationLoop(() => { controls.update(); renderer.render(scene, camera); });
+</script>
+</body>
+</html>

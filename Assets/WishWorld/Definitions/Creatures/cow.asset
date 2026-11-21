@@ -1,0 +1,32 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 082e3931834005080850fd5e2ef3182b, type: 3}
+  m_Name: cow
+  m_EditorClassIdentifier: Assembly-CSharp::WishWorld.CreatureDefinition
+  id: cow
+  displayName: Cow
+  keywords:
+  - cow
+  prefab: {fileID: 6688370547947274980, guid: f87e37084d0f2c1cbb20dc8510ce5532, type: 3}
+  moveType: 2
+  speed: 0.2
+  minDistance: 3
+  maxDistance: 4.5
+  minHeight: 0
+  maxHeight: 0
+  arScale: 0.18
+  addCount: 1
+  schooling: 0
+  voicePitch: 0.5
+  fact: A cow's stomach has four parts.
+  quizQuestion: Which farm animal has a stomach with four parts?
+  factChecked: 0

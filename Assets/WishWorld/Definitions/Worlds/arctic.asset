@@ -1,0 +1,46 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: faabf2c084f699a1189ba002eb73dab1, type: 3}
+  m_Name: arctic
+  m_EditorClassIdentifier: Assembly-CSharp::WishWorld.WorldDefinition
+  id: arctic
+  displayName: Arctic
+  keywords:
+  - arctic
+  - north pole
+  - ice
+  skyTexture: {fileID: 2800000, guid: 68bac6526d6d0f669bff3b21a15a59cb, type: 3}
+  skyPrompt: arctic ice field at night under green aurora, stylized
+  ground: 2
+  groundColor: {r: 0.92, g: 0.96, b: 1, a: 1}
+  scenery: Scenery/arctic
+  sunDirection: {x: -0.6487711, y: -0.5, z: 0.5736689}
+  fogStart: 0.12
+  fogColor: {r: 0.21976385, g: 0.36023167, b: 0.66426474, a: 1}
+  fogEnd: 700
+  lightColor: {r: 0.8, g: 0.9, b: 1, a: 1}
+  lightIntensity: 0.85
+  ambientColor: {r: 0.44, g: 0.54, b: 0.74, a: 1}
+  ambientKind: 1
+  guideIntro: Brr! Welcome to the ice, under the northern lights.
+  showInMenu: 1
+  creatures:
+  - creature: {fileID: 11400000, guid: 399a1eb8d825ddd57a24ac9b057304ef, type: 2}
+    count: 4
+  - creature: {fileID: 11400000, guid: b5663a9f6248efcfb88665c53b441f0d, type: 2}
+    count: 1
+  - creature: {fileID: 11400000, guid: a72e4b7058f5b81f4aea61ab1faab703, type: 2}
+    count: 1
+  - creature: {fileID: 11400000, guid: 56ebd2a23a4ba1dbca763f2db49f8029, type: 2}
+    count: 1
+  - creature: {fileID: 11400000, guid: 2601027518ad1856eb9487b6e82e1b26, type: 2}
+    count: 1

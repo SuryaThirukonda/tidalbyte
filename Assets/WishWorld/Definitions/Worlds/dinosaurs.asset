@@ -1,0 +1,45 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: faabf2c084f699a1189ba002eb73dab1, type: 3}
+  m_Name: dinosaurs
+  m_EditorClassIdentifier: Assembly-CSharp::WishWorld.WorldDefinition
+  id: dinosaurs
+  displayName: Dinosaurs
+  keywords:
+  - dinosaurs
+  - dinosaur
+  - dino
+  - dinosaur valley
+  skyTexture: {fileID: 2800000, guid: 59915ecf9b6234c1fbe528190a48e208, type: 3}
+  skyPrompt: prehistoric jungle valley with ferns and a volcano far away, stylized
+  ground: 2
+  groundColor: {r: 0.36, g: 0.56, b: 0.28, a: 1}
+  scenery: Scenery/dinosaurs
+  sunDirection: {x: -0.70187646, y: -0.5, z: 0.5073159}
+  fogStart: 0.12
+  fogColor: {r: 0.72312397, g: 0.7326934, b: 0.6859263, a: 1}
+  fogEnd: 680
+  lightColor: {r: 1, g: 0.97, b: 0.88, a: 1}
+  lightIntensity: 1.05
+  ambientColor: {r: 0.62, g: 0.72, b: 0.62, a: 1}
+  ambientKind: 3
+  guideIntro: Shh. The dinosaurs are walking by.
+  showInMenu: 1
+  creatures:
+  - creature: {fileID: 11400000, guid: 5e6ee3157faf254679c063c541ba7b58, type: 2}
+    count: 1
+  - creature: {fileID: 11400000, guid: 854c0b5c909bf18dfaefbda29f1d9e66, type: 2}
+    count: 1
+  - creature: {fileID: 11400000, guid: 15e81267824af458fa7e070da441573e, type: 2}
+    count: 1
+  - creature: {fileID: 11400000, guid: 64bd046927bc647a5be584a5cc2d044e, type: 2}
+    count: 2

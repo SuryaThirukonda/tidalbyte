@@ -1,0 +1,32 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 082e3931834005080850fd5e2ef3182b, type: 3}
+  m_Name: giraffe
+  m_EditorClassIdentifier: Assembly-CSharp::WishWorld.CreatureDefinition
+  id: giraffe
+  displayName: Giraffe
+  keywords:
+  - giraffe
+  prefab: {fileID: 579717488473780858, guid: e91ee9d6f82469ba780a66c1cd24cb24, type: 3}
+  moveType: 2
+  speed: 0.3
+  minDistance: 4.8
+  maxDistance: 5.9
+  minHeight: 0
+  maxHeight: 0
+  arScale: 0.1
+  addCount: 1
+  schooling: 0
+  voicePitch: 0.9
+  fact: A giraffe's long neck has seven bones, the same number as your neck.
+  quizQuestion: Which animal's long neck has seven bones, just like yours?
+  factChecked: 0

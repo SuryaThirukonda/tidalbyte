@@ -1,0 +1,33 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 082e3931834005080850fd5e2ef3182b, type: 3}
+  m_Name: pterosaur
+  m_EditorClassIdentifier: Assembly-CSharp::WishWorld.CreatureDefinition
+  id: pterosaur
+  displayName: Pterosaur
+  keywords:
+  - pterosaur
+  - pterodactyl
+  prefab: {fileID: 8649065045902707501, guid: 578e8967a5988b9f1be632dd65b210c9, type: 3}
+  moveType: 1
+  speed: 0.9
+  minDistance: 4
+  maxDistance: 5.5
+  minHeight: 2.6
+  maxHeight: 3.6
+  arScale: 0.2
+  addCount: 2
+  schooling: 0
+  voicePitch: 1.6
+  fact: Pterosaurs were flying reptiles. They were not dinosaurs.
+  quizQuestion: Which flying reptile was not really a dinosaur?
+  factChecked: 0

@@ -1,0 +1,32 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 082e3931834005080850fd5e2ef3182b, type: 3}
+  m_Name: comet
+  m_EditorClassIdentifier: Assembly-CSharp::WishWorld.CreatureDefinition
+  id: comet
+  displayName: Comet
+  keywords:
+  - comet
+  prefab: {fileID: 1913229039636161295, guid: f46ccf85156b12af49e7bb534b64f9c5, type: 3}
+  moveType: 1
+  speed: 0.9
+  minDistance: 4
+  maxDistance: 5.5
+  minHeight: 2
+  maxHeight: 3.2
+  arScale: 0.4
+  addCount: 1
+  schooling: 0
+  voicePitch: 2.4
+  fact: A comet is a ball of ice and dust. Its tail always points away from the Sun.
+  quizQuestion: What is a ball of ice and dust with a long tail?
+  factChecked: 0

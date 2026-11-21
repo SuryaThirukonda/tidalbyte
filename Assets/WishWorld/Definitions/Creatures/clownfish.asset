@@ -1,0 +1,35 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 082e3931834005080850fd5e2ef3182b, type: 3}
+  m_Name: clownfish
+  m_EditorClassIdentifier: Assembly-CSharp::WishWorld.CreatureDefinition
+  id: clownfish
+  displayName: Clownfish
+  keywords:
+  - clownfish
+  - flying fish
+  - fish
+  prefab: {fileID: 5173901291769982121, guid: 447ca1e3af1b135d584c3e2f782a5edb, type: 3}
+  moveType: 0
+  speed: 0.35
+  minDistance: 1.3
+  maxDistance: 2.4
+  minHeight: 1
+  maxHeight: 1.7
+  arScale: 1
+  addCount: 8
+  schooling: 1
+  voicePitch: 1.8
+  fact: Clownfish live among the stinging arms of sea anemones, which do not hurt
+    them.
+  quizQuestion: Which fish makes its home in a sea anemone?
+  factChecked: 0

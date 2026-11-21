@@ -1,0 +1,32 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 082e3931834005080850fd5e2ef3182b, type: 3}
+  m_Name: kite
+  m_EditorClassIdentifier: Assembly-CSharp::WishWorld.CreatureDefinition
+  id: kite
+  displayName: Kite
+  keywords:
+  - kite
+  prefab: {fileID: 191216490757512144, guid: 7bbf937a77e3fc69a8b7114ccb587055, type: 3}
+  moveType: 3
+  speed: 0.05
+  minDistance: 3
+  maxDistance: 4.5
+  minHeight: 2.6
+  maxHeight: 3.4
+  arScale: 0.3
+  addCount: 1
+  schooling: 0
+  voicePitch: 1.7
+  fact: Kites were invented in China more than two thousand years ago.
+  quizQuestion: What flying toy was invented in China over two thousand years ago?
+  factChecked: 0

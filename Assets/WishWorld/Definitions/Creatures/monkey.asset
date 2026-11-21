@@ -1,0 +1,32 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 082e3931834005080850fd5e2ef3182b, type: 3}
+  m_Name: monkey
+  m_EditorClassIdentifier: Assembly-CSharp::WishWorld.CreatureDefinition
+  id: monkey
+  displayName: Monkey
+  keywords:
+  - monkey
+  prefab: {fileID: 5625246711555759212, guid: 5c1ac6caa6a47cdd9bc4df413c0da2ea, type: 3}
+  moveType: 2
+  speed: 0.35
+  minDistance: 2.5
+  maxDistance: 4
+  minHeight: 0
+  maxHeight: 0
+  arScale: 0.3
+  addCount: 1
+  schooling: 0
+  voicePitch: 1.6
+  fact: Some monkeys, like spider monkeys, can hang from a branch by their tails.
+  quizQuestion: Which animal can hang from a branch by its tail?
+  factChecked: 0

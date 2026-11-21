@@ -1,0 +1,57 @@
+{
+  "name": "Statue of Liberty",
+  "count": 658715,
+  "scale": 0.01,
+  "bounds": {
+    "min": [
+      -170.0,
+      -0.32,
+      -169.99
+    ],
+    "max": [
+      169.99,
+      92.95,
+      169.99
+    ]
+  },
+  "source": "USGS CMGP Post-Sandy New York City lidar (NAVD88 metres). USGS 3DEP public-domain lidar, Entwine Point Tiles: https://s3-us-west-2.amazonaws.com/usgs-lidar-public/NY_NewYorkCity/ept.json",
+  "facts": [
+    "The Statue of Liberty was a gift of friendship from the people of France to the United States.",
+    "Her skin is copper, about as thick as two pennies. She started out brown like a penny and took about thirty years to turn green."
+  ],
+  "factSources": [
+    "https://www.nps.gov/stli/index.htm",
+    "https://www.nps.gov/stli/faqs.htm",
+    "https://www.nps.gov/stli/learn/historyculture/statue-statistics.htm"
+  ],
+  "axes": "+X east, +Y up, +Z south; metres = int16 * scale; y = 0 is the water level",
+  "center": {
+    "lat": 40.68945,
+    "lon": -74.0448
+  },
+  "sizeMetres": 340.0,
+  "datasets": [
+    {
+      "name": "NY_NewYorkCity",
+      "url": "https://s3-us-west-2.amazonaws.com/usgs-lidar-public/NY_NewYorkCity/ept.json"
+    }
+  ],
+  "colorSpace": "srgb",
+  "order": "random (the first N points are an even subsample)",
+  "statue": {
+    "x": 21.64,
+    "z": 23.35,
+    "pedestalTopY": 48.92,
+    "topY": 92.95,
+    "copperPoints": 1542
+  },
+  "waterLevelNavd88": -0.92,
+  "categories": {
+    "landmark": 6922,
+    "structure": 70556,
+    "veg": 115705,
+    "ground": 290221,
+    "water": 175311
+  },
+  "baseCell": 0.142
+}

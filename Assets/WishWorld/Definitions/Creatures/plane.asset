@@ -1,0 +1,34 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 082e3931834005080850fd5e2ef3182b, type: 3}
+  m_Name: plane
+  m_EditorClassIdentifier: Assembly-CSharp::WishWorld.CreatureDefinition
+  id: plane
+  displayName: Plane
+  keywords:
+  - plane
+  - airplane
+  - aeroplane
+  prefab: {fileID: 1660055926137932587, guid: 3d6b40b848b2ed65caa387eb5c3f21d9, type: 3}
+  moveType: 1
+  speed: 1.4
+  minDistance: 5
+  maxDistance: 5.9
+  minHeight: 2.8
+  maxHeight: 3.8
+  arScale: 0.12
+  addCount: 1
+  schooling: 0
+  voicePitch: 0.45
+  fact: A plane's wings are shaped so that the air rushing past pushes them up.
+  quizQuestion: What has wings shaped so that rushing air pushes them up?
+  factChecked: 0

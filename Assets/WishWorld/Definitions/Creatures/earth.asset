@@ -1,0 +1,33 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 082e3931834005080850fd5e2ef3182b, type: 3}
+  m_Name: earth
+  m_EditorClassIdentifier: Assembly-CSharp::WishWorld.CreatureDefinition
+  id: earth
+  displayName: Earth
+  keywords:
+  - earth
+  - planet
+  prefab: {fileID: 8939515758829430831, guid: 18aee97b49664379e98829218a57791a, type: 3}
+  moveType: 4
+  speed: 0.3
+  minDistance: 1.2
+  maxDistance: 1.2
+  minHeight: 0
+  maxHeight: 0
+  arScale: 0.3
+  addCount: 1
+  schooling: 0
+  voicePitch: 0.8
+  fact: More than two thirds of the Earth is covered by ocean.
+  quizQuestion: Which planet is mostly covered by ocean?
+  factChecked: 0

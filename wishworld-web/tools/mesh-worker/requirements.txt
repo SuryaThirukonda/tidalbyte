@@ -1,0 +1,14 @@
+# Install PyTorch first, from the CPU index:  pip install torch --index-url https://download.pytorch.org/whl/cpu
+omegaconf
+einops
+transformers<5
+trimesh
+rembg[cpu]
+huggingface-hub
+scikit-image
+scipy
+pillow
+imageio
+numpy
+requests
+fast-simplification

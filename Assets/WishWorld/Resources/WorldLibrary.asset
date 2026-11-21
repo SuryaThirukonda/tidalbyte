@@ -1,0 +1,68 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6ac062a658dc41bb799a3aecaf761ccb, type: 3}
+  m_Name: WorldLibrary
+  m_EditorClassIdentifier: Assembly-CSharp::WishWorld.WorldLibrary
+  worlds:
+  - {fileID: 11400000, guid: f5b5eb7aae237e073bd7004ed1e3782b, type: 2}
+  - {fileID: 11400000, guid: 35075761a3731c248b608e8d0e020285, type: 2}
+  - {fileID: 11400000, guid: 6d3f951a6bfb748908535d656652a6b4, type: 2}
+  - {fileID: 11400000, guid: 01a23959dc75f4557a9fe8b17427618d, type: 2}
+  - {fileID: 11400000, guid: 20ffdd43885ae841f9728696ef09260c, type: 2}
+  - {fileID: 11400000, guid: 20f321662bbf4e3bd9df14e87f757fbe, type: 2}
+  - {fileID: 11400000, guid: 30be44cd89a2627c7bebca77212a87d4, type: 2}
+  - {fileID: 11400000, guid: fb7962f7cebec9833b73beac23e6010c, type: 2}
+  - {fileID: 11400000, guid: 0f940ccef77edec93834efc30fbbf8eb, type: 2}
+  creatures:
+  - {fileID: 11400000, guid: 1cdf0b89166fab37a93659e096270fce, type: 2}
+  - {fileID: 11400000, guid: 3f596ba9ddabdb16ca7be1d7c89e97f2, type: 2}
+  - {fileID: 11400000, guid: 774baf5cc1c5d1320a591d5e1ce0adde, type: 2}
+  - {fileID: 11400000, guid: 42088133327314a1b92ce2de5e140596, type: 2}
+  - {fileID: 11400000, guid: 1b3030351e9a2c7fd9df5558d22a2a72, type: 2}
+  - {fileID: 11400000, guid: 119daea4f4e0351f8bd833dbf64acdc7, type: 2}
+  - {fileID: 11400000, guid: 7bca4add1dbc0ffe8aebcfb08e3ccfbc, type: 2}
+  - {fileID: 11400000, guid: 61cc4c404729faa268617669a5fb19ec, type: 2}
+  - {fileID: 11400000, guid: f25aa9dd4d5a67475a03f4ebde9801cb, type: 2}
+  - {fileID: 11400000, guid: fcda8d1089a51a176a3830874335e980, type: 2}
+  - {fileID: 11400000, guid: a91b41dd8d7e1ddd8aaef522ad14b649, type: 2}
+  - {fileID: 11400000, guid: ff6627ef864d11b78b7dd2f60c1456d9, type: 2}
+  - {fileID: 11400000, guid: dce90ea7f13dc0773b98c4cf2fcc3c19, type: 2}
+  - {fileID: 11400000, guid: e38b72bd53d59e08a945e722086eb9f4, type: 2}
+  - {fileID: 11400000, guid: a71c64fadb38a79e9b37e2fa0853d558, type: 2}
+  - {fileID: 11400000, guid: c73e282caf7765e0282d6bf3794e4427, type: 2}
+  - {fileID: 11400000, guid: 99614c4218b100d88bb68b3b5273e11f, type: 2}
+  - {fileID: 11400000, guid: 5e6ee3157faf254679c063c541ba7b58, type: 2}
+  - {fileID: 11400000, guid: 854c0b5c909bf18dfaefbda29f1d9e66, type: 2}
+  - {fileID: 11400000, guid: 15e81267824af458fa7e070da441573e, type: 2}
+  - {fileID: 11400000, guid: 64bd046927bc647a5be584a5cc2d044e, type: 2}
+  - {fileID: 11400000, guid: 399a1eb8d825ddd57a24ac9b057304ef, type: 2}
+  - {fileID: 11400000, guid: b5663a9f6248efcfb88665c53b441f0d, type: 2}
+  - {fileID: 11400000, guid: a72e4b7058f5b81f4aea61ab1faab703, type: 2}
+  - {fileID: 11400000, guid: 56ebd2a23a4ba1dbca763f2db49f8029, type: 2}
+  - {fileID: 11400000, guid: 2601027518ad1856eb9487b6e82e1b26, type: 2}
+  - {fileID: 11400000, guid: 60170bd2b6b1699cab3538ba530ce657, type: 2}
+  - {fileID: 11400000, guid: a9a38c4f3f1e60907aa822ce3379911d, type: 2}
+  - {fileID: 11400000, guid: 8b0d4bd18c7d82f71a6002b3f402b802, type: 2}
+  - {fileID: 11400000, guid: ab8731dce7ba478cb8c20940fa349331, type: 2}
+  - {fileID: 11400000, guid: a36f5ec003ec05653857033592157464, type: 2}
+  - {fileID: 11400000, guid: 69f906a10dcba87b29c90915317f0756, type: 2}
+  - {fileID: 11400000, guid: 71e2682a939672040af8797d6a82fd5e, type: 2}
+  - {fileID: 11400000, guid: ef2611facd2927dfab040ca21d38a4a5, type: 2}
+  - {fileID: 11400000, guid: 44e1faadf99366fdf9d4d5d6d01132d2, type: 2}
+  - {fileID: 11400000, guid: a0589e860dba4bea798c021869671a7d, type: 2}
+  - {fileID: 11400000, guid: 3696e061eb5ab3032b05cf9b5efa2ea1, type: 2}
+  - {fileID: 11400000, guid: 773d738b538f9575dbb4dda2f0c30293, type: 2}
+  - {fileID: 11400000, guid: 7cba11ceaf73976d9978922caaa35149, type: 2}
+  - {fileID: 11400000, guid: fb4e8deca5dfb128ab080a509711542b, type: 2}
+  snowPrefab: {fileID: 1481662925591838644, guid: 86ce3c798a6bdabb5ae9204448993cb8, type: 3}
+  guidePrefab: {fileID: 3984162286719631401, guid: 39a794060c5625ee28389af61277b76a, type: 3}
+  skyMaterial: {fileID: 2100000, guid: c364d01f8762f808a8854f495bd72559, type: 2}

@@ -1,0 +1,32 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 082e3931834005080850fd5e2ef3182b, type: 3}
+  m_Name: bird
+  m_EditorClassIdentifier: Assembly-CSharp::WishWorld.CreatureDefinition
+  id: bird
+  displayName: Bird
+  keywords:
+  - bird
+  prefab: {fileID: 3548194998489366386, guid: 93174b4991e780df58e45fa855d74b1c, type: 3}
+  moveType: 1
+  speed: 1
+  minDistance: 2
+  maxDistance: 4.5
+  minHeight: 1.8
+  maxHeight: 3.2
+  arScale: 0.7
+  addCount: 5
+  schooling: 1
+  voicePitch: 2.3
+  fact: Many birds have hollow bones, which helps them fly.
+  quizQuestion: Which animals have hollow bones that help them fly?
+  factChecked: 0

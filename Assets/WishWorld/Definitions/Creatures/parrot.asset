@@ -1,0 +1,32 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 082e3931834005080850fd5e2ef3182b, type: 3}
+  m_Name: parrot
+  m_EditorClassIdentifier: Assembly-CSharp::WishWorld.CreatureDefinition
+  id: parrot
+  displayName: Parrot
+  keywords:
+  - parrot
+  prefab: {fileID: 5571643015480323666, guid: 4d8178e38eeb99a959de4f0c7867c729, type: 3}
+  moveType: 1
+  speed: 0.8
+  minDistance: 2
+  maxDistance: 4
+  minHeight: 1.6
+  maxHeight: 2.8
+  arScale: 0.6
+  addCount: 2
+  schooling: 0
+  voicePitch: 1.9
+  fact: Parrots can copy sounds, even human words.
+  quizQuestion: Which bird can copy human words?
+  factChecked: 0

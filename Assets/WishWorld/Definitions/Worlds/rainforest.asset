@@ -1,0 +1,46 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: faabf2c084f699a1189ba002eb73dab1, type: 3}
+  m_Name: rainforest
+  m_EditorClassIdentifier: Assembly-CSharp::WishWorld.WorldDefinition
+  id: rainforest
+  displayName: Rainforest
+  keywords:
+  - rainforest
+  - jungle
+  - forest
+  skyTexture: {fileID: 2800000, guid: c30cac5be6afec220a99944ffaf063c2, type: 3}
+  skyPrompt: dense rainforest canopy, shafts of light, lush green, stylized
+  ground: 2
+  groundColor: {r: 0.26, g: 0.44, b: 0.22, a: 1}
+  scenery: Scenery/rainforest
+  sunDirection: {x: -0.5476538, y: -0.69837624, z: 0.4608101}
+  fogStart: 0.06
+  fogColor: {r: 0.6871009, g: 0.7654643, b: 0.69937634, a: 1}
+  fogEnd: 150
+  lightColor: {r: 0.95, g: 1, b: 0.86, a: 1}
+  lightIntensity: 0.95
+  ambientColor: {r: 0.52, g: 0.66, b: 0.52, a: 1}
+  ambientKind: 3
+  guideIntro: Listen. The rainforest is full of life.
+  showInMenu: 1
+  creatures:
+  - creature: {fileID: 11400000, guid: 60170bd2b6b1699cab3538ba530ce657, type: 2}
+    count: 2
+  - creature: {fileID: 11400000, guid: a9a38c4f3f1e60907aa822ce3379911d, type: 2}
+    count: 1
+  - creature: {fileID: 11400000, guid: 8b0d4bd18c7d82f71a6002b3f402b802, type: 2}
+    count: 2
+  - creature: {fileID: 11400000, guid: ab8731dce7ba478cb8c20940fa349331, type: 2}
+    count: 6
+  - creature: {fileID: 11400000, guid: a36f5ec003ec05653857033592157464, type: 2}
+    count: 1

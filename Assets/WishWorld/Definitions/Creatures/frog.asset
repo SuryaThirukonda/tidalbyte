@@ -1,0 +1,33 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 082e3931834005080850fd5e2ef3182b, type: 3}
+  m_Name: frog
+  m_EditorClassIdentifier: Assembly-CSharp::WishWorld.CreatureDefinition
+  id: frog
+  displayName: Tree Frog
+  keywords:
+  - frog
+  - tree frog
+  prefab: {fileID: 1659624283745351955, guid: bbee95e61f1c3b0ea8664e28861d90c4, type: 3}
+  moveType: 2
+  speed: 0.1
+  minDistance: 1.3
+  maxDistance: 2.2
+  minHeight: 0
+  maxHeight: 0
+  arScale: 0.8
+  addCount: 2
+  schooling: 0
+  voicePitch: 2.2
+  fact: Poison dart frogs wear bright colours to warn that they are poisonous.
+  quizQuestion: Which animal uses bright colours as a warning?
+  factChecked: 0

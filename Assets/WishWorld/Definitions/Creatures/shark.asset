@@ -1,0 +1,33 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 082e3931834005080850fd5e2ef3182b, type: 3}
+  m_Name: shark
+  m_EditorClassIdentifier: Assembly-CSharp::WishWorld.CreatureDefinition
+  id: shark
+  displayName: Shark
+  keywords:
+  - shark
+  prefab: {fileID: 1955650829318091411, guid: 8ead4abe95e26b7a5a7989f6b0e8cd92, type: 3}
+  moveType: 0
+  speed: 0.5
+  minDistance: 3.6
+  maxDistance: 5.4
+  minHeight: 1.2
+  maxHeight: 2.4
+  arScale: 0.35
+  addCount: 1
+  schooling: 0
+  voicePitch: 0.5
+  fact: A shark has no bones. Its skeleton is made of cartilage, the bendy stuff
+    in your ears.
+  quizQuestion: Which animal has a skeleton of cartilage and no bones?
+  factChecked: 0

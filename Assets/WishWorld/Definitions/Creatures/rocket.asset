@@ -1,0 +1,33 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 082e3931834005080850fd5e2ef3182b, type: 3}
+  m_Name: rocket
+  m_EditorClassIdentifier: Assembly-CSharp::WishWorld.CreatureDefinition
+  id: rocket
+  displayName: Rocket
+  keywords:
+  - rocket
+  - rocket ship
+  prefab: {fileID: 6674507165534482529, guid: 736d15daccdbaf229994ba75bb377ec0, type: 3}
+  moveType: 1
+  speed: 0.7
+  minDistance: 3.6
+  maxDistance: 5
+  minHeight: 1.6
+  maxHeight: 3
+  arScale: 0.2
+  addCount: 1
+  schooling: 0
+  voicePitch: 0.4
+  fact: To stay in orbit, a rocket has to reach about 28,000 kilometres an hour.
+  quizQuestion: What must reach about 28,000 kilometres an hour to stay in orbit?
+  factChecked: 0

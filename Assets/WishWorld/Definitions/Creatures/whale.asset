@@ -1,0 +1,33 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 082e3931834005080850fd5e2ef3182b, type: 3}
+  m_Name: whale
+  m_EditorClassIdentifier: Assembly-CSharp::WishWorld.CreatureDefinition
+  id: whale
+  displayName: Blue Whale
+  keywords:
+  - whale
+  - blue whale
+  prefab: {fileID: 2765404395185778446, guid: 737b5cbf241b8d706a4279884d90485f, type: 3}
+  moveType: 0
+  speed: 0.4
+  minDistance: 5.6
+  maxDistance: 6
+  minHeight: 2.6
+  maxHeight: 3.4
+  arScale: 0.12
+  addCount: 1
+  schooling: 0
+  voicePitch: 0.3
+  fact: The blue whale is the largest animal that has ever lived.
+  quizQuestion: Which is the largest animal that has ever lived?
+  factChecked: 0

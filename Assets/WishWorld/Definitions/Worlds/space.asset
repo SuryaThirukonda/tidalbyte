@@ -1,0 +1,51 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: faabf2c084f699a1189ba002eb73dab1, type: 3}
+  m_Name: space
+  m_EditorClassIdentifier: Assembly-CSharp::WishWorld.WorldDefinition
+  id: space
+  displayName: Space
+  keywords:
+  - space
+  - outer space
+  - solar system
+  - stars
+  skyTexture: {fileID: 2800000, guid: ff4169680e4d09faebce18ef7cd56aa8, type: 3}
+  skyPrompt: deep space star field with a distant nebula, stylized
+  ground: 1
+  groundColor: {r: 0.3, g: 0.33, b: 0.45, a: 1}
+  scenery: Scenery/space
+  sunDirection: {x: -0.37895247, y: -0.50353837, z: 0.77643037}
+  fogStart: 0.12
+  fogColor: {r: 0.14343998, g: 0.13112545, b: 0.11724121, a: 1}
+  fogEnd: 0
+  lightColor: {r: 1, g: 0.98, b: 0.95, a: 1}
+  lightIntensity: 1.1
+  ambientColor: {r: 0.36, g: 0.37, b: 0.48, a: 1}
+  ambientKind: 2
+  guideIntro: Welcome to space. Everything here is floating!
+  showInMenu: 1
+  creatures:
+  - creature: {fileID: 11400000, guid: a91b41dd8d7e1ddd8aaef522ad14b649, type: 2}
+    count: 1
+  - creature: {fileID: 11400000, guid: ff6627ef864d11b78b7dd2f60c1456d9, type: 2}
+    count: 1
+  - creature: {fileID: 11400000, guid: dce90ea7f13dc0773b98c4cf2fcc3c19, type: 2}
+    count: 1
+  - creature: {fileID: 11400000, guid: e38b72bd53d59e08a945e722086eb9f4, type: 2}
+    count: 1
+  - creature: {fileID: 11400000, guid: a71c64fadb38a79e9b37e2fa0853d558, type: 2}
+    count: 1
+  - creature: {fileID: 11400000, guid: c73e282caf7765e0282d6bf3794e4427, type: 2}
+    count: 1
+  - creature: {fileID: 11400000, guid: 99614c4218b100d88bb68b3b5273e11f, type: 2}
+    count: 1

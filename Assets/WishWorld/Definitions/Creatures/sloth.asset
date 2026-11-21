@@ -1,0 +1,32 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 082e3931834005080850fd5e2ef3182b, type: 3}
+  m_Name: sloth
+  m_EditorClassIdentifier: Assembly-CSharp::WishWorld.CreatureDefinition
+  id: sloth
+  displayName: Sloth
+  keywords:
+  - sloth
+  prefab: {fileID: 3595258830173140499, guid: 60ea99aa00d0cf5d683b44e7bdea57fc, type: 3}
+  moveType: 3
+  speed: 0.05
+  minDistance: 2.5
+  maxDistance: 3.5
+  minHeight: 2
+  maxHeight: 2.6
+  arScale: 0.4
+  addCount: 1
+  schooling: 0
+  voicePitch: 0.7
+  fact: Sloths move so slowly that green algae grows in their fur.
+  quizQuestion: Which animal moves so slowly that algae grows in its fur?
+  factChecked: 0

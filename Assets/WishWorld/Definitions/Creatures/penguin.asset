@@ -1,0 +1,33 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 082e3931834005080850fd5e2ef3182b, type: 3}
+  m_Name: penguin
+  m_EditorClassIdentifier: Assembly-CSharp::WishWorld.CreatureDefinition
+  id: penguin
+  displayName: Penguin
+  keywords:
+  - penguin
+  prefab: {fileID: 6006501246618691122, guid: 2de4aa131577595d7867d41aa8e196c9, type: 3}
+  moveType: 2
+  speed: 0.2
+  minDistance: 1.8
+  maxDistance: 3
+  minHeight: 0
+  maxHeight: 0
+  arScale: 0.4
+  addCount: 3
+  schooling: 0
+  voicePitch: 1.5
+  fact: Penguins live in the south and polar bears in the north, so they never meet
+    in the wild.
+  quizQuestion: Which bird lives in the south and never meets a polar bear?
+  factChecked: 0

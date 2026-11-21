@@ -1,0 +1,44 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: faabf2c084f699a1189ba002eb73dab1, type: 3}
+  m_Name: sky
+  m_EditorClassIdentifier: Assembly-CSharp::WishWorld.WorldDefinition
+  id: sky
+  displayName: Sky
+  keywords:
+  - sky
+  - clouds
+  - above the clouds
+  skyTexture: {fileID: 2800000, guid: 531ee1fc23f665a91856e62245d59beb, type: 3}
+  skyPrompt: above a sea of white clouds, bright blue sky, stylized
+  ground: 1
+  groundColor: {r: 0.97, g: 0.98, b: 1, a: 1}
+  scenery: Scenery/sky
+  sunDirection: {x: -0.55757445, y: -0.5, z: 0.6626543}
+  fogStart: 0.3
+  fogColor: {r: 0.7015165, g: 0.69881916, b: 0.7026117, a: 1}
+  fogEnd: 790
+  lightColor: {r: 1, g: 1, b: 1, a: 1}
+  lightIntensity: 1.1
+  ambientColor: {r: 0.75, g: 0.8, b: 0.9, a: 1}
+  ambientKind: 1
+  guideIntro: We are above the clouds. Look who is flying by!
+  showInMenu: 1
+  creatures:
+  - creature: {fileID: 11400000, guid: 3696e061eb5ab3032b05cf9b5efa2ea1, type: 2}
+    count: 2
+  - creature: {fileID: 11400000, guid: 773d738b538f9575dbb4dda2f0c30293, type: 2}
+    count: 6
+  - creature: {fileID: 11400000, guid: 7cba11ceaf73976d9978922caaa35149, type: 2}
+    count: 1
+  - creature: {fileID: 11400000, guid: fb4e8deca5dfb128ab080a509711542b, type: 2}
+    count: 1

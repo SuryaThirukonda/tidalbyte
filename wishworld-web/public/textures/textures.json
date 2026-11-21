@@ -1,0 +1,196 @@
+{
+  "note": "Skies are equirectangular JPGs, at most 2048 px wide, in the same orientation as in Unity (image centre toward Unity +X). Two ways to line one up with the scenery, both checked against the Unity hub: (1) in the headset's world frame, where exported scenery sits under a group turned half a turn about Y (/vr/core/environment.js), sample it with u = atan(z, x) / 2pi + 0.5 and no rotation, as environment.js does, or set it as scene.background with EquirectangularReflectionMapping; (2) with the .glb files added unrotated (export axes: Unity x negated), use scene.background = texture and scene.backgroundRotation.y = Math.PI. Use texture.colorSpace = THREE.SRGBColorSpace; Unity shows the photo at exposure 1 with no tone mapping. The sun in each photograph is where layouts.json puts that world's light (sun.toSun, in export axes).",
+  "skies": {
+    "hub": {
+      "file": "sky_hub.jpg",
+      "width": 2048,
+      "height": 1024,
+      "projection": "equirectangular",
+      "kind": "photo",
+      "unityAsset": "Assets/ThirdParty/Skies/Sky_Hub.jpg (4096 x 2048 there)",
+      "source": "Poly Haven, snow_field_puresky",
+      "licence": "CC0 1.0",
+      "horizonSrgb": [
+        0.5932,
+        0.5915,
+        0.5772
+      ],
+      "sunElevationDegrees": 35.859375
+    },
+    "race": {
+      "file": "sky_race.jpg",
+      "width": 2048,
+      "height": 1024,
+      "projection": "equirectangular",
+      "kind": "photo",
+      "unityAsset": "Assets/ThirdParty/Skies/Sky_Race.jpg (4096 x 2048 there)",
+      "source": "Poly Haven, kloofendal_48d_partly_cloudy_puresky",
+      "licence": "CC0 1.0",
+      "horizonSrgb": [
+        0.6103,
+        0.6419,
+        0.7131
+      ],
+      "sunElevationDegrees": 47.109375
+    },
+    "zoo": {
+      "file": "sky_zoo.jpg",
+      "width": 2048,
+      "height": 1024,
+      "projection": "equirectangular",
+      "kind": "photo",
+      "unityAsset": "Assets/ThirdParty/Skies/Sky_Zoo.jpg (4096 x 2048 there)",
+      "source": "Poly Haven, qwantani_sunset_puresky",
+      "licence": "CC0 1.0",
+      "horizonSrgb": [
+        0.7839,
+        0.7687,
+        0.726
+      ],
+      "sunElevationDegrees": 3.515625
+    },
+    "farm": {
+      "file": "sky_farm.jpg",
+      "width": 2048,
+      "height": 1024,
+      "projection": "equirectangular",
+      "kind": "photo",
+      "unityAsset": "Assets/ThirdParty/Skies/Sky_Farm.jpg (4096 x 2048 there)",
+      "source": "Poly Haven, sunflowers_puresky",
+      "licence": "CC0 1.0",
+      "horizonSrgb": [
+        0.667,
+        0.6913,
+        0.6693
+      ],
+      "sunElevationDegrees": 44.296875
+    },
+    "dinosaurs": {
+      "file": "sky_dinosaurs.jpg",
+      "width": 2048,
+      "height": 1024,
+      "projection": "equirectangular",
+      "kind": "photo",
+      "unityAsset": "Assets/ThirdParty/Skies/Sky_Dinosaurs.jpg (4096 x 2048 there)",
+      "source": "Poly Haven, hilly_terrain_01_puresky",
+      "licence": "CC0 1.0",
+      "horizonSrgb": [
+        0.7231,
+        0.7327,
+        0.6859
+      ],
+      "sunElevationDegrees": 13.359375
+    },
+    "arctic": {
+      "file": "sky_arctic.jpg",
+      "width": 2048,
+      "height": 1024,
+      "projection": "equirectangular",
+      "kind": "photo",
+      "unityAsset": "Assets/ThirdParty/Skies/Sky_Arctic.jpg (4096 x 2048 there)",
+      "source": "Poly Haven, kloppenheim_02_puresky, darkened to night with an aurora painted on by this project",
+      "licence": "CC0 1.0",
+      "horizonSrgb": [
+        0.2198,
+        0.3602,
+        0.6643
+      ],
+      "sunElevationDegrees": 24.609375
+    },
+    "rainforest": {
+      "file": "sky_rainforest.jpg",
+      "width": 2048,
+      "height": 1024,
+      "projection": "equirectangular",
+      "kind": "photo",
+      "unityAsset": "Assets/ThirdParty/Skies/Sky_Rainforest.jpg (4096 x 2048 there)",
+      "source": "Poly Haven, kloofendal_misty_morning_puresky, tinted slightly green",
+      "licence": "CC0 1.0",
+      "horizonSrgb": [
+        0.6871,
+        0.7655,
+        0.6994
+      ],
+      "sunElevationDegrees": 44.296875
+    },
+    "sky": {
+      "file": "sky_sky.jpg",
+      "width": 2048,
+      "height": 1024,
+      "projection": "equirectangular",
+      "kind": "photo",
+      "unityAsset": "Assets/ThirdParty/Skies/Sky_Sky.jpg (4096 x 2048 there)",
+      "source": "Poly Haven, rocky_ridge_puresky",
+      "licence": "CC0 1.0",
+      "horizonSrgb": [
+        0.7015,
+        0.6988,
+        0.7026
+      ],
+      "sunElevationDegrees": 7.734375
+    },
+    "space": {
+      "file": "sky_space.jpg",
+      "width": 2048,
+      "height": 1024,
+      "projection": "equirectangular",
+      "kind": "photo",
+      "unityAsset": "Assets/ThirdParty/Skies/Sky_Space.jpg (4096 x 2048 there)",
+      "source": "NASA/Goddard Space Flight Center Scientific Visualization Studio, Deep Star Maps (svs.gsfc.nasa.gov/4851); star data Gaia DR2: ESA/Gaia/DPAC",
+      "licence": "Public domain (NASA media)",
+      "horizonSrgb": [
+        0.1434,
+        0.1311,
+        0.1172
+      ],
+      "sunElevationDegrees": 30.234375
+    },
+    "aquarium": {
+      "file": "sky_aquarium.jpg",
+      "width": 1024,
+      "height": 512,
+      "projection": "equirectangular",
+      "kind": "painted",
+      "unityAsset": "Assets/WishWorld/Generated/Textures/PLACEHOLDER_Sky_Aquarium.png",
+      "source": "Painted by this project's own code (Builder.Core.cs, BuildSky)",
+      "licence": "This project's own work"
+    },
+    "blank": {
+      "file": "sky_blank.jpg",
+      "width": 1024,
+      "height": 512,
+      "projection": "equirectangular",
+      "kind": "painted",
+      "unityAsset": "Assets/WishWorld/Generated/Textures/PLACEHOLDER_Sky_WishWorld.png",
+      "source": "Painted by this project's own code (Builder.Core.cs, BuildSky)",
+      "licence": "This project's own work"
+    }
+  },
+  "use": {
+    "hub": "hub",
+    "frostslice": "hub",
+    "snowcircuit": "race",
+    "worlds": {
+      "aquarium": "aquarium",
+      "zoo": "zoo",
+      "space": "space",
+      "dinosaurs": "dinosaurs",
+      "arctic": "arctic",
+      "rainforest": "rainforest",
+      "farm": "farm",
+      "sky": "sky",
+      "blank": "blank"
+    },
+    "comment": "Values are keys of skies. frostslice normally shows the real room (passthrough); the hub sky is its fallback. blank is the Wish World. The aquarium has no photograph, so it keeps its painted sky."
+  },
+  "sprites": {
+    "dot": {
+      "file": "dot.png",
+      "width": 64,
+      "height": 64,
+      "use": "Soft round dot with alpha: snowflakes (Snowfall), juice bursts, sparkles and the blob shadow under creatures (shadow colour rgb(10, 15, 31) at 46 percent). Tinted by the particle colour.",
+      "licence": "This project's own work"
+    }
+  },
+  "notTextures": "The game has no UI sprites or card art: panels, ribbons, cards and buttons are flat vertex-coloured meshes (see /models/ui_*.glb) and text is drawn with the fonts in /fonts."
+}

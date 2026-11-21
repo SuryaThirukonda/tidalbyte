@@ -1,0 +1,45 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: faabf2c084f699a1189ba002eb73dab1, type: 3}
+  m_Name: farm
+  m_EditorClassIdentifier: Assembly-CSharp::WishWorld.WorldDefinition
+  id: farm
+  displayName: Farm
+  keywords:
+  - farm
+  - barn
+  skyTexture: {fileID: 2800000, guid: 18c03d45c4e90a151a74652df42d9a62, type: 3}
+  skyPrompt: rolling green farm fields with a red barn, blue sky, stylized
+  ground: 2
+  groundColor: {r: 0.46, g: 0.7, b: 0.32, a: 1}
+  scenery: Scenery/farm
+  sunDirection: {x: -0.56960505, y: -0.69837624, z: 0.4333829}
+  fogStart: 0.12
+  fogColor: {r: 0.666986, g: 0.6913158, b: 0.66928434, a: 1}
+  fogEnd: 680
+  lightColor: {r: 1, g: 0.98, b: 0.9, a: 1}
+  lightIntensity: 1.1
+  ambientColor: {r: 0.7, g: 0.75, b: 0.7, a: 1}
+  ambientKind: 3
+  guideIntro: Welcome to the farm. Say hello to the animals!
+  showInMenu: 1
+  creatures:
+  - creature: {fileID: 11400000, guid: 69f906a10dcba87b29c90915317f0756, type: 2}
+    count: 1
+  - creature: {fileID: 11400000, guid: 71e2682a939672040af8797d6a82fd5e, type: 2}
+    count: 3
+  - creature: {fileID: 11400000, guid: ef2611facd2927dfab040ca21d38a4a5, type: 2}
+    count: 1
+  - creature: {fileID: 11400000, guid: 44e1faadf99366fdf9d4d5d6d01132d2, type: 2}
+    count: 3
+  - creature: {fileID: 11400000, guid: a0589e860dba4bea798c021869671a7d, type: 2}
+    count: 1

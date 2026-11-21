@@ -1,0 +1,21 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "cleanUrls": true,
+  "trailingSlash": false,
+  "functions": {
+    "api/scan.js": { "maxDuration": 300 },
+    "api/scan-status.js": { "maxDuration": 300 },
+    "api/**/*.js": { "maxDuration": 60 }
+  },
+  "rewrites": [
+    { "source": "/api/inbox", "destination": "/api/events" },
+    { "source": "/api/tts", "destination": "/api/voice?do=tts" },
+    { "source": "/api/stt", "destination": "/api/voice?do=stt" }
+  ],
+  "headers": [
+    {
+      "source": "/(models|lidar|vendor|textures|audio)/(.*)",
+      "headers": [{ "key": "Cache-Control", "value": "public, max-age=3600, stale-while-revalidate=86400" }]
+    }
+  ]
+}

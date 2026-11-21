@@ -1,0 +1,732 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ccccf7f966472989681792ff4a15b051, type: 3}
+  m_Name: VoiceBank
+  m_EditorClassIdentifier: Assembly-CSharp::WishWorld.VoiceBank
+  voiceName: cgSgspJ2msm6clMCkdW9
+  entries:
+  - text: Welcome to the aquarium! Touch a creature to learn about it.
+    clip: {fileID: 8300000, guid: 4cce0b3c5ed930e2ca93ab7fe8c6df85, type: 3}
+  - text: Welcome to the savanna. Look how tall the giraffe is!
+    clip: {fileID: 8300000, guid: 2951a655796941f7e8730a3d3d61e9a8, type: 3}
+  - text: Welcome to space. Everything here is floating!
+    clip: {fileID: 8300000, guid: 010307e31f7fa9eba85e8b278057fe21, type: 3}
+  - text: Shh. The dinosaurs are walking by.
+    clip: {fileID: 8300000, guid: e56b6901ab8ce17d2ab219dd7bd6afb2, type: 3}
+  - text: Brr! Welcome to the ice, under the northern lights.
+    clip: {fileID: 8300000, guid: 819e1a5e0cbd8a550b1a0a034a3043de, type: 3}
+  - text: Listen. The rainforest is full of life.
+    clip: {fileID: 8300000, guid: 26ee273506735e4c8818c6db6b315770, type: 3}
+  - text: Welcome to the farm. Say hello to the animals!
+    clip: {fileID: 8300000, guid: e3c2ba8fcb09b1f6d8e6301ca9ae7e19, type: 3}
+  - text: We are above the clouds. Look who is flying by!
+    clip: {fileID: 8300000, guid: 2f17b436906e90965b798d705e0fc258, type: 3}
+  - text: Welcome to the Wish World!
+    clip: {fileID: 8300000, guid: 675add01573705619ba1d77d732ea7ac, type: 3}
+  - text: Clownfish live among the stinging arms of sea anemones, which do not hurt
+      them.
+    clip: {fileID: 8300000, guid: 71cf02d8a2a39138890863b79516d29b, type: 3}
+  - text: Which fish makes its home in a sea anemone?
+    clip: {fileID: 8300000, guid: 8fdea990b936c6d5a8f73fdc6b5909b6, type: 3}
+  - text: Here comes the clownfish!
+    clip: {fileID: 8300000, guid: e97f412b3652d7cf0b04dfc77b47470d, type: 3}
+  - text: Sea turtles swim back to the beach where they hatched to lay their own
+      eggs.
+    clip: {fileID: 8300000, guid: 58fb52c35cb119f478441a00768fe510, type: 3}
+  - text: Which animal returns to the beach where it hatched to lay its eggs?
+    clip: {fileID: 8300000, guid: 31691ba5923ac4cd38eca9b123ac9ee8, type: 3}
+  - text: Here comes the sea turtle!
+    clip: {fileID: 8300000, guid: afc48767cbc67ec60a66cc879dbcad5c, type: 3}
+  - text: A shark has no bones. Its skeleton is made of cartilage, the bendy stuff
+      in your ears.
+    clip: {fileID: 8300000, guid: a45f6f58694019c21b0f488250c7102e, type: 3}
+  - text: Which animal has a skeleton of cartilage and no bones?
+    clip: {fileID: 8300000, guid: 37d26684db11f5d37a0f44f92b1f07b6, type: 3}
+  - text: Here comes the shark!
+    clip: {fileID: 8300000, guid: a5f2e2704899d4faf81df9374fe1e2e8, type: 3}
+  - text: Jellyfish have no brain, no heart and no bones.
+    clip: {fileID: 8300000, guid: 3061ff7ae87c9c02cb0076536b0e5b16, type: 3}
+  - text: Which sea animal has no brain and no heart?
+    clip: {fileID: 8300000, guid: 362a8d9cbff46c2889dd38b7de58669e, type: 3}
+  - text: Here comes the jellyfish!
+    clip: {fileID: 8300000, guid: a092885297d72d07d8fa32a293dab93e, type: 3}
+  - text: Rays swim by flapping their wide fins like wings.
+    clip: {fileID: 8300000, guid: be611cc955a4b0d3ea2d322ec9b435d3, type: 3}
+  - text: Which sea animal swims by flapping its fins like wings?
+    clip: {fileID: 8300000, guid: a413fbb8978247facad183830d7b76ff, type: 3}
+  - text: Here comes the ray!
+    clip: {fileID: 8300000, guid: bf36808b201bdd6a5861e09856804323, type: 3}
+  - text: An elephant's trunk has no bones in it. It is all muscle.
+    clip: {fileID: 8300000, guid: 255a07fb0dd490954a676f26270a783c, type: 3}
+  - text: Which animal has a long nose with no bones in it?
+    clip: {fileID: 8300000, guid: a1797f08c821d2728aceba1eb95a03e1, type: 3}
+  - text: Here comes the elephant!
+    clip: {fileID: 8300000, guid: 33ed7370ec37254159dfac12b63feac6, type: 3}
+  - text: A giraffe's long neck has seven bones, the same number as your neck.
+    clip: {fileID: 8300000, guid: 282683b711e6147dcbb9e547517af468, type: 3}
+  - text: Which animal's long neck has seven bones, just like yours?
+    clip: {fileID: 8300000, guid: 44eec80399601a386a368095761e517f, type: 3}
+  - text: Here comes the giraffe!
+    clip: {fileID: 8300000, guid: 99d7f6c144721be27aa06e8092e8ccbb, type: 3}
+  - text: Every zebra has its own stripe pattern. No two are the same.
+    clip: {fileID: 8300000, guid: d6320cf381fa745ed80c2abbce63b894, type: 3}
+  - text: Which animal has stripes that are different on every one?
+    clip: {fileID: 8300000, guid: b1811773b5e0f22a5b068bd9fa24ec08, type: 3}
+  - text: Here comes the zebra!
+    clip: {fileID: 8300000, guid: deadaad5375649a78b0e2e2c86a80250, type: 3}
+  - text: A lion's roar can be heard from several kilometres away.
+    clip: {fileID: 8300000, guid: 600e9b019891b50f1b6b995c1ee53538, type: 3}
+  - text: Whose roar can be heard from kilometres away?
+    clip: {fileID: 8300000, guid: af990c8b1fd4b329db7492ac51b7c8f1, type: 3}
+  - text: Here comes the lion!
+    clip: {fileID: 8300000, guid: 0eeb34721174bfa26bf2789698708cf4, type: 3}
+  - text: Flamingos are pink because of the food they eat.
+    clip: {fileID: 8300000, guid: b4f65c7d74761bd818f809549903e9ce, type: 3}
+  - text: Which bird turns pink because of its food?
+    clip: {fileID: 8300000, guid: ce60301262f0c9afa9a91b2ad764a06f, type: 3}
+  - text: Here comes the flamingo!
+    clip: {fileID: 8300000, guid: c7fa82cdab8340b7f86bf8341d5cdec9, type: 3}
+  - text: Saturn's rings are made mostly of pieces of ice.
+    clip: {fileID: 8300000, guid: 49ac874a0a462e06991e370d6b2fb6e5, type: 3}
+  - text: Which planet has rings made mostly of ice?
+    clip: {fileID: 8300000, guid: 2f4de38573162d1e89541fc2ea2a98ce, type: 3}
+  - text: Here comes the saturn!
+    clip: {fileID: 8300000, guid: 1af76673fbe287b14996008c7969906a, type: 3}
+  - text: More than two thirds of the Earth is covered by ocean.
+    clip: {fileID: 8300000, guid: 372f3a8a501ed80e1a5c43fb98ee8a45, type: 3}
+  - text: Which planet is mostly covered by ocean?
+    clip: {fileID: 8300000, guid: 636bb614e23d24ae6b2b528766b1d261, type: 3}
+  - text: Here comes the earth!
+    clip: {fileID: 8300000, guid: 8761e2ca3af138d7ebea941b6aa19ef6, type: 3}
+  - text: A day on Venus is longer than its year.
+    clip: {fileID: 8300000, guid: 3c35f07d2043bc8f2b8f6386c5acdf13, type: 3}
+  - text: On which planet is a day longer than a year?
+    clip: {fileID: 8300000, guid: e175213210a1102299a9e9ca8759bd90, type: 3}
+  - text: Here comes the venus!
+    clip: {fileID: 8300000, guid: 63a070fcfc9c8f5d0a8f7bbf5807a2f5, type: 3}
+  - text: Astronauts in orbit float because they are falling around the Earth all
+      the time.
+    clip: {fileID: 8300000, guid: be1c2bfb47e63e8e69b182cd6ac7acc7, type: 3}
+  - text: Who floats while circling the Earth?
+    clip: {fileID: 8300000, guid: 9241f88c92d021614874b2d9329ff2ae, type: 3}
+  - text: Here comes the astronaut!
+    clip: {fileID: 8300000, guid: 3b062e209e3a21377a3a4735467ead85, type: 3}
+  - text: To stay in orbit, a rocket has to reach about 28,000 kilometres an hour.
+    clip: {fileID: 8300000, guid: b8e71d5dcfbaa925fa0d8c4267a46ef3, type: 3}
+  - text: What must reach about 28,000 kilometres an hour to stay in orbit?
+    clip: {fileID: 8300000, guid: ccb4b63b22bbc5ff8b8fef3e9e144af9, type: 3}
+  - text: Here comes the rocket!
+    clip: {fileID: 8300000, guid: 934462689aa96dd25b6f7c4aaeec6562, type: 3}
+  - text: Satellites circle the Earth. Some help phones and maps know where you are.
+    clip: {fileID: 8300000, guid: fc72a9390fded7bb58e06d06711c104b, type: 3}
+  - text: What circles the Earth and helps maps know where you are?
+    clip: {fileID: 8300000, guid: f87acc87faf616b21905477d5eac7d3b, type: 3}
+  - text: Here comes the satellite!
+    clip: {fileID: 8300000, guid: 72e4d9163accfd6efb134f48dee6c498, type: 3}
+  - text: A comet is a ball of ice and dust. Its tail always points away from the
+      Sun.
+    clip: {fileID: 8300000, guid: 1e9125953a159c1909f798316179758e, type: 3}
+  - text: What is a ball of ice and dust with a long tail?
+    clip: {fileID: 8300000, guid: 7ecb60a89ea6398d5a72045934ed6cdc, type: 3}
+  - text: Here comes the comet!
+    clip: {fileID: 8300000, guid: 54dd2b8bc000f9e11acf32422ca16019, type: 3}
+  - text: T. rex lived closer in time to you than to Stegosaurus.
+    clip: {fileID: 8300000, guid: e240645785605758f9579d5d264d22ad, type: 3}
+  - text: Which dinosaur lived closer in time to you than to Stegosaurus?
+    clip: {fileID: 8300000, guid: 20635e9a2fa77d4fcaa615e2b6ece64c, type: 3}
+  - text: Here comes the t. rex!
+    clip: {fileID: 8300000, guid: ab2c1df6e616e3d54ac6f15c1d82a55c, type: 3}
+  - text: The name Triceratops means three-horned face.
+    clip: {fileID: 8300000, guid: 021c9c5c7c2ba80d6a692e641c380453, type: 3}
+  - text: Which dinosaur's name means three-horned face?
+    clip: {fileID: 8300000, guid: 2c5abb44d4744fb0598455ea2a6dafc1, type: 3}
+  - text: Here comes the triceratops!
+    clip: {fileID: 8300000, guid: 1020fa8f633ccbbb6987f77c90b8fb3d, type: 3}
+  - text: Stegosaurus had two rows of bony plates along its back.
+    clip: {fileID: 8300000, guid: a70d480b0b9e1b969ae45fc72a4c2fae, type: 3}
+  - text: Which dinosaur had bony plates along its back?
+    clip: {fileID: 8300000, guid: cbe54398d75c98a14a83ac1c4b690722, type: 3}
+  - text: Here comes the stegosaurus!
+    clip: {fileID: 8300000, guid: c31ee4772b68031bebb0e7a4ec94bc11, type: 3}
+  - text: Pterosaurs were flying reptiles. They were not dinosaurs.
+    clip: {fileID: 8300000, guid: 09e57838ccd2e8624859c5666a6e6fce, type: 3}
+  - text: Which flying reptile was not really a dinosaur?
+    clip: {fileID: 8300000, guid: 306ea982a5c6aa7cf8ac85cc6ea9b9d9, type: 3}
+  - text: Here comes the pterosaur!
+    clip: {fileID: 8300000, guid: 892a892700a4f11398e36f5a2b8d93e5, type: 3}
+  - text: Penguins live in the south and polar bears in the north, so they never
+      meet in the wild.
+    clip: {fileID: 8300000, guid: 59145e292b28f7b06bfa690905207200, type: 3}
+  - text: Which bird lives in the south and never meets a polar bear?
+    clip: {fileID: 8300000, guid: 45bcfd5d5757ff1dd8edaeaf574f4ce7, type: 3}
+  - text: Here comes the penguin!
+    clip: {fileID: 8300000, guid: 9380f37821495e464860b83592b974d6, type: 3}
+  - text: Under its white fur, a polar bear's skin is black.
+    clip: {fileID: 8300000, guid: 087dfc822e5f62413bef86fe692b96e0, type: 3}
+  - text: Which animal has black skin under white fur?
+    clip: {fileID: 8300000, guid: 595eb2207ab898a108a37df31d00605d, type: 3}
+  - text: Here comes the polar bear!
+    clip: {fileID: 8300000, guid: bffae677161f98fa5bee6820fd48aa21, type: 3}
+  - text: Seals have a thick layer of fat called blubber that keeps them warm.
+    clip: {fileID: 8300000, guid: 0da0b7e8db8510fa48ab99bf5d7e6f30, type: 3}
+  - text: Which animal keeps warm with a layer of blubber?
+    clip: {fileID: 8300000, guid: aa99f60d5828e747383f67b7c394e729, type: 3}
+  - text: Here comes the seal!
+    clip: {fileID: 8300000, guid: a464e865d5b970e029f25c1bf81694b4, type: 3}
+  - text: The blue whale is the largest animal that has ever lived.
+    clip: {fileID: 8300000, guid: fc3fa3ea0bde60e89b2d58bfe8fa806f, type: 3}
+  - text: Which is the largest animal that has ever lived?
+    clip: {fileID: 8300000, guid: 7944d5f85cbd624588a88e6880c3abcf, type: 3}
+  - text: Here comes the blue whale!
+    clip: {fileID: 8300000, guid: 9a05c5886b62eded796095855c58cbdb, type: 3}
+  - text: Unlike most owls, snowy owls often hunt in the daytime.
+    clip: {fileID: 8300000, guid: 433fc29431c17cfa79dfe595f90d036d, type: 3}
+  - text: Which owl often hunts in the daytime?
+    clip: {fileID: 8300000, guid: f45cbe093aff213b08bf708ae0540b54, type: 3}
+  - text: Here comes the snowy owl!
+    clip: {fileID: 8300000, guid: 0a55ea9af97e77acca0809694d62a94e, type: 3}
+  - text: Parrots can copy sounds, even human words.
+    clip: {fileID: 8300000, guid: 08e7b6f2ad324f01bb3381f5539f0de7, type: 3}
+  - text: Which bird can copy human words?
+    clip: {fileID: 8300000, guid: 68ed36c73d4497a93b5db2c404fd0803, type: 3}
+  - text: Here comes the parrot!
+    clip: {fileID: 8300000, guid: 2bc624f3adf3c7a499149f854d0606d6, type: 3}
+  - text: Some monkeys, like spider monkeys, can hang from a branch by their tails.
+    clip: {fileID: 8300000, guid: d8da5ae3068ee305bb2635d57398d239, type: 3}
+  - text: Which animal can hang from a branch by its tail?
+    clip: {fileID: 8300000, guid: 1171b3a0f7f006bb384797528c8399cd, type: 3}
+  - text: Here comes the monkey!
+    clip: {fileID: 8300000, guid: f22f763330655e977a92a16b491bfe46, type: 3}
+  - text: Poison dart frogs wear bright colours to warn that they are poisonous.
+    clip: {fileID: 8300000, guid: 355c0ddbe454fcb9dbe0b685dc6722ab, type: 3}
+  - text: Which animal uses bright colours as a warning?
+    clip: {fileID: 8300000, guid: 93c6445daf6e85a9692e84d997cb63f5, type: 3}
+  - text: Here comes the tree frog!
+    clip: {fileID: 8300000, guid: f8d3209e5e526822a8550963267ecf6a, type: 3}
+  - text: Butterflies taste with their feet.
+    clip: {fileID: 8300000, guid: cb62312feeda26a1b897886f920526db, type: 3}
+  - text: Which insect tastes with its feet?
+    clip: {fileID: 8300000, guid: a1444021e1d6317d39a7e6f6d2bef738, type: 3}
+  - text: Here comes the butterfly!
+    clip: {fileID: 8300000, guid: 6c55929db7e9bca0885c45d6db558e95, type: 3}
+  - text: Sloths move so slowly that green algae grows in their fur.
+    clip: {fileID: 8300000, guid: c071c48520076eb7ba681d3d5036f609, type: 3}
+  - text: Which animal moves so slowly that algae grows in its fur?
+    clip: {fileID: 8300000, guid: 395465e07d60037d9afd6020bc664730, type: 3}
+  - text: Here comes the sloth!
+    clip: {fileID: 8300000, guid: 6765c355051fb8200b0bdf08fd5b56bd, type: 3}
+  - text: A cow's stomach has four parts.
+    clip: {fileID: 8300000, guid: d475e555c530d36a6aa475a364e27551, type: 3}
+  - text: Which farm animal has a stomach with four parts?
+    clip: {fileID: 8300000, guid: 57420835048f87e019a8ff23448a73d1, type: 3}
+  - text: Here comes the cow!
+    clip: {fileID: 8300000, guid: 5f730adafc87ce4cda34fc1792f31e81, type: 3}
+  - text: A sheep's wool never stops growing.
+    clip: {fileID: 8300000, guid: 4f6a6a996febc3bf397d2493f86f5341, type: 3}
+  - text: Which animal has wool that never stops growing?
+    clip: {fileID: 8300000, guid: ce79b88a3858e2bbebc1c1ff005feb3f, type: 3}
+  - text: Here comes the sheep!
+    clip: {fileID: 8300000, guid: ff7af26d90d6d29d6811edc6c67e293c, type: 3}
+  - text: Horses can sleep standing up.
+    clip: {fileID: 8300000, guid: 8addec26715a296f8b5049cf62cf99db, type: 3}
+  - text: Which animal can sleep standing up?
+    clip: {fileID: 8300000, guid: 6a8f9a0de309dfd3590128cdd64bdd33, type: 3}
+  - text: Here comes the horse!
+    clip: {fileID: 8300000, guid: 12c9aba791b04b9749b5b8f410c117e1, type: 3}
+  - text: Birds, including chickens, are living relatives of the dinosaurs.
+    clip: {fileID: 8300000, guid: 8220678b68d6bef4294912a64ce2c225, type: 3}
+  - text: Which farm bird is a living relative of the dinosaurs?
+    clip: {fileID: 8300000, guid: 39471b9a21adf8ecf87d5c230a57d659, type: 3}
+  - text: Here comes the chicken!
+    clip: {fileID: 8300000, guid: 028de0d4e11b30bb7814c8855dad6438, type: 3}
+  - text: Pigs roll in mud to cool down, because they can hardly sweat.
+    clip: {fileID: 8300000, guid: c7cd00f920e4a62bd94a50cabf4f8406, type: 3}
+  - text: Which animal rolls in mud to cool down?
+    clip: {fileID: 8300000, guid: acd0c811f5c1cb42d80c52e9ebf6be5d, type: 3}
+  - text: Here comes the pig!
+    clip: {fileID: 8300000, guid: f7ac7250983ecbf5fbb1fb164599e839, type: 3}
+  - text: Hot air is lighter than cool air. That is what lifts a hot-air balloon.
+    clip: {fileID: 8300000, guid: 7785aee5247f05d47a1ced9f90ee858b, type: 3}
+  - text: What rises because hot air is lighter than cool air?
+    clip: {fileID: 8300000, guid: 1104bb5b68d95fb8d9cacaddb7fae723, type: 3}
+  - text: Here comes the hot-air balloon!
+    clip: {fileID: 8300000, guid: cf6e2dcf150c7b3baa20c2323845dcc4, type: 3}
+  - text: Many birds have hollow bones, which helps them fly.
+    clip: {fileID: 8300000, guid: 27e9a57b1cd95b7079942db18fffce5e, type: 3}
+  - text: Which animals have hollow bones that help them fly?
+    clip: {fileID: 8300000, guid: 327cd5c698ab10139a4f41c5939792aa, type: 3}
+  - text: Here comes the bird!
+    clip: {fileID: 8300000, guid: d9dc33abaf542211dae38f7f14de1ce5, type: 3}
+  - text: Kites were invented in China more than two thousand years ago.
+    clip: {fileID: 8300000, guid: 32cbcfac14bd29c9e9337275af1c97c4, type: 3}
+  - text: What flying toy was invented in China over two thousand years ago?
+    clip: {fileID: 8300000, guid: c29ebde30093632e18bd3326d1fafb99, type: 3}
+  - text: Here comes the kite!
+    clip: {fileID: 8300000, guid: 8848b0eb405029b36b5f1996ecd2ef85, type: 3}
+  - text: A plane's wings are shaped so that the air rushing past pushes them up.
+    clip: {fileID: 8300000, guid: 786c3e180c607e06780fbf06b0676c9c, type: 3}
+  - text: What has wings shaped so that rushing air pushes them up?
+    clip: {fileID: 8300000, guid: d57253c530aea847d94fcac7f7901156, type: 3}
+  - text: Here comes the plane!
+    clip: {fileID: 8300000, guid: eb0b928679ddedadba7b21642019fe21, type: 3}
+  - text: Ooh, red!
+    clip: {fileID: 8300000, guid: 08e6692abb1a1487eaf22c3bfaaa5995, type: 3}
+  - text: Ooh, blue!
+    clip: {fileID: 8300000, guid: 2d6ef742226c4ea8693e2a4b3394aa0a, type: 3}
+  - text: Ooh, purple!
+    clip: {fileID: 8300000, guid: 75e3f33a40bb32be2bb11bb620199971, type: 3}
+  - text: Ooh, gold!
+    clip: {fileID: 8300000, guid: f0fccb0af4082ab2e81cfa1350009e96, type: 3}
+  - text: Ooh, rainbow!
+    clip: {fileID: 8300000, guid: ca1c51863e7d31b37b6932c563fe9554, type: 3}
+  - text: Lap 2!
+    clip: {fileID: 8300000, guid: c682e770d97b3b8c99fb157d6464343d, type: 3}
+  - text: Lap 3!
+    clip: {fileID: 8300000, guid: 00ea34226b165bd648e05c3da9572484, type: 3}
+  - text: Lap 4!
+    clip: {fileID: 8300000, guid: 1f04d855d4e3ce0fe85f596c64a69e27, type: 3}
+  - text: Lap 5!
+    clip: {fileID: 8300000, guid: be9d1037e40754976987a5e9b7de5b7f, type: 3}
+  - text: You finished first!
+    clip: {fileID: 8300000, guid: 9826eb2403867103fa03a669e5c67573, type: 3}
+  - text: You finished second!
+    clip: {fileID: 8300000, guid: 70c27e6f64d41a2a1bbd5d27545a668c, type: 3}
+  - text: You finished third!
+    clip: {fileID: 8300000, guid: d15fc61064bf362fd81761257673b06b, type: 3}
+  - text: You finished fourth!
+    clip: {fileID: 8300000, guid: 2b72239f8cc78c910a01a689ab0c2afb, type: 3}
+  - text: You finished fifth!
+    clip: {fileID: 8300000, guid: 50ebf23ecaee52c648331257f474ee66, type: 3}
+  - text: Yes! Clownfish.
+    clip: {fileID: 8300000, guid: 775c286bd2c4b1568abe6bae51707cd0, type: 3}
+  - text: It was the Clownfish.
+    clip: {fileID: 8300000, guid: 6c215adf8aee917fea8e8e133b22bcc4, type: 3}
+  - text: Clownfish
+    clip: {fileID: 8300000, guid: ca2ad4c9a48b8d6528d092a9b3e7be41, type: 3}
+  - text: Yes! Sea Turtle.
+    clip: {fileID: 8300000, guid: 977bbcfc85a74338895cfc9c587f5dc6, type: 3}
+  - text: It was the Sea Turtle.
+    clip: {fileID: 8300000, guid: 6864295da04d4e9c8a137579317662ac, type: 3}
+  - text: Sea Turtle
+    clip: {fileID: 8300000, guid: 1dbf6a933a38926719ef3ea7118cc51c, type: 3}
+  - text: Yes! Shark.
+    clip: {fileID: 8300000, guid: 0e6feaf4d5a35e5ee827c26e3b8fdb7e, type: 3}
+  - text: It was the Shark.
+    clip: {fileID: 8300000, guid: 1d9995b053b3eead99a8875c9b8b30ca, type: 3}
+  - text: Shark
+    clip: {fileID: 8300000, guid: d5f398916b9aa273faf44c1456aadd5d, type: 3}
+  - text: Yes! Jellyfish.
+    clip: {fileID: 8300000, guid: 8c8cc462e677773198649a868e411002, type: 3}
+  - text: It was the Jellyfish.
+    clip: {fileID: 8300000, guid: e334e7c56bfcb314d8af838b93374351, type: 3}
+  - text: Jellyfish
+    clip: {fileID: 8300000, guid: 95ac894bf057fb226a0b1d624f6657a0, type: 3}
+  - text: Yes! Ray.
+    clip: {fileID: 8300000, guid: 3db8b220524e097a1a46b5392dc09b0c, type: 3}
+  - text: It was the Ray.
+    clip: {fileID: 8300000, guid: c1735e535567894afb88869e39a9eada, type: 3}
+  - text: Ray
+    clip: {fileID: 8300000, guid: 8dcb3d3f7d889431cb426b0b0d51b22c, type: 3}
+  - text: Yes! Elephant.
+    clip: {fileID: 8300000, guid: cd5e830b93e9eaeb19a0f64b01cac2be, type: 3}
+  - text: It was the Elephant.
+    clip: {fileID: 8300000, guid: 5bf355db7aac4249cadb1b73230d00e0, type: 3}
+  - text: Elephant
+    clip: {fileID: 8300000, guid: 98921029a04e689d68b21a70eec4e835, type: 3}
+  - text: Yes! Giraffe.
+    clip: {fileID: 8300000, guid: 81deb36721cc22cdb992edc3232a42d9, type: 3}
+  - text: It was the Giraffe.
+    clip: {fileID: 8300000, guid: 559f9b5afaf2a16a698ae11a00087452, type: 3}
+  - text: Giraffe
+    clip: {fileID: 8300000, guid: f2947b7754b289b17acc0931906fa68a, type: 3}
+  - text: Yes! Zebra.
+    clip: {fileID: 8300000, guid: fb9b2d6439d4076be94db95db68bd74d, type: 3}
+  - text: It was the Zebra.
+    clip: {fileID: 8300000, guid: b3b59885d61563ccdbfbc8b834262a80, type: 3}
+  - text: Zebra
+    clip: {fileID: 8300000, guid: ad5f8a6023c525b19be77c329e035a28, type: 3}
+  - text: Yes! Lion.
+    clip: {fileID: 8300000, guid: 88e74d2b2cf35326da6853c81132ce24, type: 3}
+  - text: It was the Lion.
+    clip: {fileID: 8300000, guid: b15c7ee3d019684f89f48b7619d75a8f, type: 3}
+  - text: Lion
+    clip: {fileID: 8300000, guid: 3afced43677d65ef699ab0337f8a68b8, type: 3}
+  - text: Yes! Flamingo.
+    clip: {fileID: 8300000, guid: 2b42a651ecfca4cafa379b8309c08db1, type: 3}
+  - text: It was the Flamingo.
+    clip: {fileID: 8300000, guid: b24a3da29e4f5e611a9c8696f712f27a, type: 3}
+  - text: Flamingo
+    clip: {fileID: 8300000, guid: b2ce4e120c5549756832906363baf9ec, type: 3}
+  - text: Yes! Saturn.
+    clip: {fileID: 8300000, guid: f46106e1a6cb86893aa3a8549efc56e8, type: 3}
+  - text: It was the Saturn.
+    clip: {fileID: 8300000, guid: 132e0ccbf2a117b8aa0c40124d143de1, type: 3}
+  - text: Saturn
+    clip: {fileID: 8300000, guid: de4f3df56647d15a1af4ac654a57dad8, type: 3}
+  - text: Yes! Earth.
+    clip: {fileID: 8300000, guid: f15d4766e10c8e4c98004ab9ee27f02a, type: 3}
+  - text: It was the Earth.
+    clip: {fileID: 8300000, guid: 8ecd8347411d645ac874cabb4aff08a8, type: 3}
+  - text: Earth
+    clip: {fileID: 8300000, guid: e2f99c3fbc580de82b3de2479caf27ac, type: 3}
+  - text: Yes! Venus.
+    clip: {fileID: 8300000, guid: a6992c75ca33fdf16a2928bfbf5c38b0, type: 3}
+  - text: It was the Venus.
+    clip: {fileID: 8300000, guid: 35ad6ac0f0f342d33b4b9975210068a4, type: 3}
+  - text: Venus
+    clip: {fileID: 8300000, guid: f5c4aa284cdcde98a932fd5e4c7877c9, type: 3}
+  - text: Yes! Astronaut.
+    clip: {fileID: 8300000, guid: d9b4732d456cc610b9052a6d109d8fe4, type: 3}
+  - text: It was the Astronaut.
+    clip: {fileID: 8300000, guid: bf0d2d4871d40fc85b0eccd606caf72a, type: 3}
+  - text: Astronaut
+    clip: {fileID: 8300000, guid: 7aea7cd819f7c62658ede9c4ab63975b, type: 3}
+  - text: Yes! Rocket.
+    clip: {fileID: 8300000, guid: 43e99e405b12fb6f0b616945deb39bee, type: 3}
+  - text: It was the Rocket.
+    clip: {fileID: 8300000, guid: 13c9527e9f77f74b285aee971a539a2f, type: 3}
+  - text: Rocket
+    clip: {fileID: 8300000, guid: d0ccc60dabd2e9a88b1fc57922d3bc2e, type: 3}
+  - text: Yes! Satellite.
+    clip: {fileID: 8300000, guid: 40269a097971ffd49a562b95133f809f, type: 3}
+  - text: It was the Satellite.
+    clip: {fileID: 8300000, guid: 5241b8358df16ad2b9f1609cccf5f575, type: 3}
+  - text: Satellite
+    clip: {fileID: 8300000, guid: e9b735dbb52e6d454a6d94c6e1e23e7c, type: 3}
+  - text: Yes! Comet.
+    clip: {fileID: 8300000, guid: 34b065efdd0f73925930474a25acadaf, type: 3}
+  - text: It was the Comet.
+    clip: {fileID: 8300000, guid: eca3d299debe971a4bec6a7d980bd62c, type: 3}
+  - text: Comet
+    clip: {fileID: 8300000, guid: af53dd35c6bddd894b02bf8b1586c2b9, type: 3}
+  - text: Yes! T. rex.
+    clip: {fileID: 8300000, guid: 0491662326abe2c5dba0a1dbf2c0c521, type: 3}
+  - text: It was the T. rex.
+    clip: {fileID: 8300000, guid: 52c6a8b6036c3daa8814d94d3da0d086, type: 3}
+  - text: T. rex
+    clip: {fileID: 8300000, guid: a9b01d1ab04533d8c9e5349d754bb950, type: 3}
+  - text: Yes! Triceratops.
+    clip: {fileID: 8300000, guid: a1cf1b70aa5399333ac29a83d757e210, type: 3}
+  - text: It was the Triceratops.
+    clip: {fileID: 8300000, guid: 3aa432297c7643f999508dfbf949d22a, type: 3}
+  - text: Triceratops
+    clip: {fileID: 8300000, guid: 35f38c0720aa80c6c93baa6fbcbb65c8, type: 3}
+  - text: Yes! Stegosaurus.
+    clip: {fileID: 8300000, guid: 380ba68fa7854a839b415cd95abbf5e4, type: 3}
+  - text: It was the Stegosaurus.
+    clip: {fileID: 8300000, guid: 5ced700b3b7bef995bc4762352158c9f, type: 3}
+  - text: Stegosaurus
+    clip: {fileID: 8300000, guid: b744e05d3d7e943c5aace6f6817fd1df, type: 3}
+  - text: Yes! Pterosaur.
+    clip: {fileID: 8300000, guid: 8c6e245e2c80bc674885a54a250ff0be, type: 3}
+  - text: It was the Pterosaur.
+    clip: {fileID: 8300000, guid: 215adfbb4ab84242fb3f5bb5b8eeeade, type: 3}
+  - text: Pterosaur
+    clip: {fileID: 8300000, guid: e6807f98f9849337facb6820f94a1707, type: 3}
+  - text: Yes! Penguin.
+    clip: {fileID: 8300000, guid: 7f7313e9676d286c2bbc3b0795b6d45a, type: 3}
+  - text: It was the Penguin.
+    clip: {fileID: 8300000, guid: 158820ea5172fe33988f7119dade0b86, type: 3}
+  - text: Penguin
+    clip: {fileID: 8300000, guid: 33bc95df31544692281b4d9cc090991b, type: 3}
+  - text: Yes! Polar Bear.
+    clip: {fileID: 8300000, guid: f76d68aa092863098abe238de247cc99, type: 3}
+  - text: It was the Polar Bear.
+    clip: {fileID: 8300000, guid: 625dc354488e82d0797dfe847aa72b16, type: 3}
+  - text: Polar Bear
+    clip: {fileID: 8300000, guid: 799572b83489b420e99e555daee7c5e5, type: 3}
+  - text: Yes! Seal.
+    clip: {fileID: 8300000, guid: bc98e2281421415ac8ab95457564633a, type: 3}
+  - text: It was the Seal.
+    clip: {fileID: 8300000, guid: 2d981745b1d89ff2dae6e5f594a67c4e, type: 3}
+  - text: Seal
+    clip: {fileID: 8300000, guid: fc3b86402e00847bda54d521e18ca45e, type: 3}
+  - text: Yes! Blue Whale.
+    clip: {fileID: 8300000, guid: 375a00e23bba898f6824e78c2627c250, type: 3}
+  - text: It was the Blue Whale.
+    clip: {fileID: 8300000, guid: 497c93bf080279a058bcee3d717d8513, type: 3}
+  - text: Blue Whale
+    clip: {fileID: 8300000, guid: b2eb622f468a58dcf93933ebc9a4615f, type: 3}
+  - text: Yes! Snowy Owl.
+    clip: {fileID: 8300000, guid: 52d405a2bc2d723a2b13c56638de9c24, type: 3}
+  - text: It was the Snowy Owl.
+    clip: {fileID: 8300000, guid: 0de70c9d8090e7cae84940ce3dc40d72, type: 3}
+  - text: Snowy Owl
+    clip: {fileID: 8300000, guid: 033201998667e9e32b6c861e629a6873, type: 3}
+  - text: Yes! Parrot.
+    clip: {fileID: 8300000, guid: 30e2557dc4e6605fc92db27f9bb6b952, type: 3}
+  - text: It was the Parrot.
+    clip: {fileID: 8300000, guid: 7144ce7af9c68fcfca78af7a5288f273, type: 3}
+  - text: Parrot
+    clip: {fileID: 8300000, guid: a71a6c4504c4b82909db21e6e1d342a4, type: 3}
+  - text: Yes! Monkey.
+    clip: {fileID: 8300000, guid: 7008c3df1e0e651a1a6b8396149db2cc, type: 3}
+  - text: It was the Monkey.
+    clip: {fileID: 8300000, guid: 97d459975e55b69c79465dcc856859d1, type: 3}
+  - text: Monkey
+    clip: {fileID: 8300000, guid: ce1c15b5c690710fa8ce6e27d7837b09, type: 3}
+  - text: Yes! Tree Frog.
+    clip: {fileID: 8300000, guid: 3b9edf4aed2a54356b1f9cba9e6d0781, type: 3}
+  - text: It was the Tree Frog.
+    clip: {fileID: 8300000, guid: a10502c30d3925fd195a5d3708c1f9ca, type: 3}
+  - text: Tree Frog
+    clip: {fileID: 8300000, guid: 89bda2fc54d6425f68014509d1e5f67b, type: 3}
+  - text: Yes! Butterfly.
+    clip: {fileID: 8300000, guid: 502729e9e3c130eb3bd1136fb3046eef, type: 3}
+  - text: It was the Butterfly.
+    clip: {fileID: 8300000, guid: 0046ea471f643aae991e6629d74a4ee6, type: 3}
+  - text: Butterfly
+    clip: {fileID: 8300000, guid: 06c891d41ef79e30ab98c5700acdab1e, type: 3}
+  - text: Yes! Sloth.
+    clip: {fileID: 8300000, guid: 915f73efd36b1fedebb45a96010ff0aa, type: 3}
+  - text: It was the Sloth.
+    clip: {fileID: 8300000, guid: 75f760fe47b61d1b98f70bbcb33e6a67, type: 3}
+  - text: Sloth
+    clip: {fileID: 8300000, guid: d8a2fdaabf5fbe18eb8241e2cadf2798, type: 3}
+  - text: Yes! Cow.
+    clip: {fileID: 8300000, guid: b1c37f1a31aca7fea93ccbe475fed188, type: 3}
+  - text: It was the Cow.
+    clip: {fileID: 8300000, guid: 9d0e47c7d6248365c9aeda82ea110238, type: 3}
+  - text: Cow
+    clip: {fileID: 8300000, guid: 97d716d5caf9fbff2b54d224163dc726, type: 3}
+  - text: Yes! Sheep.
+    clip: {fileID: 8300000, guid: 545079f29eb1772e38a0b854d8456474, type: 3}
+  - text: It was the Sheep.
+    clip: {fileID: 8300000, guid: 910fcf352296837cf96e329f93f3d968, type: 3}
+  - text: Sheep
+    clip: {fileID: 8300000, guid: 74ef7e387032cb310b22e935dba5048b, type: 3}
+  - text: Yes! Horse.
+    clip: {fileID: 8300000, guid: 2e0e0a4352b51e73eb889cf1df7baab9, type: 3}
+  - text: It was the Horse.
+    clip: {fileID: 8300000, guid: 78664f14693a038fbbf106fc45f08c23, type: 3}
+  - text: Horse
+    clip: {fileID: 8300000, guid: 2560482ce4ab2a882a393cebf11a65c4, type: 3}
+  - text: Yes! Chicken.
+    clip: {fileID: 8300000, guid: 3fdc7e94ede424109b01b6f637cc411d, type: 3}
+  - text: It was the Chicken.
+    clip: {fileID: 8300000, guid: 4240b750de36ae4038df83eb8d0c882c, type: 3}
+  - text: Chicken
+    clip: {fileID: 8300000, guid: 6571a62232ffc9794995fcd5768b0e3e, type: 3}
+  - text: Yes! Pig.
+    clip: {fileID: 8300000, guid: 24302e3c0c468da4499e2f25b59bb79f, type: 3}
+  - text: It was the Pig.
+    clip: {fileID: 8300000, guid: f5af0cfff8d2adbda8f7dcda2320f450, type: 3}
+  - text: Pig
+    clip: {fileID: 8300000, guid: 2ae80a4a49e44235bb622b16f65d6ec3, type: 3}
+  - text: Yes! Hot-Air Balloon.
+    clip: {fileID: 8300000, guid: 0574d96ea36da7641a96f2b393f8c4f8, type: 3}
+  - text: It was the Hot-Air Balloon.
+    clip: {fileID: 8300000, guid: c7a7a120407e7c5b1a09428a0d4a77d1, type: 3}
+  - text: Hot-Air Balloon
+    clip: {fileID: 8300000, guid: ae3d24196034751e185a376c86e16b02, type: 3}
+  - text: Yes! Bird.
+    clip: {fileID: 8300000, guid: de50fe1bb57e2a6d082a02b75f5d382a, type: 3}
+  - text: It was the Bird.
+    clip: {fileID: 8300000, guid: c59579a52aa5c66d8af984fce241ffdd, type: 3}
+  - text: Bird
+    clip: {fileID: 8300000, guid: a99b85ae09f94777da7e420ffd9ac8df, type: 3}
+  - text: Yes! Kite.
+    clip: {fileID: 8300000, guid: 43bfcbeb37254d20b87c61bcbce61afb, type: 3}
+  - text: It was the Kite.
+    clip: {fileID: 8300000, guid: c61a413be5b56332ea7268c7ccdece32, type: 3}
+  - text: Kite
+    clip: {fileID: 8300000, guid: 0deecba12de6f78aca8fb921dcb321a1, type: 3}
+  - text: Yes! Plane.
+    clip: {fileID: 8300000, guid: 0e81bf62d0422c146a4862582957e9d0, type: 3}
+  - text: It was the Plane.
+    clip: {fileID: 8300000, guid: 2a97d6e878bfc83f8a2f6b9850f29b6b, type: 3}
+  - text: Plane
+    clip: {fileID: 8300000, guid: 82409c84ecc1d6ea78eb79143970e245, type: 3}
+  - text: Aquarium
+    clip: {fileID: 8300000, guid: ae0aa42d932e7d89a909826b7beda195, type: 3}
+  - text: Zoo
+    clip: {fileID: 8300000, guid: 5a2ef3c25287bbb30b27bc8f2b85a202, type: 3}
+  - text: Space
+    clip: {fileID: 8300000, guid: a1c295567f1e14fbc83f52a2f329005d, type: 3}
+  - text: Dinosaurs
+    clip: {fileID: 8300000, guid: a8fbf6288db5d0e36a17e98c9f341023, type: 3}
+  - text: Arctic
+    clip: {fileID: 8300000, guid: 5c34d6967d41909968644cc3faac8477, type: 3}
+  - text: Rainforest
+    clip: {fileID: 8300000, guid: bcb65523ad560263f9e65d0dbc7eedfb, type: 3}
+  - text: Farm
+    clip: {fileID: 8300000, guid: 9fb235b65328fc0c7b0f6e1c28e51907, type: 3}
+  - text: Sky
+    clip: {fileID: 8300000, guid: 4d79ae0dc42bbbda78bffe261eaef201, type: 3}
+  - text: You got 0 of 1 right!
+    clip: {fileID: 8300000, guid: 2433cac13b09ee6bf80d289daae1c05e, type: 3}
+  - text: You got 1 of 1 right!
+    clip: {fileID: 8300000, guid: 08dade838f510bba5a5bbf271491b0ff, type: 3}
+  - text: You got 0 of 2 right!
+    clip: {fileID: 8300000, guid: b76314065eb5f1825861debc40c858cf, type: 3}
+  - text: You got 1 of 2 right!
+    clip: {fileID: 8300000, guid: 12b4281b1a87c5a56aef693221aa216b, type: 3}
+  - text: You got 2 of 2 right!
+    clip: {fileID: 8300000, guid: 07d0fd710a010bb62bea4cc570979de5, type: 3}
+  - text: You got 0 of 3 right!
+    clip: {fileID: 8300000, guid: 5a5297abe0e22c1818f9113d2c0e330c, type: 3}
+  - text: You got 1 of 3 right!
+    clip: {fileID: 8300000, guid: 9131d2bb376d45bbda4ee8f41a18ec5d, type: 3}
+  - text: You got 2 of 3 right!
+    clip: {fileID: 8300000, guid: 4541ef5844a7bf7e3aee7248082f19cb, type: 3}
+  - text: You got 3 of 3 right!
+    clip: {fileID: 8300000, guid: d452aaadec750340eaadaeb82e9cb659, type: 3}
+  - text: Add some creatures and learn their facts, then try the quiz.
+    clip: {fileID: 8300000, guid: 3b8aed05ed60804669895aa538a5efa5, type: 3}
+  - text: Home
+    clip: {fileID: 8300000, guid: fc9939c972432bde49055cd1ea3b2871, type: 3}
+  - text: Finish
+    clip: {fileID: 8300000, guid: 8a29b4068c55f28ca8fd09ae4a03e12c, type: 3}
+  - text: Close
+    clip: {fileID: 8300000, guid: b23e0a554c57320569e2139c9ddc428d, type: 3}
+  - text: Back
+    clip: {fileID: 8300000, guid: d3bb2f01beee629309646045b0509c6a, type: 3}
+  - text: Start
+    clip: {fileID: 8300000, guid: 41dd59e415411122faa99cca5aff6a69, type: 3}
+  - text: Hub
+    clip: {fileID: 8300000, guid: bad021098e76109a183cb010023fb066, type: 3}
+  - text: Play again
+    clip: {fileID: 8300000, guid: 25b0c9fde25f7631e8f48569695482e9, type: 3}
+  - text: Race again
+    clip: {fileID: 8300000, guid: d942cfeff9fafcc438349c02e6cc1631, type: 3}
+  - text: Worlds
+    clip: {fileID: 8300000, guid: 158888b2c2829a3e4b5fea81277f9037, type: 3}
+  - text: Creatures
+    clip: {fileID: 8300000, guid: 7fb0be6aa459cc5b293b31287308315f, type: 3}
+  - text: Change
+    clip: {fileID: 8300000, guid: ca6ae5f4fbf9e4838bed44c60b41a157, type: 3}
+  - text: Control
+    clip: {fileID: 8300000, guid: d44dfca858d1901cca8da0181978ebf7, type: 3}
+  - text: Red
+    clip: {fileID: 8300000, guid: 6c7f0c554ce0b937ca8e03502c97d790, type: 3}
+  - text: Blue
+    clip: {fileID: 8300000, guid: fe0b0ea17e73324698f1eba87a4c5119, type: 3}
+  - text: Purple
+    clip: {fileID: 8300000, guid: a93fe38abcdab359aab44e6c4d91f380, type: 3}
+  - text: Gold
+    clip: {fileID: 8300000, guid: 47be24d343f1f498aa663720e2c58072, type: 3}
+  - text: Rainbow
+    clip: {fileID: 8300000, guid: 8b709e3f7171da554944f0b265e3427e, type: 3}
+  - text: More
+    clip: {fileID: 8300000, guid: 1a8ef6c450f8b0bad8ea0d7b41659b79, type: 3}
+  - text: Fewer
+    clip: {fileID: 8300000, guid: 03009e6a1df2459ad99859d4115b4da6, type: 3}
+  - text: Lots
+    clip: {fileID: 8300000, guid: 0fa0b3d0cd20c7cff8967a569f0ab200, type: 3}
+  - text: Bigger
+    clip: {fileID: 8300000, guid: 9d05c53f3f0eee3ac914e5210e4929ce, type: 3}
+  - text: Smaller
+    clip: {fileID: 8300000, guid: cd93d6dc2386ae998ad26c2a24ca0ea9, type: 3}
+  - text: Giant
+    clip: {fileID: 8300000, guid: d97931261f34970efb1b46b5f7025228, type: 3}
+  - text: Tiny
+    clip: {fileID: 8300000, guid: f3c70cb550d027d958592643356fa5ac, type: 3}
+  - text: Make it snow
+    clip: {fileID: 8300000, guid: 77a6858c2c160162d9383e823535b290, type: 3}
+  - text: Make it night
+    clip: {fileID: 8300000, guid: e8860ded74f9139fbba696b07c2e9048, type: 3}
+  - text: Make it sunny
+    clip: {fileID: 8300000, guid: 10f8e15943e2c074ea542f4e8d017c43, type: 3}
+  - text: In my room
+    clip: {fileID: 8300000, guid: 3f566023f5d2022dfa1ffa0fc870aa7b, type: 3}
+  - text: Take me there
+    clip: {fileID: 8300000, guid: 1efadc87afab301acbe78fa011bfb1ba, type: 3}
+  - text: Undo
+    clip: {fileID: 8300000, guid: 134407ca85e6023f48722b2f7592da86, type: 3}
+  - text: Clear
+    clip: {fileID: 8300000, guid: 2fd08b9cbd76da5fbbfd64e41c1207d7, type: 3}
+  - text: Go home
+    clip: {fileID: 8300000, guid: 9846c2e2cc794d3128f868922375f5f4, type: 3}
+  - text: Games. Slice fruit, race cars.
+    clip: {fileID: 8300000, guid: a738c18cce5f3dd3382ffb249772a417, type: 3}
+  - text: Worlds. Visit far places.
+    clip: {fileID: 8300000, guid: 61ef8bec95e5fed5fa8797a3efe9f6b8, type: 3}
+  - text: AR Worlds. Bring them to you.
+    clip: {fileID: 8300000, guid: 7f23a41efb0dd6200acd5b026b598fef, type: 3}
+  - text: Wish. Say what you wish for.
+    clip: {fileID: 8300000, guid: 7a2decda7199b02159bddbf4812877a7, type: 3}
+  - text: Frost Slice. Slice the flying fruit.
+    clip: {fileID: 8300000, guid: dc13b4c5cf0836160a349103b7d1906f, type: 3}
+  - text: Snow Circuit. Race a snowy track.
+    clip: {fileID: 8300000, guid: 64c7565087c53612798974e653cf0d49, type: 3}
+  - text: Three.
+    clip: {fileID: 8300000, guid: d4b3a601517c11927962b16023bd1e8d, type: 3}
+  - text: Two.
+    clip: {fileID: 8300000, guid: a67174899d76eea53a2c72593e76b501, type: 3}
+  - text: One.
+    clip: {fileID: 8300000, guid: cb967632d8a883d2cb97e6b470cc165a, type: 3}
+  - text: Go!
+    clip: {fileID: 8300000, guid: 70b8ff4960266a4e6988e89f42d09969, type: 3}
+  - text: Games. Slice fruit, or race a car.
+    clip: {fileID: 8300000, guid: 986af0f1e8b5da84db5660135cdec05b, type: 3}
+  - text: Worlds. Where would you like to go?
+    clip: {fileID: 8300000, guid: 544fc13e4d70169fd92a2bc4dfab38ff, type: 3}
+  - text: Frost Slice. Swing the controllers to slice the fruit. Leave the ice blocks
+      alone!
+    clip: {fileID: 8300000, guid: 57741dbec6442c8b1b61f7bfeb6f52e2, type: 3}
+  - text: Snow Circuit. Hold both controllers like a steering wheel. Right trigger
+      to go, left trigger to brake.
+    clip: {fileID: 8300000, guid: 64c3df57fe1190f7fbceabd7375f3402, type: 3}
+  - text: Slice the fruit! Leave the ice alone.
+    clip: {fileID: 8300000, guid: be1034a5870d0de44be5538283f0c5b1, type: 3}
+  - text: Slice the fruit!
+    clip: {fileID: 8300000, guid: 8782642162b6b4a5d8dfbf1588ab4300, type: 3}
+  - text: A new best score! Amazing slicing.
+    clip: {fileID: 8300000, guid: b0e95df8c2987063f8780c3e62037005, type: 3}
+  - text: Nice slicing! Want another go?
+    clip: {fileID: 8300000, guid: 567d7e9f442639ae4a8630b368bd975c, type: 3}
+  - text: What a swing!
+    clip: {fileID: 8300000, guid: 40051717a1054a6288fc24d3aff45de2, type: 3}
+  - text: A new best lap! Great driving.
+    clip: {fileID: 8300000, guid: 86dc1c8a253d9d0159250298c1e338e6, type: 3}
+  - text: Great driving! Want another race?
+    clip: {fileID: 8300000, guid: f5cb254ba108fd317af720819331b090, type: 3}
+  - text: Last lap!
+    clip: {fileID: 8300000, guid: 5fc58a3b42333b6d29f477a205c5c6d0, type: 3}
+  - text: Welcome to WishWorld! Pick a card to begin.
+    clip: {fileID: 8300000, guid: 830a57259792a720882eee01a4542a62, type: 3}
+  - text: Okay, I put it back.
+    clip: {fileID: 8300000, guid: 5903d74bfbb2d5e7aae018175be86de0, type: 3}
+  - text: There is nothing to undo.
+    clip: {fileID: 8300000, guid: 395cbea034cbcc6fea61f23a6cfd7add, type: 3}
+  - text: All clear.
+    clip: {fileID: 8300000, guid: af3a7410ea8439ed9b5050bf5b293936, type: 3}
+  - text: Here it is, in your room.
+    clip: {fileID: 8300000, guid: 1eee8e02c900f07a0a5ec92ca26dfb66, type: 3}
+  - text: Off we go!
+    clip: {fileID: 8300000, guid: 9af64a3c518f36cc682c106bd2ddc305, type: 3}
+  - text: A few less.
+    clip: {fileID: 8300000, guid: 821bfb0573978b1ab9134153f508e45c, type: 3}
+  - text: More and more!
+    clip: {fileID: 8300000, guid: 9104def2f8f343ea4ab13c269fa1c068, type: 3}
+  - text: So small!
+    clip: {fileID: 8300000, guid: 87b3b47fc34d75f4fbc9fd86b75c18ef, type: 3}
+  - text: So big!
+    clip: {fileID: 8300000, guid: 50b0ed5d8f59b04e786d919e30488e2d, type: 3}
+  - text: Let it snow!
+    clip: {fileID: 8300000, guid: 4254238b94a6a02d7a23aad93ee3cd50, type: 3}
+  - text: Goodnight, world.
+    clip: {fileID: 8300000, guid: 4a92500b1ecc5736bb52adbd85e59bd6, type: 3}
+  - text: Hello, sunshine!
+    clip: {fileID: 8300000, guid: a8293fba1026249728db3025081f26f8, type: 3}
+  - text: I can't make that yet. Want a shark instead?
+    clip: {fileID: 8300000, guid: b1486cf4b5fc5b68e9472d848808708e, type: 3}
+  - text: Perfect score! You are a real explorer.
+    clip: {fileID: 8300000, guid: 494ac08f8a38e4b37a836d6b7b941f84, type: 3}
+  - text: Nice exploring! Want to look around some more?
+    clip: {fileID: 8300000, guid: 5df38ce0482d865b6817f5b5d9d551e4, type: 3}
+  - text: This is your room. Say or pick what should visit!
+    clip: {fileID: 8300000, guid: 2421864faead7b93a97da43353406a49, type: 3}
+  - text: What do you wish for? Say it, or pick from the menu.
+    clip: {fileID: 8300000, guid: e45b7ff5620556b1eb0b898c26591673, type: 3}
+  - text: You found them all! Press Finish for a quiz.
+    clip: {fileID: 8300000, guid: 71aec468604419d0390ebbac68052064, type: 3}

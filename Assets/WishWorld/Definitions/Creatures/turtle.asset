@@ -1,0 +1,33 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 082e3931834005080850fd5e2ef3182b, type: 3}
+  m_Name: turtle
+  m_EditorClassIdentifier: Assembly-CSharp::WishWorld.CreatureDefinition
+  id: turtle
+  displayName: Sea Turtle
+  keywords:
+  - turtle
+  - sea turtle
+  prefab: {fileID: 6120286990190392399, guid: d1d22fb9053cf8077b68f819603dd89d, type: 3}
+  moveType: 0
+  speed: 0.25
+  minDistance: 2
+  maxDistance: 3.4
+  minHeight: 0.9
+  maxHeight: 1.8
+  arScale: 0.5
+  addCount: 1
+  schooling: 0
+  voicePitch: 0.8
+  fact: Sea turtles swim back to the beach where they hatched to lay their own eggs.
+  quizQuestion: Which animal returns to the beach where it hatched to lay its eggs?
+  factChecked: 0

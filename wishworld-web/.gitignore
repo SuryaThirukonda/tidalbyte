@@ -1,0 +1,11 @@
+node_modules/
+.vercel/
+.env
+.env.*
+!.env.example
+tools/lidar/cache/
+tools/lidar/.venv/
+*.log
+
+.vercel
+.env*.local

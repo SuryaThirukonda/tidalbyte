@@ -1,0 +1,46 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: faabf2c084f699a1189ba002eb73dab1, type: 3}
+  m_Name: zoo
+  m_EditorClassIdentifier: Assembly-CSharp::WishWorld.WorldDefinition
+  id: zoo
+  displayName: Zoo
+  keywords:
+  - zoo
+  - savanna
+  - safari
+  skyTexture: {fileID: 2800000, guid: 08191acb0256fb595bf8aa4620eaa5cd, type: 3}
+  skyPrompt: african savanna grassland at golden hour, acacia trees, stylized
+  ground: 2
+  groundColor: {r: 0.8, g: 0.68, b: 0.38, a: 1}
+  scenery: Scenery/zoo
+  sunDirection: {x: -0.6761383, y: -0.5, z: 0.5411442}
+  fogStart: 0.12
+  fogColor: {r: 0.78394026, g: 0.76868474, b: 0.7259913, a: 1}
+  fogEnd: 660
+  lightColor: {r: 1, g: 0.9, b: 0.72, a: 1}
+  lightIntensity: 1.1
+  ambientColor: {r: 0.74, g: 0.68, b: 0.58, a: 1}
+  ambientKind: 3
+  guideIntro: Welcome to the savanna. Look how tall the giraffe is!
+  showInMenu: 1
+  creatures:
+  - creature: {fileID: 11400000, guid: 119daea4f4e0351f8bd833dbf64acdc7, type: 2}
+    count: 1
+  - creature: {fileID: 11400000, guid: 7bca4add1dbc0ffe8aebcfb08e3ccfbc, type: 2}
+    count: 1
+  - creature: {fileID: 11400000, guid: 61cc4c404729faa268617669a5fb19ec, type: 2}
+    count: 2
+  - creature: {fileID: 11400000, guid: f25aa9dd4d5a67475a03f4ebde9801cb, type: 2}
+    count: 1
+  - creature: {fileID: 11400000, guid: fcda8d1089a51a176a3830874335e980, type: 2}
+    count: 3

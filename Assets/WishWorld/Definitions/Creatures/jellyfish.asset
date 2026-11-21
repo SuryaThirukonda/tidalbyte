@@ -1,0 +1,33 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 082e3931834005080850fd5e2ef3182b, type: 3}
+  m_Name: jellyfish
+  m_EditorClassIdentifier: Assembly-CSharp::WishWorld.CreatureDefinition
+  id: jellyfish
+  displayName: Jellyfish
+  keywords:
+  - jellyfish
+  - jelly
+  prefab: {fileID: 725333133461596693, guid: 282990544b05b5663b27639cb3b61747, type: 3}
+  moveType: 3
+  speed: 0.1
+  minDistance: 1.4
+  maxDistance: 3
+  minHeight: 1
+  maxHeight: 2.2
+  arScale: 0.8
+  addCount: 3
+  schooling: 0
+  voicePitch: 1.5
+  fact: Jellyfish have no brain, no heart and no bones.
+  quizQuestion: Which sea animal has no brain and no heart?
+  factChecked: 0

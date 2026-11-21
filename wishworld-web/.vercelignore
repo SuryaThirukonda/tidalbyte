@@ -1,0 +1,7 @@
+# What the Vercel CLI must not upload. (The CLI reads this file, not .gitignore.)
+# Only public/ (static files) and api/ (functions) are part of the site.
+tools
+docs
+*.log
+.env
+.env.*
