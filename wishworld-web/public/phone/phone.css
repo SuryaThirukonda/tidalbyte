@@ -281,3 +281,8 @@ body.ar-live .topbar { visibility: hidden; }
 .forchip.on { border-color: var(--slate); background: linear-gradient(#ffe6d6, #ffdcb8); box-shadow: 0 3px 0 #a8836f; }
 .forchip-name { white-space: nowrap; max-width: 9em; overflow: hidden; text-overflow: ellipsis; }
 body.ar-live .forbar { visibility: hidden; }
+
+/* Inbox buddies: rename or let go */
+.buddies .buddy-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+.buddies .buddy-edit { margin-top: 8px; }
+.buddies .buddy-edit .field { width: 100%; }
