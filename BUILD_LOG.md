@@ -896,3 +896,33 @@ passed.
 ### Not checked
 
 On a headset: thumbstick walking and turning, comfort, and the frame rate at life size.
+
+## Smooth surfaces for the Explore places
+
+The lidar places looked like loose squares up close. `tools/lidar/preprocess.py` now also writes a smooth surface
+for each place: a height grid (at most 320 x 320 cells, 1 to 6 m each) of the top of everything solid, coloured from
+the dots, which Explore draws as one continuous mesh shaded by slope. Ground, roofs, trees, cliffs and the Niagara
+gorge read as solid shapes. Parts that hang over open space cannot be a height grid and stay as dots on top: the
+statue's figure, the Golden Gate Bridge and the Gateway Arch. The cells under the bridge and the arch are kept at
+water or ground level, which removed grey walls under the deck. Still water has one even colour, which removed
+patches where the merged Golden Gate surveys meet.
+
+- Explore opens in the smooth view; "Show dots" switches to every measured dot (`?view=dots` opens that way).
+- Walking at life size uses a solid ground mesh made from the lowest dot in each 2 m cell, with an opening (a
+  minimum then a maximum over about 18 m) that removes tree crowns, plus every measured dot standing on it. The
+  smooth surface itself is too coarse up close (trees became blobs around the viewer). Walking starts on open ground.
+- Files: `<place>.surface.bin` (0.5 MB each) and `<place>.floating.bin` (statue 14 KB, arch 20 KB, bridge 1.35 MB).
+
+### Checked
+
+In the desktop preview against the local files: the Statue of Liberty, Niagara Falls, the Golden Gate Bridge,
+Devils Tower, the Grand Canyon and the Gateway Arch in the smooth view; walking at Devils Tower (smooth ground, the
+forest and the tower as dots) and at the Statue of Liberty. `explore.test.mjs` (with new checks: the surface is the
+default view with about 200,000 triangles, Show dots draws every dot and back, a place without a surface file is
+dots only) and `shell.test.mjs`: all checks passed.
+
+### Not checked
+
+On a headset: the frame rate with a 200,000-triangle surface plus dots on a Quest 2, and how the walking ground
+feels underfoot. The Grand Canyon is so tall for its box that its tabletop model rises well above the base; it
+reads better when walking.

@@ -2,7 +2,8 @@
 //
 //   node explore.test.mjs <out folder> [base url, default http://localhost:8103]
 //
-// Checks: both real places load into one THREE.Points; the facts are shown, spoken and logged; two-hand
+// Checks: both real places load into one THREE.Points; the smooth surface is the default view and "Show dots"
+// switches to every measured dot; the facts are shown, spoken and logged; two-hand
 // grip scales and turns (and clamps), one-hand grip drags, the buttons work; switching frees the old cloud;
 // a place with no files shows the "could not load" card and no geometry; exit() frees the points.
 // Saves pictures of each state. Exits 1 on a failure.
@@ -24,7 +25,7 @@ const near = (a, b, tolerance) => Math.abs(a - b) <= tolerance;
 // What the page reports about the diorama. Runs in the page.
 const STATE = `(() => {
   const h = window.__harness, g = h.tab.group;
-  const pivot = g.getObjectByName('Diorama'), points = g.getObjectByName('LidarPoints');
+  const pivot = g.getObjectByName('Diorama'), points = g.getObjectByName('LidarPoints'), surface = g.getObjectByName('LidarSurface');
   const attr = points.geometry.getAttribute('position');
   const cards = [];
   g.traverse((o) => { if (o.userData && typeof o.userData.text === 'string' && o.visible) cards.push(o.userData.text); });
@@ -35,6 +36,8 @@ const STATE = `(() => {
     visible: points.visible, count: attr ? attr.count : 0, drawn: points.geometry.drawRange.count,
     opacity: points.material.opacity, transparent: points.material.transparent, size: points.material.size,
     int16: attr ? attr.array.constructor.name : '', cards, clouds,
+    surfaceVisible: Boolean(surface && surface.visible),
+    surfaceTriangles: surface && surface.geometry.index ? surface.geometry.index.count / 3 : 0,
     info: h.info(), logs: h.logs.map((l) => l.type + ':' + JSON.stringify(l.detail)), said: h.said.length,
   };
 })()`;
@@ -65,6 +68,19 @@ async function real() {
     check(s.said >= 1, `the guide spoke (${s.said} line so far)`);
     check(s.cards.some((c) => /gift|copper|France/i.test(c)), 'the place\'s facts are on a card');
     check(s.cards.some((c) => /plane/i.test(c) && /sides of tall things poorly/i.test(c)), 'the limits of the scan are stated on a card');
+    check(s.surfaceVisible && s.surfaceTriangles > 100000, `the smooth surface is shown by default (${s.surfaceTriangles} triangles)`);
+    check(s.drawn > 0 && s.drawn < 20000, `only the statue's hanging dots are drawn on it (${s.drawn})`);
+    await browser.screenshot(join(outDir, 'explore-liberty-smooth.png'));
+    check(await browser.evaluate("window.__harness.click('Show dots')"), 'the Show dots button is there');
+    await frames();
+    s = await state(browser);
+    check(!s.surfaceVisible && s.drawn > 400000, `Show dots draws every measured dot instead (${s.drawn})`);
+    await browser.screenshot(join(outDir, 'explore-liberty-dots.png'));
+    // The same button again (the shell relabels it "Show smooth"; the harness's buttons keep their first label).
+    check(await browser.evaluate("window.__harness.click('Show dots')"), 'pressing it again brings the surface back');
+    await frames();
+    s = await state(browser);
+    check(s.surfaceVisible, 'the surface is back');
     await browser.screenshot(join(outDir, 'explore-liberty.png'));
 
     // The whole layout, from a step back.
@@ -191,6 +207,7 @@ async function missing() {
     await sleep(1200);
     let s = await state(browser);
     check(s.visible && s.count === 40000, `the labelled test cloud loaded (${s.count} points)`);
+    check(!s.surfaceVisible && s.drawn === 40000, 'a place without a surface file is shown as dots');
     check(s.cards.some((c) => /TEST CLOUD/.test(c)), 'and it is labelled as a test cloud on the cards');
     await browser.screenshot(join(outDir, 'explore-test-cloud.png'));
 

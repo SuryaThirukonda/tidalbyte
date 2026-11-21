@@ -89,6 +89,23 @@ and for Liberty `statue: { x, z, pedestalTopY, topY }`).
 | `liberty.bin` | 658,715 | 5.93 MB | 340 × 340 m, 93 m tall |
 | `niagara.bin` | 657,818 | 5.92 MB | 1250 × 1250 m, 113 m tall (lower river to treetops) |
 
+### The smooth surface and the hanging dots
+
+Every place also gets `<place>.surface.bin`, and the places with parts over open space get `<place>.floating.bin`.
+The `.json` points to them (`surface: { file, n, cell, min, scale }`, `floating: { file, count }`).
+
+- `<place>.surface.bin`: a height grid of `n` x `n` cells (at most 320 a side, so at most about 200,000 triangles).
+  `Int16` heights for every cell (metres = int16 x `scale`, the same y = 0 as the dots), row by row from north to
+  south (+Z) and west to east (+X) within a row, then `Uint8` r,g,b for every cell in the same order (sRGB). Cell
+  centres are at `min + (i + 0.5) * cell` on both axes. Each cell is the top of everything solid in it (ground,
+  roof, treetop, cliff top) coloured by the dots within 0.75 m of that top; empty cells (calm water, shadows) take
+  the low side of their neighbourhood. Still water takes one water colour with a gentle ripple, which hides the
+  seams between merged surveys. The Explore tab joins the cells into one mesh, shaded by slope.
+- `<place>.floating.bin`: dots that hang over open space and so cannot be part of a height grid, in the same
+  format as `<place>.bin`: the Statue of Liberty's figure, the Golden Gate Bridge (deck, towers, cables) and the
+  Gateway Arch (`landmark.floating` in `preprocess.py`). For the bridge and the arch the surface cells they cross are
+  left at ground or water level, so no wall rises up to them.
+
 ### Loading it in three.js
 
 `public/lidar/preview.html` has two small functions worth copying: `loadLidar(name)` and
