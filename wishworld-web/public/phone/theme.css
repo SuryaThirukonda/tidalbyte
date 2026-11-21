@@ -1,0 +1,211 @@
+/* WishWorld look, shared by the landing page and the phone app.
+   Colours, fonts and panel shapes follow the Unity game (WWTheme.cs and WWUI.Styles.cs):
+   snowy sky, slate outlines, white band + thin ice line on cards, peach pill buttons, blue stitched ribbons. */
+
+@font-face { font-family: "WW Title"; src: url("/fonts/MountainsofChristmas-Bold.ttf") format("truetype"); font-weight: 700; font-display: swap; }
+@font-face { font-family: "WW Heading"; src: url("/fonts/BerkshireSwash-Regular.ttf") format("truetype"); font-display: swap; }
+@font-face { font-family: "WW Body"; src: url("/fonts/Almendra-Regular.ttf") format("truetype"); font-display: swap; }
+/* Almendra's old-style numerals read as letters ("11" looks like "II"), so digits in body text use the game's plain font. */
+@font-face { font-family: "WW Body"; src: url("/fonts/LiberationSans.ttf") format("truetype"); font-display: swap; unicode-range: U+30-39; }
+
+:root {
+  --sky-top: #7fa1c9;
+  --sky: #b8cce0;
+  --horizon: #dbe6f2;
+  --snow: #f2f7fc;
+  --snow-white: #fbfcff;
+  --snow-under: #c2d6ed;
+  --frost: #ccdef2;
+  --slate: #334052;
+  --slate-soft: #55647a;
+  --peach: #ffb88c;
+  --panel: #edf2f7;
+  --button: #d1e0f0;
+  --ice: #8fb0d4;
+  --ribbon: #45618c;
+  --shade: #788ca8;
+  --good: #2f7d5b;
+  --bad: #a8323a;
+  --bad-bg: #fde8e4;
+
+  --font-title: "WW Title", "Mountains of Christmas", "Comic Sans MS", cursive;
+  --font-heading: "WW Heading", "Berkshire Swash", Georgia, "Times New Roman", serif;
+  --font-body: "WW Body", "Almendra", Georgia, "Times New Roman", serif;
+  --font-plain: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+
+  --radius: 22px;
+  --tap: 52px;
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-left: env(safe-area-inset-left, 0px);
+  --safe-right: env(safe-area-inset-right, 0px);
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+
+html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  min-height: 100dvh;
+  color: var(--slate);
+  font-family: var(--font-body);
+  font-size: 18px;
+  line-height: 1.4;
+  background: var(--horizon);
+  overflow-x: hidden;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Sky, far hills and snow ground, fixed behind everything. */
+.ww-sky {
+  position: fixed; inset: 0; z-index: -2; pointer-events: none;
+  background: linear-gradient(180deg, var(--sky-top) 0%, var(--sky) 34%, var(--horizon) 68%, var(--snow) 100%);
+}
+.ww-sky::before {            /* soft warm glow, like the hub sky */
+  content: ""; position: absolute; left: 50%; top: 30%; width: 120vmax; height: 60vmax; transform: translate(-50%, -50%);
+  background: radial-gradient(closest-side, rgba(255, 217, 179, 0.34), rgba(255, 217, 179, 0));
+}
+.ww-hills { position: fixed; left: 0; right: 0; bottom: 0; height: 34vh; min-height: 180px; z-index: -1; pointer-events: none; }
+.ww-hills svg { width: 100%; height: 100%; display: block; }
+
+/* Falling snow: a handful of dots, CSS only. */
+.ww-snowfall { position: fixed; inset: 0; z-index: -1; pointer-events: none; overflow: hidden; }
+.ww-snowfall i {
+  position: absolute; top: -12px; width: 8px; height: 8px; border-radius: 50%;
+  background: rgba(255, 255, 255, 0.92);
+  animation: ww-fall linear infinite;
+}
+@keyframes ww-fall {
+  from { transform: translate3d(0, -5vh, 0); }
+  to { transform: translate3d(24px, 105vh, 0); }
+}
+
+h1, h2, h3 { margin: 0; font-weight: 400; line-height: 1.15; }
+p { margin: 0; }
+.title { font-family: var(--font-title); font-weight: 700; letter-spacing: 0.01em; }
+.heading { font-family: var(--font-heading); }
+.muted { color: var(--slate-soft); }
+.small { font-size: 16px; }
+.center { text-align: center; }
+[hidden] { display: none !important; }
+
+/* Card: the game's "Frame" panel. Slate outline, white band, thin ice line, pale fill, offset shadow. */
+.card {
+  position: relative;
+  background: linear-gradient(180deg, #f8fbfe 0%, #e7eff8 100%);
+  border: 2px solid var(--slate);
+  border-radius: var(--radius);
+  box-shadow: inset 0 0 0 4px var(--snow-white), inset 0 0 0 5px var(--ice), 4px 6px 0 var(--shade);
+  padding: 22px 20px 20px;
+}
+.card + .card { margin-top: 22px; }
+.card.snowcap { margin-top: 14px; }
+.card.snowcap::before {      /* snow sitting on the top edge */
+  content: ""; position: absolute; left: 16px; right: 16px; top: -11px; height: 20px; pointer-events: none;
+  background:
+    radial-gradient(circle at 12px 16px, #fff 0 8px, transparent 8.5px) 0 0 / 34px 26px repeat-x,
+    radial-gradient(circle at 29px 13px, #fff 0 6px, transparent 6.5px) 0 0 / 34px 26px repeat-x,
+    linear-gradient(#fff, #fff) 0 0 / 100% 13px no-repeat;
+  border-radius: 12px 12px 8px 8px;
+  filter: drop-shadow(0 2px 0 var(--snow-under));
+}
+.card.plain { box-shadow: 3px 4px 0 var(--shade); background: var(--panel); }
+
+/* Ribbon: blue title strip with a stitched edge and notched tails. */
+.ribbon {
+  position: relative; display: inline-block; max-width: calc(100% - 44px);
+  margin: 0 22px;
+  padding: 7px 18px 8px;
+  color: var(--snow); background: var(--ribbon);
+  border: 2px solid var(--slate); border-radius: 6px;
+  font-family: var(--font-title); font-weight: 700; font-size: 25px; line-height: 1.1; letter-spacing: 0.02em; text-align: center;
+  box-shadow: inset 0 3px 0 -1px rgba(255, 255, 255, 0.0);
+  background-image:
+    repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.55) 0 7px, transparent 7px 14px),
+    repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.55) 0 7px, transparent 7px 14px);
+  background-size: calc(100% - 16px) 1.5px, calc(100% - 16px) 1.5px;
+  background-position: 8px 4px, 8px calc(100% - 4px);
+  background-repeat: no-repeat;
+}
+.ribbon::before, .ribbon::after {
+  content: ""; position: absolute; top: 9px; width: 24px; height: 100%; z-index: -1;
+  background: #36507a; border: 2px solid var(--slate);
+}
+.ribbon::before { left: -20px; clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%, 9px 50%); }
+.ribbon::after { right: -20px; clip-path: polygon(0 0, 100% 0, calc(100% - 9px) 50%, 100% 100%, 0 100%); }
+.ribbon-row { display: flex; justify-content: center; position: relative; z-index: 1; margin: 0 0 14px; }
+
+/* Buttons: the game's "Pill". Slate outline, raised lip below, pale-to-fill gradient, highlight streak. */
+.btn {
+  position: relative; display: inline-flex; align-items: center; justify-content: center; gap: 10px;
+  min-height: var(--tap); padding: 10px 22px;
+  font-family: var(--font-heading); font-size: 21px; line-height: 1.1; color: var(--slate); text-decoration: none;
+  background: linear-gradient(180deg, #eef4fa 0%, var(--button) 100%);
+  border: 2px solid var(--slate); border-radius: 999px;
+  box-shadow: 0 5px 0 #8793a6;
+  cursor: pointer; user-select: none; -webkit-user-select: none; touch-action: manipulation;
+  transition: transform 80ms ease, box-shadow 80ms ease, filter 120ms ease;
+}
+.btn::before {               /* highlight streak */
+  content: ""; position: absolute; left: 22px; right: 22px; top: 5px; height: 5px; border-radius: 3px;
+  background: rgba(255, 255, 255, 0.75); pointer-events: none;
+}
+.btn:hover { filter: brightness(1.03); }
+.btn:active, .btn.is-pressed { transform: translateY(4px); box-shadow: 0 1px 0 #8793a6; }
+.btn:focus-visible, .chip:focus-visible, .tab:focus-visible, .field:focus-visible, .roomchip:focus-visible {
+  outline: 3px solid var(--ribbon); outline-offset: 3px;
+}
+.btn.primary { background: linear-gradient(180deg, #ffdcc6 0%, var(--peach) 100%); box-shadow: 0 5px 0 #aa856e; }
+.btn.primary:active { box-shadow: 0 1px 0 #aa856e; }
+.btn.block { display: flex; width: 100%; }
+.btn.big { min-height: 60px; font-size: 24px; }
+.btn.small { min-height: 48px; font-size: 18px; padding: 8px 16px; }
+.btn[disabled], .btn[aria-disabled="true"] { opacity: 0.6; cursor: default; transform: none; filter: none; }
+.btn svg { width: 24px; height: 24px; flex: none; }
+
+/* Form fields */
+.label { display: block; font-family: var(--font-heading); font-size: 19px; margin: 0 0 6px 4px; }
+.field {
+  display: block; width: 100%; min-height: var(--tap);
+  padding: 12px 16px;
+  font-family: var(--font-body); font-size: 19px; line-height: 1.35; color: var(--slate);
+  background: #fff; border: 2px solid var(--slate); border-radius: 16px;
+  box-shadow: inset 0 3px 0 #e3ebf4;
+  appearance: none; -webkit-appearance: none;
+}
+.field::placeholder { color: #7f8da1; opacity: 1; }
+textarea.field { resize: none; min-height: 112px; }
+.field-row { margin-bottom: 16px; }
+.counter { display: block; text-align: right; font-family: var(--font-plain); font-size: 13px; color: var(--slate-soft); margin: 4px 6px 0; }
+.counter.near { color: var(--bad); font-weight: 600; }
+
+/* Messages */
+.note {
+  display: flex; gap: 10px; align-items: flex-start;
+  padding: 12px 14px; border-radius: 16px; border: 2px solid var(--slate);
+  background: #fff; font-size: 17px;
+}
+.note svg { width: 22px; height: 22px; flex: none; margin-top: 2px; }
+.note.bad { background: var(--bad-bg); border-color: var(--bad); color: #6f1d24; }
+.note.good { background: #e6f5ec; border-color: var(--good); color: #1e5a40; }
+.note.info { background: #eaf2fb; border-color: var(--ice); }
+
+/* Round creature picture with an emoji fallback on a tinted circle. */
+.thumb {
+  position: relative; flex: none; display: inline-grid; place-items: center;
+  width: var(--size, 96px); height: var(--size, 96px);
+  border-radius: 50%; border: 2px solid var(--slate);
+  background: var(--tint, var(--frost));
+  box-shadow: inset 0 0 0 3px #fff;
+  overflow: hidden;
+}
+.thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.thumb .emoji { font-size: calc(var(--size, 96px) * 0.52); line-height: 1; font-family: "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif; }
+
+@media (prefers-reduced-motion: reduce) {
+  .ww-snowfall { display: none; }
+  .btn { transition: none; }
+  * { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; scroll-behavior: auto !important; }
+}

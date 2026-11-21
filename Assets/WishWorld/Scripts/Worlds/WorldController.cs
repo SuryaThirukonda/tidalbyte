@@ -59,6 +59,7 @@ namespace WishWorld
             if (sun != null) sunHome = sun.transform.rotation;
             gameObject.AddComponent<CommandRouter>();
             gameObject.AddComponent<WishVoice>();
+            gameObject.AddComponent<ToyScan>();
         }
 
         void OnDestroy()
@@ -88,6 +89,7 @@ namespace WishWorld
                 GuideVoice.Say(Mode == WorldMode.AR
                     ? "This is your room. Say or pick what should visit!"
                     : "What do you wish for? Say it, or pick from the menu.");
+                KeepToys();      // a toy scanned earlier in the session comes along here too
             }
             Rebuild();
             Ready = true;
@@ -114,7 +116,18 @@ namespace WishWorld
             State.night = false;
             foreach (var e in def.creatures)
                 if (e.creature != null) State.entries.Add(new WorldState.Entry { creatureId = e.creature.id, count = e.count });
+            KeepToys();
             return true;
+        }
+
+        /// <summary>
+        /// A scanned toy goes wherever the child goes. Anything that replaces the list of creatures (a new world,
+        /// "clear", "undo") calls this, so the toys are put back before the world is built.
+        /// </summary>
+        void KeepToys()
+        {
+            foreach (var t in lib.ScannedToys())
+                if (State.Find(t.id) == null) State.entries.Add(new WorldState.Entry { creatureId = t.id, count = 1 });
         }
 
         public void AddCreature(string creatureId)
@@ -122,8 +135,32 @@ namespace WishWorld
             var def = lib.FindCreature(creatureId);
             if (def == null) return;
             var e = State.Find(creatureId);
+            if (def.toy)
+            {
+                // There is only ever one of the child's toy.
+                if (e == null) State.entries.Add(new WorldState.Entry { creatureId = creatureId, count = 1 });
+                return;
+            }
             if (e == null) State.entries.Add(new WorldState.Entry { creatureId = creatureId, count = Mathf.Max(1, def.addCount) });
             else e.count = Mathf.Min(MaxPerEntry, e.count + Mathf.Max(1, def.addCount));
+        }
+
+        /// <summary>
+        /// Bring a prepared toy into the world, as the end of "scan a toy". It is remembered for the session, so it
+        /// is still there after a world change. Returns the toy now in the scene.
+        /// </summary>
+        public Creature AddToy(string toyId)
+        {
+            var def = lib.FindToy(toyId);
+            if (def == null) return null;
+            AppState.scannedToyIds.Add(toyId);
+            AppState.lastToyId = toyId;
+            Begin();
+            KeepToys();
+            Commit();
+            if (wishMenu != null) wishMenu.Refresh();
+            foreach (var c in live) if (c != null && c.def == def) return c;
+            return null;
         }
 
         IEnumerable<WorldState.Entry> Targets(List<string> ids)
@@ -138,6 +175,7 @@ namespace WishWorld
         {
             foreach (var e in Targets(ids))
             {
+                if (lib.FindToy(e.creatureId) != null) continue;      // only ever one of the child's toy
                 if (word == "more") e.count += Mathf.Max(2, e.count / 2);
                 else if (word == "lots") e.count = Mathf.Max(e.count * 3, 12);
                 else if (word == "fewer") e.count = Mathf.Max(1, e.count / 2);
@@ -160,14 +198,37 @@ namespace WishWorld
         public void SetSnow(bool on) { State.snow = on; }
         public void SetNight(bool on) { State.night = on; }
         public void SetAR(bool on) { State.ar = on; }
-        public void Clear() { State.entries.Clear(); State.snow = false; }
+        public void Clear() { State.entries.Clear(); State.snow = false; KeepToys(); }
 
         public bool Undo()
         {
             if (undo.Count == 0) return false;
             State = undo.Pop();
+            KeepToys();
             Rebuild();
             return true;
+        }
+
+        // ---------- the scan view (see ToyScan) ----------
+
+        bool scanView;
+
+        /// <summary>
+        /// While a toy is being "scanned" the world steps aside: creatures, panels and the guide are hidden and the
+        /// real room is shown, the same way "in my room" shows it. Switching it off puts everything back.
+        /// This is a view, not a command: the state is untouched and nothing is added to undo.
+        /// </summary>
+        public void SetScanView(bool on)
+        {
+            if (scanView == on) return;
+            scanView = on;
+            if (on) FactCardPanel.Hide();
+            if (creatureRoot != null) creatureRoot.gameObject.SetActive(!on);
+            if (infoPanel != null) infoPanel.SetActive(!on);
+            if (wishMenu != null) wishMenu.gameObject.SetActive(!on);
+            if (guide != null) guide.SetActive(!on);
+            if (quiz != null) quiz.gameObject.SetActive(!on);
+            ApplyEnvironment(lib.FindWorld(State.worldId));
         }
 
         // ---------- building the world from the state ----------
@@ -186,7 +247,7 @@ namespace WishWorld
             foreach (var e in State.entries)
             {
                 var w = lib.FindCreature(e.creatureId);
-                if (w != null && w.moveType == MoveType.Walk) ctx.walkerTotal += e.count;
+                if (w != null && w.moveType == MoveType.Walk && !w.toy) ctx.walkerTotal += e.count;
             }
             int total = 0;
             foreach (var e in State.entries)
@@ -210,7 +271,8 @@ namespace WishWorld
 
         void ApplyEnvironment(WorldDefinition def)
         {
-            bool ar = State.ar;
+            // The scan view borrows the real-room look: no scenery, ground or sky, and passthrough on.
+            bool ar = State.ar || scanView;
             if (PassthroughToggle.I != null && PassthroughToggle.I.IsOn != ar) PassthroughToggle.I.Set(ar);
             float dim = State.night ? 0.3f : 1f;
 
@@ -225,7 +287,10 @@ namespace WishWorld
                 bool own = !ar && def != null && def.sunDirection.sqrMagnitude > 0.01f;
                 sun.transform.rotation = own ? transform.rotation * Quaternion.LookRotation(def.sunDirection) : sunHome;
             }
-            ApplyScenery(!ar && def != null ? def.scenery : null);
+            // "In my room" unloads the surroundings. The scan view only hides them: it lasts a few seconds, and
+            // loading a whole landscape again when it ends would make the headset stutter.
+            ApplyScenery(!State.ar && def != null ? def.scenery : null);
+            if (scenery != null) scenery.SetActive(!scanView);
             WWEnv.SetAmbient(ambientColor * (State.night ? 0.45f : 1f));
 
             if (def != null && sky != null)
@@ -269,7 +334,7 @@ namespace WishWorld
             {
                 snow = Instantiate(lib.snowPrefab, Floor + Vector3.up * 3.2f, lib.snowPrefab.transform.rotation, transform);
             }
-            if (snow != null) snow.SetActive(State.snow);
+            if (snow != null) snow.SetActive(State.snow && !scanView);
         }
 
         /// <summary>Swap the surroundings (terrain and props to the horizon). Only one world's set is in memory at a time.</summary>
@@ -369,6 +434,8 @@ namespace WishWorld
             }
             if (isNew && State.entries.Count > 1 && FoundCount() == State.entries.Count)
                 GuideVoice.Say("You found them all! Press Finish for a quiz.");
+            // Touched again, a toy has something friendly to say after its card.
+            if (!isNew && def != null && def.toy) GuideVoice.Say(VoiceLines.NextToyFriendly());
         }
 
         static void Kick(TextMeshPro label)

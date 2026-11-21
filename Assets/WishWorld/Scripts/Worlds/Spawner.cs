@@ -80,7 +80,15 @@ namespace WishWorld
                     if (ctx.ar) { radius = Mathf.Clamp(radius * 0.45f, 0.9f, 2.4f); height = Mathf.Clamp(height * 0.8f, 0f, 1.9f); }
                     // Bigger creatures stand further back so they never crowd the head.
                     radius = Mathf.Clamp(Mathf.Max(radius, MinRing + 0.4f * (size - 1f)), MinRing, MaxRing);
-                    if (def.moveType == MoveType.Walk)
+                    if (def.moveType == MoveType.Walk && def.toy)
+                    {
+                        // A scanned toy keeps its place straight ahead of the player, close enough to reach, and
+                        // paces a short way either side. It takes no slice of the walkers' circle.
+                        height = 0f;
+                        angle = Mathf.Atan2(ctx.forward.z, ctx.forward.x);
+                        m.arc = 0.3f;
+                    }
+                    else if (def.moveType == MoveType.Walk)
                     {
                         // Each walker gets its own slice of the circle and paces inside it.
                         height = 0f;

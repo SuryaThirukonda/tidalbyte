@@ -63,6 +63,8 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 773d738b538f9575dbb4dda2f0c30293, type: 2}
   - {fileID: 11400000, guid: 7cba11ceaf73976d9978922caaa35149, type: 2}
   - {fileID: 11400000, guid: fb4e8deca5dfb128ab080a509711542b, type: 2}
+  toys:
+  - {fileID: 11400000, guid: 1566a4af8a331b144b88d2296fecb2ad, type: 2}
   snowPrefab: {fileID: 1481662925591838644, guid: 86ce3c798a6bdabb5ae9204448993cb8, type: 3}
   guidePrefab: {fileID: 3984162286719631401, guid: 39a794060c5625ee28389af61277b76a, type: 3}
   skyMaterial: {fileID: 2100000, guid: c364d01f8762f808a8854f495bd72559, type: 2}

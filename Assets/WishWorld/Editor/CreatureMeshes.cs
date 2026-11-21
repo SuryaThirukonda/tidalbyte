@@ -549,6 +549,58 @@ namespace WishWorld.EditorTools
             return b;
         }
 
+        // ---- the team's own toy (see Builder.Toy.cs) ----
+
+        /// <summary>
+        /// Bubby: a soft brown plush lying on its belly, modelled by hand from the team's photographs of the toy
+        /// (Assets/WishWorld/Toy/bubby/source~). About 0.3 m from nose to back feet, front toward +Z, origin under
+        /// the middle of the belly. Every part is marked "not body" so colour commands never repaint it.
+        /// </summary>
+        public static MeshBuilder Bubby()
+        {
+            var fur = C(0.60f, 0.43f, 0.28f);        // mid warm brown
+            var tip = C(0.71f, 0.55f, 0.39f);        // the lighter tips of the fur, where the light catches it
+            var muzzle = C(0.40f, 0.29f, 0.11f);     // darker olive-brown muzzle
+            var nose = C(0.27f, 0.19f, 0.08f);
+            var pad = C(0.34f, 0.22f, 0.13f);        // paw pads and feet
+            var b = new MeshBuilder();
+
+            // body: a low rounded lump, a little fuller at the rump
+            b.Sphere(V(0, 0.056f, -0.015f), V(0.150f, 0.112f, 0.205f), fur, false, default, 12);
+            b.Sphere(V(0, 0.052f, -0.075f), V(0.142f, 0.104f, 0.120f), fur, false, default, 10);
+            b.Sphere(V(0, 0.088f, -0.030f), V(0.096f, 0.056f, 0.150f), tip, false, default, 10);     // sheen along the back
+            b.Sphere(V(0, 0.062f, -0.128f), Vector3.one * 0.034f, fur, false, default, 6);            // stub of a tail
+
+            // head: big and round, resting just above the front paws
+            var head = V(0, 0.078f, 0.092f);
+            b.Sphere(head, V(0.136f, 0.122f, 0.128f), fur, false, default, 12);
+            b.Sphere(head + V(0, 0.034f, -0.006f), V(0.092f, 0.060f, 0.094f), tip, false, default, 10);  // lighter crown
+            b.Sphere(head + V(0, -0.022f, 0.060f), V(0.078f, 0.062f, 0.072f), muzzle, false, default, 10);
+            b.Sphere(head + V(0, -0.012f, 0.094f), V(0.032f, 0.024f, 0.022f), nose, false, default, 6);
+            var earInside = C(0.47f, 0.33f, 0.20f);
+            for (int s = -1; s <= 1; s += 2)
+            {
+                b.Sphere(head + V(s * 0.052f, 0.050f, -0.016f), V(0.038f, 0.036f, 0.024f), fur, false, V(0, s * 20f, 0), 8);        // ear
+                b.Sphere(head + V(s * 0.053f, 0.049f, -0.008f), V(0.020f, 0.019f, 0.012f), earInside, false, V(0, s * 20f, 0), 6);  // inside of the ear
+                b.Sphere(head + V(s * 0.040f, 0.012f, 0.052f), Vector3.one * 0.013f, K, false, default, 6);                         // eye
+                b.Sphere(head + V(s * 0.042f, 0.015f, 0.056f), Vector3.one * 0.004f, W, false, default, 5);                         // glint
+
+                // front paw, flopped forward and a little outward, with a flat pad at the end
+                var paw = V(s * 0.068f, 0.024f, 0.086f);
+                var pawTurn = Quaternion.Euler(0, s * 22f, 0);
+                b.Sphere(paw, V(0.056f, 0.046f, 0.116f), fur, false, pawTurn.eulerAngles, 10);
+                b.Sphere(paw + pawTurn * V(0, -0.002f, 0.052f), V(0.044f, 0.036f, 0.026f), pad, false, pawTurn.eulerAngles, 6);
+
+                // back leg, stretched out behind and splayed, foot turned so the pad shows
+                var leg = V(s * 0.060f, 0.026f, -0.104f);
+                var legTurn = Quaternion.Euler(0, s * -30f, 0);
+                b.Sphere(leg, V(0.062f, 0.050f, 0.128f), fur, false, legTurn.eulerAngles, 10);
+                b.Sphere(leg + legTurn * V(0, 0.001f, -0.058f), V(0.054f, 0.048f, 0.034f), pad, false, legTurn.eulerAngles, 8);
+            }
+            // Built a little large for easy numbers; brought down here so nose to back feet is about 0.3 m.
+            return new MeshBuilder().Append(b, Vector3.zero, 0f, 0.8f);
+        }
+
         // ---- sky ----
         public static MeshBuilder Balloon()
         {

@@ -1,0 +1,39 @@
+# Netlify project "wishworld-web". No build step: public/ is served as is and every /api route goes to
+# netlify/functions/api.mjs, which runs the handlers in api/ unchanged (they are written for Vercel's
+# (req, res) shape; vercel.json is kept so a Vercel deploy still works).
+# Deploy: pwsh -File tools/deploy-netlify.ps1   Environment variables: see README.md (never put them here).
+[build]
+  publish = "public"
+  functions = "netlify/functions"
+  command = ""
+
+[functions]
+  node_bundler = "esbuild"
+  # sharp loads a native binary per platform, so it is copied in rather than bundled. The Linux build
+  # (@img/sharp-linux-x64, @img/sharp-libvips-linux-x64) must be in node_modules; deploy-netlify.ps1 adds it.
+  external_node_modules = ["sharp"]
+
+[[headers]]
+  for = "/models/*"
+  [headers.values]
+    Cache-Control = "public, max-age=3600, stale-while-revalidate=86400"
+
+[[headers]]
+  for = "/lidar/*"
+  [headers.values]
+    Cache-Control = "public, max-age=3600, stale-while-revalidate=86400"
+
+[[headers]]
+  for = "/vendor/*"
+  [headers.values]
+    Cache-Control = "public, max-age=3600, stale-while-revalidate=86400"
+
+[[headers]]
+  for = "/textures/*"
+  [headers.values]
+    Cache-Control = "public, max-age=3600, stale-while-revalidate=86400"
+
+[[headers]]
+  for = "/audio/*"
+  [headers.values]
+    Cache-Control = "public, max-age=3600, stale-while-revalidate=86400"

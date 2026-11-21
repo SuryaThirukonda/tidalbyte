@@ -237,6 +237,7 @@ namespace WishWorld.EditorTools
             var lib = ScriptableObject.CreateInstance<WorldLibrary>();
             lib.worlds = worldList.ToArray();
             lib.creatures = creatureList.ToArray();
+            lib.toys = BuildToys();
             lib.snowPrefab = Prefab("Snowfall");
             lib.guidePrefab = Prefab("PLACEHOLDER_PenguinGuide");
             lib.skyMaterial = AssetDatabase.LoadAssetAtPath<Material>(Gen + "/Materials/M_SkyPanorama.mat");

@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#7fa1c9">
+<title>WishWorld</title>
+<meta name="description" content="WishWorld lets family send wishes, letters and scanned toys into a child's hospital room world.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='15' fill='%237fa1c9'/%3E%3Cpath d='M16 6l2.7 6.5 7 .800-5.3 4.6 1.7 6.9L16 21.1l-6.1 3.7 1.7-6.9-5.3-4.6 7-.800z' fill='%23fff'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="/phone/theme.css">
+<link rel="stylesheet" href="/phone/landing.css">
+<script type="importmap">{ "imports": {
+  "three": "/vendor/three/build/three.module.js",
+  "three/addons/": "/vendor/three/examples/jsm/" } }</script>
+<script type="module" src="/phone/landing.js"></script>
+</head>
+<body>
+<div class="ww-sky" aria-hidden="true"></div>
+<div class="ww-snowfall" id="snowfall" aria-hidden="true"></div>
+<div class="ww-hills" aria-hidden="true">
+  <svg viewBox="0 0 400 200" preserveAspectRatio="none">
+    <path d="M0 96 C60 60 110 70 160 92 C210 114 250 60 310 70 C350 76 380 92 400 84 V200 H0z" fill="#d6e3f2"/>
+    <path d="M0 132 C70 100 130 128 200 120 C270 112 320 140 400 116 V200 H0z" fill="#e9f0f8"/>
+    <path d="M0 164 C90 140 170 170 250 156 C310 146 360 160 400 152 V200 H0z" fill="#f2f7fc"/>
+  </svg>
+</div>
+
+<main class="land">
+  <header class="hero">
+    <!-- The game's guide: a round slate-blue penguin with a peach scarf and a little hat. -->
+    <svg class="penguin" viewBox="0 0 120 150" role="img" aria-label="The WishWorld penguin guide">
+      <ellipse cx="60" cy="143" rx="34" ry="5" fill="#0a0f1f" opacity="0.18"/>
+      <path d="M34 138h20l-4-9H38zM66 138h20l-4-9H70z" fill="#ffb88c" stroke="#334052" stroke-width="2.5" stroke-linejoin="round"/>
+      <path d="M22 78c-9 10-12 24-8 34 6-4 11-10 13-18zM98 78c9 10 12 24 8 34-6-4-11-10-13-18z" fill="#384a66" stroke="#334052" stroke-width="2.5" stroke-linejoin="round"/>
+      <path d="M26 132c-4-18-4-44 2-58 5-12 17-17 32-17s27 5 32 17c6 14 6 40 2 58z" fill="#384a66" stroke="#334052" stroke-width="2.5" stroke-linejoin="round"/>
+      <path d="M38 131c-3-14-3-34 1-45 4-9 11-12 21-12s17 3 21 12c4 11 4 31 1 45z" fill="#fafafa"/>
+      <path d="M31 60c-3-20 8-36 29-36s32 16 29 36c-1 8-8 13-29 13s-28-5-29-13z" fill="#384a66" stroke="#334052" stroke-width="2.5" stroke-linejoin="round"/>
+      <path d="M40 58c-2-10 4-19 12-19 4 0 6 2 8 5 2-3 4-5 8-5 8 0 14 9 12 19-1 6-8 9-20 9s-19-3-20-9z" fill="#fafafa"/>
+      <circle cx="50" cy="49" r="3.6" fill="#14141a"/><circle cx="70" cy="49" r="3.6" fill="#14141a"/>
+      <path d="M52 56h16l-8 10z" fill="#ffb88c" stroke="#334052" stroke-width="2" stroke-linejoin="round"/>
+      <path d="M27 70c8-5 58-5 66 0v9c-8 5-58 5-66 0z" fill="#ffb88c" stroke="#334052" stroke-width="2.5" stroke-linejoin="round"/>
+      <path d="M72 78l12 2 2 22-11-3z" fill="#ffb88c" stroke="#334052" stroke-width="2.5" stroke-linejoin="round"/>
+      <path d="M43 27c2-9 9-13 17-13s15 4 17 13c-8 3-26 3-34 0z" fill="#ffb88c" stroke="#334052" stroke-width="2.5" stroke-linejoin="round"/>
+      <circle cx="60" cy="11" r="5" fill="#fafafa" stroke="#334052" stroke-width="2.5"/>
+    </svg>
+    <div class="hero-text">
+      <h1 class="title wordmark">WishWorld</h1>
+      <p class="tagline">Family and friends send wishes, letters and scanned toys, and they come alive in a child's hospital room.</p>
+    </div>
+  </header>
+
+  <section class="card snowcap room-card" aria-labelledby="roomTitle">
+    <div class="ribbon-row"><h2 class="ribbon" id="roomTitle">Your room</h2></div>
+    <p class="center muted">Everyone who uses the same room code shares one world.</p>
+    <div class="code-plate" aria-live="polite">
+      <span class="code-label">Room code</span>
+      <output class="code" id="roomCode">WISH</output>
+    </div>
+
+    <div class="room-actions">
+      <form class="room-form" id="startForm" novalidate>
+        <h3 class="heading">Start a room</h3>
+        <label class="label small" for="childName">Child's first name (optional)</label>
+        <input class="field" id="childName" type="text" maxlength="40" autocomplete="off" autocapitalize="words" placeholder="Mia">
+        <button class="btn primary block" type="submit" id="startBtn"><span class="btn-text">Start a room</span></button>
+      </form>
+      <form class="room-form" id="joinForm" novalidate>
+        <h3 class="heading">Join a room</h3>
+        <label class="label small" for="joinCode">Type a room code</label>
+        <input class="field code-input" id="joinCode" type="text" maxlength="8" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="WISH">
+        <button class="btn block" type="submit" id="joinBtn">Join a room</button>
+      </form>
+    </div>
+    <div class="note bad" id="roomAlert" role="alert" hidden></div>
+  </section>
+
+  <div class="two">
+    <section class="card" aria-labelledby="phoneTitle">
+      <div class="ribbon-row"><h2 class="ribbon" id="phoneTitle">On a phone</h2></div>
+      <p class="center">Point a phone camera at this code to send wishes, scan a toy or write a letter.</p>
+      <a class="qr" id="qrLink" href="/phone/?room=WISH" aria-label="Open the phone app for this room">
+        <span id="qr" class="qr-box"></span>
+      </a>
+      <p class="addr" id="phoneAddr">/phone/?room=WISH</p>
+      <a class="btn primary block" id="phoneBtn" href="/phone/?room=WISH">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="7" y="2.5" width="10" height="19" rx="2.5"/><path d="M10.5 18.5h3"/></svg>
+        Open the phone app
+      </a>
+    </section>
+
+    <section class="card" aria-labelledby="vrTitle">
+      <div class="ribbon-row"><h2 class="ribbon" id="vrTitle">On the headset</h2></div>
+      <p class="center">Put on the Quest, open the Meta Quest Browser and type this address, then press Enter.</p>
+      <p class="addr big" id="vrAddr">/vr/?room=WISH</p>
+      <a class="btn block" id="vrBtn" href="/vr/?room=WISH">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.5 10.5A2.5 2.5 0 0 1 6 8h12a2.5 2.5 0 0 1 2.5 2.5v4A2.5 2.5 0 0 1 18 17h-2.2a2 2 0 0 1-1.7-.900l-.600-.900a1.8 1.8 0 0 0-3 0l-.600.9a2 2 0 0 1-1.7.900H6a2.5 2.5 0 0 1-2.5-2.5z"/></svg>
+        Open the headset view
+      </a>
+      <p class="center muted small vr-note">Already in the headset's browser? Press the button instead.</p>
+    </section>
+
+    <section class="card" aria-labelledby="playTitle">
+      <div class="ribbon-row"><h2 class="ribbon" id="playTitle">No headset?</h2></div>
+      <p class="center">Play the same worlds as a game in this browser: look around with the mouse (or drag on a phone), walk
+        with W A S D or the on-screen stick, and click to use. A game controller works too.</p>
+      <a class="btn primary block" id="playBtn" href="/vr/?room=WISH&amp;mode=play">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 9h4M9 7v4M15.5 9.5h.01M17.5 11.5h.01"/><path d="M6.5 5.5h11A3.5 3.5 0 0 1 21 9l-.8 7a2.5 2.5 0 0 1-4.3 1.4L13.5 15h-3l-2.4 2.4A2.5 2.5 0 0 1 3.8 16L3 9a3.5 3.5 0 0 1 3.5-3.5z"/></svg>
+        Play in the browser
+      </a>
+    </section>
+  </div>
+
+  <footer class="foot muted small">No accounts, no sign-in. A room code is all anyone needs.</footer>
+</main>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+<noscript><p style="text-align:center;padding:20px">WishWorld needs JavaScript turned on.</p></noscript>
+</body>
+</html>

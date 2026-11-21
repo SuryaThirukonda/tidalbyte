@@ -20,6 +20,12 @@ namespace WishWorld
 
         public static void Reload() { values = null; }
 
+        /// <summary>WISHWORLD_TOY (on by default): off takes "scan a toy" and the prepared toy out of the app.</summary>
+        public static bool ToyEnabled => Get("WISHWORLD_TOY", "on").ToLowerInvariant() != "off";
+
+        /// <summary>WISHWORLD_CHILD_NAME: the child's name when it is known before the session. Empty when not set.</summary>
+        public static string ChildName => Get("WISHWORLD_CHILD_NAME", "").Trim();
+
         public static Dictionary<string, string> Parse(string text)
         {
             var d = new Dictionary<string, string>();

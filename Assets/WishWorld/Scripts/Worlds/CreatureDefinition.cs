@@ -26,5 +26,13 @@ namespace WishWorld
         [TextArea] public string fact;
         [TextArea] public string quizQuestion;
         public bool factChecked;
+
+        [Header("Toys only (see ToyScan)")]
+        [Tooltip("A toy the team prepared ahead of time. It joins the world through \"scan a toy\", stays through world changes, " +
+                 "keeps its own colours, and stands in front of the player instead of taking a place among the walkers.")]
+        public bool toy;
+        [Tooltip("What the toy says when it first appears. {child} is replaced with the child's name.")]
+        [TextArea] public string greeting;
+        [TextArea] public string greeting2;
     }
 }

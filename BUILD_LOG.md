@@ -705,3 +705,163 @@ from a Windows laptop through Meta Horizon Link, which needs no debugging approv
 - Fixes found while recording: a button's name no longer restarts while the pointer rests on it; looking at a creature
   no longer opens its fact card while the quiz is on screen (it used to cut off the score); starting Frost Slice cuts
   off the menu being read. The APK was rebuilt with these (83.2 MB, 0 errors).
+
+## Scan a toy: Bubby (branch `feat/newparts`)
+
+A child says "scan a toy" (or presses **Scan a toy** on the Creatures tab), a viewfinder sweeps over the real room, and
+Bubby, the team's own soft toy, pops into the world, greets the child by name and comes along from world to world.
+**The scan is staged.** A Quest 2 cannot read its cameras, so nothing is captured: Bubby was modelled ahead of time
+and the scan is an animation. Say so when presenting it; the app shows no "demo" label by design.
+
+- **The model** is `CreatureMeshes.Bubby()`: a generated low-poly mesh like every other creature, built from the
+  photographs of the toy (2,108 triangles, 0.3 m long, no texture, no new shader). `Builder.Toy.cs` builds it into
+  `WorldLibrary.toys`. It is shown at 1.7 times life size in a world and at life size in the real room.
+- **The sequence** is `Scripts/Worlds/ToyScan.cs`: fade to the room, viewfinder with a sweeping line and a progress
+  bar for 4 s, white flash, the toy appears at chest height in sparkles and drifts down to the floor, then the
+  greeting. The toy is in the world 5.8 s after the command.
+- **The name** comes from `WISHWORLD_CHILD_NAME` in `.env`, or from the next thing said after the guide asks
+  "What's your name?" (hold A), or else the toy says "friend". It is kept in memory for the session only.
+- **It stays.** Scanned toys live in `AppState` and are put back whenever a world is loaded, cleared or undone.
+  Colour and "more" commands leave the toy alone.
+- **Off switch:** `WISHWORLD_TOY=off` takes the button and the command away at once; Rebuild All then removes the files.
+- **Voice:** 13 new lines recorded (441 characters); the bank holds 367 of 367.
+
+### Checked in the editor (Play mode, mouse and keyboard, no headset)
+
+`ToyScanCheck.Run()` (editor only) sends the same command text the menu and the voice send. 34 of 34 checks passed,
+with no console errors: the toy cannot be reached before the scan; the sequence runs and a second command during it is
+ignored; the toy walks ahead of the player; it is in all eight worlds exactly once; "take bubby to space", undo and
+clear keep it; the fact card opens from a pointer click; "purple" does not repaint it; a second scan leaves one toy;
+a spoken answer is taken as the name; no answer gives "friend"; looking at the toy while it says hello does not open its
+fact card (it used to, and cut the greeting off once the fact was recorded); in the room the toy is 0.30 m long. Also checked by
+hand: `WISHWORLD_CHILD_NAME=Sam` skips the question; `WISHWORLD_TOY=off` removes the button and the command, and
+Rebuild All then deletes the toy's files and brings them back when switched on again; with the keys in place every
+line of the scan played from the voice bank (7 hits, 0 misses). Screenshots: `Logs/verification/toy/`.
+
+### Not checked
+
+- **Nothing was run on a headset, and no APK was built from this branch.** Passthrough has still never run on a
+  Quest 2 in this project; in the editor the room is a grey backdrop. If passthrough fails on the device the
+  viewfinder still draws over whatever is behind it.
+- Frame rate and hitching on the device. The scan view hides the surroundings instead of unloading them, to avoid a
+  stutter when the world comes back, but that is untested on a Quest 2.
+- Push-to-talk into the name question with the real speech service (the check typed the answer through the debug path).
+- Whether a 0.5 m toy on the floor two metres away is easy for a child to find in a busy world.
+
+### Things to know
+
+- Rebuild All on Windows rewrites about 115 generated files that have nothing to do with the toy (tiny number
+  differences in the surroundings' meshes, reshuffled ids in the scenes). They were put back before committing.
+- After the builder updates an existing mesh, the editor keeps drawing the old one until the mesh is reloaded.
+  Check a changed model in a fresh Play session or after restarting the editor.
+- The work that was unpushed on `main` when this started (passthrough over Link, controller hand-over) was looked at
+  for a name store, as the spec asked. It has none, so the name lives in `AppState.childName`. That work has since been
+  pushed (`6df4f02`); this branch sits on top of it and the checks above were run again there.
+
+## Scan a toy in the web headset (WebXR), with the real photo-to-3D
+
+The Unity toy scan above is staged: it always ends with Bubby, modelled ahead of time. The web build already turns
+a phone photo into a real 3D model (`POST /api/scan`: Stable Fast 3D, then TRELLIS and TripoSR, a library creature
+as the last resort). Compared on Netlify with `tools/mesh-worker/samples/teddy-bear.jpg` and `rubber-duck.jpg`: each
+became a textured model of that toy (about 19,000 triangles) in about 9 seconds. The real pipeline works for any
+toy, so it is what the headset scan now shows; the Unity sequence is its presentation, and Bubby is the fallback.
+
+- **Where:** the Reef tab (AR "My room" and VR). A **Scan a toy** button under the panel, or say "scan a toy" /
+  "scan my toy" with push-to-talk. Code: `public/vr/core/toyscan.js`, wired in `public/vr/tabs/reef.js`.
+- **Which toy:** the newest scanned gift from the last ten minutes that has not been opened, or else the next one
+  the phone's Scan tab sends while the viewfinder waits ("Take a picture of your toy with the phone"). Pressing the
+  button again ("Bring Bubby"), or 150 seconds with no photo, brings Bubby. A toy brought in by a scan is marked
+  opened and does not also arrive as a present.
+- **The sequence** follows `ToyScan.cs`: fade, viewfinder with corner brackets, sweeping line and progress bar
+  (at least one full 4-second sweep once the toy is known), a rising tone and controller pulses, white flash, the toy
+  pops in at chest height in sparkles, says hello by name (the room's child name from the Inbox, else "friend"),
+  then drifts to the viewer's side as a companion. The voice question for the name is not ported.
+- **Bubby on the web** is `public/shared/toys.js`, the same numbers as `CreatureMeshes.Bubby()` (2,108 triangles,
+  0.3 m long).
+
+### Checked
+
+- In the desktop preview of `/vr/` against the Netlify API, room TEST: an unopened scan from minutes before was
+  picked up at once; a new phone scan sent while the viewfinder waited was taken as soon as it was ready; pressing
+  the button twice brought Bubby; each ended as a companion. Bubby rendered from four sides matches
+  `Logs/verification/toy/01_bubby_model.png`.
+- `public/vr/dev/test/shell.test.mjs`: all shell checks passed, no console errors.
+
+### Not checked
+
+- Nothing was run on a headset. The preview ran in a hidden browser pane, so the frames were stepped by hand.
+- The Unity game still shows only Bubby: it cannot load a scanned .glb at runtime yet.
+
+## Scans from several photos, and companions that stay
+
+**Several photos.** A single photo leaves the back of a toy to be guessed. The phone's Scan tab now takes up to four
+photos of one toy (Front, Back, Left side, Right side; "Choose" can pick several at once). `POST /api/scan` accepts
+`images: [...]` (front first) next to the old `image`. With two or more, the task first runs TRELLIS in its
+"Multiple Images" mode (`trellism` in `api/_lib/mesh/routes.js`: the Space's hidden is-multi-image state set to true,
+the photos as a gallery, the "stochastic" algorithm); if that is refused or fails it goes on with the front photo
+exactly as before (Stable Fast 3D, then TRELLIS and TripoSR, then a library creature).
+
+- Checked on Netlify from the phone page (room TEST, two photos): built by `trellism` in 32 s, preview shown.
+- TRELLIS asks Hugging Face for 120 s of GPU at once. Without `HF_TOKEN` the free allowance per caller runs out after a
+  couple of runs, and then the scan quietly uses the front photo only (seen once in a local run: refused, then Stable
+  Fast 3D in 3 s). Set `HF_TOKEN` (a free Hugging Face token) on Netlify for more.
+
+**Companions that stay.** Companions used to live in the Reef tab only and were gone when it closed. Now the shell
+keeps them (`public/vr/core/companions.js`, `ctx.companions`): every scanned toy that joins, from a scan, an opened
+scanned gift, or Bubby, is saved for the room (`api/companions.js`, table `companions`) and follows the child in every
+tab and world, and again the next time the room is opened. The newest four follow; poking one makes it hop.
+
+- Checked in the desktop preview against Netlify (room TEST): the saved duck loaded on the hub and stayed 0.75 m from
+  the viewer in Worlds, Calm, Explore, Frost Slice and Reef; Bubby added in the Reef was saved and, after a reload,
+  all four saved companions came back on the hub. `shell.test.mjs`: all checks passed.
+- Not checked on a headset. Companions float to the sides, so they are mostly outside the narrow desktop preview.
+
+## Play in the browser, without a headset
+
+The headset view can now be played as a first-person game on a laptop or phone: `/vr/?mode=play`, the start page's
+"Play in browser" (its default when the device has no WebXR), and a "Play in the browser" card on the landing page.
+It is the same shell, tabs and worlds as the headset; only the input differs (`public/vr/core/input.js`, `setPlay`):
+
+- Mouse and keyboard: full screen and pointer lock on Enter; the mouse looks, the hands aim through a crosshair in the
+  middle, click is the trigger, right click or G the grip, Space the A button (hold to talk), M the menu. Esc frees the
+  mouse and shows a pause card (Keep playing, Menu, Leave). With the mouse free, menu buttons can still be clicked.
+  E and Q no longer fly up and down in this mode.
+- Touch screens: a move stick appears wherever the lower left is touched, drag elsewhere looks, tap uses, and round
+  Talk, Grab and Menu buttons sit on the right. The tab bar is hidden there (Menu has the tabs).
+- Game controllers (standard mapping): left stick walks, right stick looks, right trigger uses, left trigger or right
+  bumper grabs, A talks, B, X and Y are the headset's B, X and Y, Start opens the menu.
+
+### Checked
+
+In the browser pane, with the local files against the live API (room TEST): the start page picks "Play in browser" on
+a laptop and describes touch controls at phone size; Enter starts play mode. With the capture flag set by hand (the
+embedded pane grants neither pointer lock nor full screen), mouse movement turned the view, W walked 1 m and E no
+longer flew, Space pressed A, a click aimed through the middle, and freeing the mouse showed the pause card. A stub
+controller walked, turned and triggered. At phone size the stick walked 1 m, a drag looked, and Talk pressed A.
+`shell.test.mjs`: all checks passed.
+
+### Not checked
+
+Real pointer lock and full screen in a normal browser window, a real game controller, and a real phone.
+
+## Room switching in the game; a wider Snow Circuit with sharper steering
+
+**Room switching.** The headset view (VR, browser play and preview) can change room without going back to the start
+page or reloading (a reload would end a headset session): `switchRoom` in `public/vr/main.js` sets the code, clears
+the gift watcher (`gifts.reset`) and the followers (`companions.clear`), loads the new room's companions and enters
+the current tab again. Where: a room row in the floating menu (room code, up to two rooms used on this device, New
+room), and on a laptop or phone a "Room" chip in the top left that takes a typed code (also from the pause card).
+
+- Checked in the preview against the live API: the chip switched TEST to WISH (64 TEST gifts and 4 companions gone,
+  only WISH gifts after), the menu's TEST button switched back and the 4 TEST companions returned. New room was not
+  pressed (it makes a real room).
+
+**Snow Circuit.** The road is 11 m wide instead of Unity's 7 m (`TRACK_WIDTH`), drawn from the game's own centre line
+(`trackFallback`), since the exported `track_snowcircuit.glb` is the 7 m road. Rival home lanes moved from 1.7 m to
+2.6 m off the centre. Steering is sharper: up to 110 degrees a second at walking pace and 55 at top speed (was 75 and
+34), full lock at 35 degrees of wheel tilt (was 45), the wheel answers faster, and A and D reach full lock sooner.
+
+- Auto-driver, three laps, 4 rivals: before, third in 1:08.1 with 81 knocks (stuck behind rivals); after, first in
+  0:52.4, best lap 0:16.8, no knocks. A top-down render shows the valley's tyre stacks on the snow bank just outside
+  the new kerbs, nothing on the road.
+- Not checked on a headset: faster turning also turns the view faster, which some players may find less comfortable.

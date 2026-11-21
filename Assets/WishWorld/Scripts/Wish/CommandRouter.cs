@@ -20,11 +20,28 @@ namespace WishWorld
         {
             I = this;
             lib = WorldLibrary.I;
+            RefreshVocabulary();
+        }
+
+        void OnDestroy() { if (I == this) I = null; }
+
+        /// <summary>
+        /// Work out again which words the interpreter may answer with. Called at the start, and after a toy has been
+        /// scanned, because a toy's name only becomes a word the app knows once the toy is in.
+        /// </summary>
+        public void RefreshVocabulary()
+        {
             Services.Vocabulary = CommandParser.Vocabulary(lib);
             Services.Options = CommandParser.Options(lib);
         }
 
-        void OnDestroy() { if (I == this) I = null; }
+        System.Action<string> captureNext;
+
+        /// <summary>
+        /// Hand the next thing the child says to <paramref name="onHeard"/> instead of treating it as a wish.
+        /// Used when the guide has asked a question ("What's your name?"). Pass null to stop waiting.
+        /// </summary>
+        public void CaptureNext(System.Action<string> onHeard) { captureNext = onHeard; }
 
         /// <summary>
         /// Speech path. With only the keyword matcher (no AI key), the words go straight to it.
@@ -35,6 +52,17 @@ namespace WishWorld
         public void HandleHeard(string heard)
         {
             LastHeard = heard ?? "";
+            if (captureNext != null)
+            {
+                // The guide asked something and this is the answer: it is not a wish.
+                var answer = captureNext;
+                captureNext = null;
+                LastRoute = "answer";
+                LastResult = "captured";
+                answer(LastHeard);
+                return;
+            }
+            if (ToyScan.Busy) { LastResult = "busy"; return; }      // nothing else happens while a toy is being scanned
             LastRoute = "keywords";
             bool ai = !(Services.Interpreter is KeywordCommandInterpreter);
             if (!ai) { if (!Execute(heard, true)) Miss(); return; }
@@ -74,6 +102,8 @@ namespace WishWorld
 
         bool Execute(string text, bool quietMiss)
         {
+            // While a toy is being scanned the world is put aside, so a second command is dropped, not queued.
+            if (ToyScan.Busy) { LastResult = "busy"; return true; }
             var p = CommandParser.Parse(text, lib);
             if (!p.Any)
             {
@@ -84,6 +114,13 @@ namespace WishWorld
 
             var wc = WorldController.I;
             if (wc == null) { LastResult = "no world"; return false; }
+
+            if (p.scan && !p.AnyBesidesScan)
+            {
+                LastResult = "scan";
+                ToyScan.Run();
+                return true;
+            }
 
             if (p.undo)
             {
@@ -120,7 +157,7 @@ namespace WishWorld
                         wc.AddCreature(id);
                         said.Add("add:" + id);
                         var c = lib.FindCreature(id);
-                        if (line == null && c != null) line = "Here comes the " + c.displayName.ToLowerInvariant() + "!";
+                        if (line == null && c != null) line = c.toy ? VoiceLines.ToyComes(c.displayName) : "Here comes the " + c.displayName.ToLowerInvariant() + "!";
                     }
                 }
             }
@@ -138,6 +175,9 @@ namespace WishWorld
             LastResult = string.Join(" ", said);
             // Arriving in a new world replaces anything the guide still had queued about the last one.
             if (line != null) { if (p.world != null) GuideVoice.SayNow(line); else GuideVoice.Say(line); }
+            // A toy that came along to a new place has something friendly to say about it.
+            if (p.world != null && said.Contains("world:" + p.world) && AppState.scannedToyIds.Count > 0 && lib.ToysEnabled)
+                GuideVoice.Say(VoiceLines.NextToyFriendly());
             return true;
         }
 
@@ -153,7 +193,8 @@ namespace WishWorld
             {
                 var c = lib.FindCreature(e.creatureId);
                 if (c == null) continue;
-                sb.Append("; ").Append(e.count).Append(' ').Append(c.displayName);
+                if (c.toy) sb.Append("; ").Append(c.displayName).Append(", the child's own toy, who has come along");
+                else sb.Append("; ").Append(e.count).Append(' ').Append(c.displayName);
                 if (!string.IsNullOrEmpty(c.fact)) sb.Append(" (").Append(c.fact).Append(')');
             }
             return sb.Append('.').ToString();

@@ -1,11 +1,13 @@
 // POST /api/scan { room, sender, image, imageType? } -> { gift, companion: { name, what } }
+// POST /api/scan { room, sender, images: [front, back, side, ...] }   (2 to 4 photos of the same object)
+// Several photos let TRELLIS build the back and sides from real views instead of guessing them (see run.js).
 // Someone photographs a toy. This stores the photo, asks Claude Haiku for the companion's name and first
 // line (the one slow call of the request), saves a `pending` gift of kind "mesh" and answers. Turning the
 // photo into a 3D model then carries on in the background (waitUntil), so the model does not depend on
 // the phone staying on the page: the headset sees the gift through GET /api/gifts once it is `ready`.
 // A scan always ends `ready`, as a mesh or, if nothing worked within two minutes, as a library creature.
 // See api/_lib/mesh/job.js for the order of attempts and GET /api/scan-status for the poll.
-import { waitUntil } from '@vercel/functions';
+import { waitUntil } from './_lib/runtime.js';
 import sharp from 'sharp';
 import { route, send, body, text, roomCode, base64Bytes, UserError } from './_lib/http.js';
 import { ensureRoom, insertGift, giftJson } from './_lib/db.js';
@@ -21,6 +23,8 @@ import { runScan, invocationEnd } from './_lib/mesh/run.js';
 export const config = { maxDuration: 300 };
 
 const MAX_PHOTO_BYTES = 4 * 1024 * 1024; // Vercel caps a request body at 4.5 MB; the phone sends far less
+const MAX_VIEWS = 4;                      // photos of one object; the phone shrinks each to 1024 px (about 200 KB)
+const MAX_TOTAL_BYTES = 5 * 1024 * 1024;  // Netlify takes 6 MB per request, base64 included
 
 function kindOf(bytes) {
   if (bytes.length > 3 && bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff) return 'jpeg';
@@ -80,10 +84,22 @@ export default route('POST', async (req, res) => {
   const end = invocationEnd();
   const b = body(req);
   const room = roomCode(b.room);
-  const raw = base64Bytes(b.image, MAX_PHOTO_BYTES);
-  if (!raw) throw new UserError('Take a photo first.');
+  const given = Array.isArray(b.images) && b.images.length ? b.images : [b.image];
+  if (given.length > MAX_VIEWS) throw new UserError(`Please send at most ${MAX_VIEWS} photos.`);
+  const raws = given.map((value) => base64Bytes(value, MAX_PHOTO_BYTES));
+  if (!raws[0] || raws.some((r) => !r)) throw new UserError('Take a photo first.');
+  if (raws.reduce((n, r) => n + r.length, 0) > MAX_TOTAL_BYTES) throw new UserError('Those photos are too large together. Try fewer.');
   const sender = safeSender(text(b.sender, 40));
-  const photo = await tidyPhoto(raw);
+  const views = [];
+  for (let i = 0; i < raws.length; i++) {
+    try {
+      views.push(await tidyPhoto(raws[i]));
+    } catch (err) {
+      if (raws.length > 1 && err instanceof UserError) throw new UserError(`Photo ${i + 1}: ${err.message}`);
+      throw err;
+    }
+  }
+  const photo = views[0];
 
   // Storing the photo is quick; naming is the one slow call (it never throws and has a friendly default).
   const [imageUrl, companion] = await Promise.all([
@@ -103,7 +119,7 @@ export default route('POST', async (req, res) => {
     status: 'pending',
   });
 
-  waitUntil(runScan(row, photo, 'image/jpeg', { end, relay: relayThrough(req), debug: debugOptions(b, room) }));
+  waitUntil(runScan(row, photo, 'image/jpeg', { end, relay: relayThrough(req), debug: debugOptions(b, room), views }));
 
   send(res, 200, { gift: giftJson(row), companion: companionOf(row) });
 });

@@ -646,6 +646,8 @@ MonoBehaviour:
     clip: {fileID: 8300000, guid: 2fd08b9cbd76da5fbbfd64e41c1207d7, type: 3}
   - text: Go home
     clip: {fileID: 8300000, guid: 9846c2e2cc794d3128f868922375f5f4, type: 3}
+  - text: Scan a toy
+    clip: {fileID: 8300000, guid: 9f9b1ed200420a44aaa55acb729cf3ed, type: 3}
   - text: Games. Slice fruit, race cars.
     clip: {fileID: 8300000, guid: a738c18cce5f3dd3382ffb249772a417, type: 3}
   - text: Worlds. Visit far places.
@@ -676,6 +678,31 @@ MonoBehaviour:
   - text: Snow Circuit. Hold both controllers like a steering wheel. Right trigger
       to go, left trigger to brake.
     clip: {fileID: 8300000, guid: 64c3df57fe1190f7fbceabd7375f3402, type: 3}
+  - text: Hold your toy up in front of me!
+    clip: {fileID: 8300000, guid: 392f1049fcba8c84ab544ca8b0a18248, type: 3}
+  - text: What's your name?
+    clip: {fileID: 8300000, guid: 8beaca083c622fb40a190bc489b9c10d, type: 3}
+  - text: Wow, look at this place!
+    clip: {fileID: 8300000, guid: fb97b81072331534ea328695c1808a48, type: 3}
+  - text: I'm learning so much with you!
+    clip: {fileID: 8300000, guid: d7317a74ff71df848a7ce69061ea0213, type: 3}
+  - text: Let's explore together!
+    clip: {fileID: 8300000, guid: 8393ee673f76d914c9ad14fb8a8869d9, type: 3}
+  - text: Thanks for taking me along!
+    clip: {fileID: 8300000, guid: b3ad91e8c8eabe14ba7700ce71b85465, type: 3}
+  - text: Hi friend! I'm Bubby! I'm so excited to be on this adventure with you!
+    clip: {fileID: 8300000, guid: 94d7c004056e28a48b47c9f3aac10464, type: 3}
+  - text: I can't wait to learn new things together. Where should we go first?
+    clip: {fileID: 8300000, guid: 3a81c3b2da7438a44853728a91012151, type: 3}
+  - text: Bubby is soft and fuzzy, and loves exploring and learning new things with
+      you.
+    clip: {fileID: 8300000, guid: 7f2d60d1f17982447a8a0b43a02e1728, type: 3}
+  - text: Where should we take Bubby? Say a place!
+    clip: {fileID: 8300000, guid: 716ba59c6fa46e74ab89c347f7175965, type: 3}
+  - text: Here comes Bubby!
+    clip: {fileID: 8300000, guid: 006ca6a9f66e1804892cb375908214bd, type: 3}
+  - text: Bubby
+    clip: {fileID: 8300000, guid: 86c1d858b170d7e4980f52183db6b483, type: 3}
   - text: Slice the fruit! Leave the ice alone.
     clip: {fileID: 8300000, guid: be1034a5870d0de44be5538283f0c5b1, type: 3}
   - text: Slice the fruit!

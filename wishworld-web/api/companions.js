@@ -1,0 +1,104 @@
+// Saved companions: the toys that follow the child around the headset view, kept per room so they are there
+// in every tab and world, and again the next time the room is opened.
+//
+//   GET  /api/companions?room=                     -> { companions: [companion] }   oldest first
+//   POST /api/companions { room, gift_id }         -> { companion }   save a scanned toy (a "mesh" gift, or the
+//                                                                      library creature a failed scan became)
+//   POST /api/companions { room, toy: "bubby" }    -> { companion }   save the prepared toy
+//   POST /api/companions { room, id, remove: true }-> { removed }     let one go
+//
+// companion: { id, name, toy, gift_id, kind ("mesh" | "creature" | "toy"), model_url, option_id, created_at }
+// Saving the same toy twice returns the saved one. The table is created on first use.
+import { route, send, body, text, roomCode, UserError } from './_lib/http.js';
+import { sql, ensureRoom } from './_lib/db.js';
+
+const TOYS = { bubby: 'Bubby' };
+const MAX_PER_ROOM = 24;
+
+let ready = null;
+function ensureTable() {
+  if (!ready) {
+    ready = sql`
+      create table if not exists companions (
+        id bigserial primary key,
+        room_code text not null,
+        gift_id bigint,
+        toy text,
+        name text not null,
+        created_at timestamptz not null default now(),
+        unique (room_code, gift_id),
+        unique (room_code, toy)
+      )`.catch((err) => { ready = null; throw err; });
+  }
+  return ready;
+}
+
+function json(row) {
+  return {
+    id: Number(row.id),
+    name: row.name,
+    toy: row.toy || null,
+    gift_id: row.gift_id === null || row.gift_id === undefined ? null : Number(row.gift_id),
+    kind: row.toy ? 'toy' : row.kind,
+    model_url: row.model_url || null,
+    option_id: row.option_id || null,
+    created_at: row.created_at,
+  };
+}
+
+async function list(room) {
+  const rows = await sql`
+    select c.*, g.kind, g.model_url, g.option_id
+    from companions c left join gifts g on g.id = c.gift_id
+    where c.room_code = ${room}
+    order by c.created_at asc, c.id asc`;
+  return rows.map(json);
+}
+
+/** "Honey, a golden teddy bear" -> "Honey". */
+function nameOf(gift) {
+  const first = String(gift.wish || '').split(',')[0].trim();
+  return text(first, 40) || 'Friend';
+}
+
+export default route(['GET', 'POST'], async (req, res) => {
+  await ensureTable();
+  if (req.method === 'GET') {
+    const room = roomCode((req.query || {}).room);
+    return send(res, 200, { companions: await list(room) });
+  }
+
+  const b = body(req);
+  const room = roomCode(b.room);
+
+  if (b.remove) {
+    const id = Number(b.id);
+    if (!Number.isSafeInteger(id) || id <= 0) throw new UserError('That companion id does not look right.');
+    const gone = await sql`delete from companions where id = ${id} and room_code = ${room} returning id`;
+    return send(res, 200, { removed: gone.length > 0 });
+  }
+
+  const count = await sql`select count(*)::int as n from companions where room_code = ${room}`;
+  if (count[0].n >= MAX_PER_ROOM) throw new UserError(`A room can keep ${MAX_PER_ROOM} companions. Let one go first.`, 409);
+
+  if (b.toy !== undefined) {
+    const toy = String(b.toy || '').toLowerCase();
+    if (!TOYS[toy]) throw new UserError('That toy is not known.');
+    await ensureRoom(room);
+    await sql`insert into companions (room_code, toy, name) values (${room}, ${toy}, ${TOYS[toy]}) on conflict (room_code, toy) do nothing`;
+  } else {
+    const giftId = Number(b.gift_id);
+    if (!Number.isSafeInteger(giftId) || giftId <= 0) throw new UserError('"gift_id" must be a gift id.');
+    const gifts = await sql`select * from gifts where id = ${giftId} and room_code = ${room}`;
+    const gift = gifts[0];
+    if (!gift) throw new UserError('That gift is not in this room.', 404);
+    const usable = gift.status === 'ready' && ((gift.kind === 'mesh' && gift.model_url) || (gift.kind === 'creature' && gift.option_id));
+    if (!usable) throw new UserError('That gift is not a companion yet.', 409);
+    await sql`insert into companions (room_code, gift_id, name) values (${room}, ${giftId}, ${nameOf(gift)}) on conflict (room_code, gift_id) do nothing`;
+  }
+  const rows = await list(room);
+  const saved = b.toy !== undefined
+    ? rows.find((c) => c.toy === String(b.toy).toLowerCase())
+    : rows.find((c) => c.gift_id === Number(b.gift_id));
+  send(res, 200, { companion: saved || null });
+});

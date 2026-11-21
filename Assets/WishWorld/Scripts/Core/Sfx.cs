@@ -24,6 +24,22 @@ namespace WishWorld
             float f = t < 0.15f ? 523 : t < 0.3f ? 659 : t < 0.45f ? 784 : 1047;
             return Mathf.Sin(t * f * 6.283f) * Env(t % 0.15f, t < 0.45f ? 0.15f : 0.25f) * 0.45f;
         });
+        /// <summary>The toy scan: a soft tone that climbs for as long as the scan line sweeps.</summary>
+        public static AudioClip Scan(float seconds)
+        {
+            int tenths = Mathf.Clamp(Mathf.RoundToInt(seconds * 10f), 5, 120);
+            float len = tenths / 10f;
+            return Get("scan" + tenths, len, t =>
+            {
+                // The pitch doubles over the length of the clip, so the phase is the running sum of that rising pitch.
+                float phase = 260f * len / 0.6931f * (Mathf.Pow(2f, t / len) - 1f) * 6.283f;
+                float fade = Mathf.Clamp01(t / 0.15f) * Mathf.Clamp01((len - t) / 0.25f);
+                float shimmer = 0.75f + 0.25f * Mathf.Sin(t * 11f * 6.283f);
+                return (Mathf.Sin(phase) * 0.7f + Mathf.Sin(phase * 2f) * 0.3f) * fade * shimmer * 0.22f;
+            });
+        }
+        /// <summary>The camera-flash moment at the end of the scan.</summary>
+        public static AudioClip Flash => Get("flash", 0.35f, t => (Noise() * 0.5f + Mathf.Sin(t * Mathf.Lerp(2400, 900, t / 0.35f) * 6.283f) * 0.3f) * Env(t, 0.35f) * 0.5f);
         public static AudioClip Engine => Get("engine", 1f, t => (Saw(t * 70) * 0.5f + Saw(t * 105) * 0.25f + Noise() * 0.05f) * 0.5f, true);
 
         /// <summary>Looping background bed. 0 underwater, 1 wind, 2 space hum, 3 outdoors.</summary>

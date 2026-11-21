@@ -58,6 +58,11 @@ namespace WishWorld
             status.text = statusText.Substring(0, statusText.Length - 3) + new string('.', dots) + new string(' ', 3 - dots);
         }
 
+        public const string ScanLabel = "Scan a toy";
+
+        /// <summary>Lay the buttons out again, for when the choices have changed (a toy has just been scanned).</summary>
+        public void Refresh() { Fill(); }
+
         public void SelectTab(int index)
         {
             tab = index;
@@ -78,7 +83,9 @@ namespace WishWorld
                     foreach (var w in lib.worlds) if (w != null && w.showInMenu) items.Add((w.displayName, w.keywords[0]));
                     break;
                 case 1:
+                    if (lib.ToysEnabled) items.Add((ScanLabel, CommandParser.ScanCommand));
                     foreach (var c in lib.creatures) if (c != null) items.Add((c.displayName, "add " + c.keywords[0]));
+                    foreach (var t in lib.ScannedToys()) items.Add((t.displayName, "add " + t.keywords[0]));     // only after its scan
                     break;
                 case 2:
                     items.AddRange(new[] { ("Red", "red"), ("Blue", "blue"), ("Purple", "purple"), ("Gold", "gold"), ("Rainbow", "rainbow"),

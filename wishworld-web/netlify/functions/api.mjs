@@ -1,0 +1,136 @@
+// Netlify entry point for every /api route. The handlers in ../../api are written for Vercel's Node
+// (req, res) shape; this turns a web Request into that shape, runs the handler with Netlify's context
+// (so waitUntil and the invocation deadline work, see api/_lib/runtime.js) and returns a web Response.
+// The rewrites vercel.json had (/api/inbox, /api/tts, /api/stt) are the ALIASES below.
+import { withPlatform } from '../../api/_lib/runtime.js';
+import companions from '../../api/companions.js';
+import events from '../../api/events.js';
+import gifts from '../../api/gifts.js';
+import giftsOpen from '../../api/gifts/open.js';
+import guide from '../../api/guide.js';
+import health from '../../api/health.js';
+import letter from '../../api/letter.js';
+import rooms from '../../api/rooms.js';
+import scanStatus from '../../api/scan-status.js';
+import scan from '../../api/scan.js';
+import voice from '../../api/voice.js';
+import wish from '../../api/wish.js';
+
+const HANDLERS = {
+  companions,
+  events,
+  gifts,
+  'gifts/open': giftsOpen,
+  guide,
+  health,
+  letter,
+  rooms,
+  'scan-status': scanStatus,
+  scan,
+  voice,
+  wish,
+};
+
+/** Same as vercel.json's rewrites: name -> [handler name, extra query]. */
+const ALIASES = {
+  inbox: ['events', {}],
+  tts: ['voice', { do: 'tts' }],
+  stt: ['voice', { do: 'stt' }],
+};
+
+/** A synchronous Netlify function is stopped after 60 seconds. */
+const LIMIT_MS = 60000;
+
+function notFound() {
+  return new Response(JSON.stringify({ error: 'Not found' }), {
+    status: 404,
+    headers: { 'content-type': 'application/json; charset=utf-8', 'access-control-allow-origin': '*' },
+  });
+}
+
+/** A Vercel-style request: method, url, lower-case headers, query, and a body parsed like Vercel does. */
+async function toNodeRequest(request, url, extraQuery) {
+  const headers = {};
+  request.headers.forEach((value, key) => {
+    headers[key] = value;
+  });
+  const query = Object.fromEntries(url.searchParams);
+  Object.assign(query, extraQuery);
+  const raw = request.method === 'GET' || request.method === 'HEAD' ? '' : await request.text();
+  const req = { method: request.method, url: url.pathname + url.search, headers, query };
+  const type = String(headers['content-type'] || '').toLowerCase();
+  let parsed;
+  let done = false;
+  Object.defineProperty(req, 'body', {
+    enumerable: true,
+    get() {
+      // Like Vercel: JSON is parsed on first read and a broken body throws; anything else is a string.
+      if (!done) {
+        done = true;
+        if (!raw) parsed = undefined;
+        else if (type.includes('application/json')) parsed = JSON.parse(raw);
+        else if (type.includes('application/x-www-form-urlencoded')) parsed = Object.fromEntries(new URLSearchParams(raw));
+        else parsed = raw;
+      }
+      return parsed;
+    },
+  });
+  return req;
+}
+
+/** A Vercel-style response that collects status, headers and body. */
+function nodeResponse() {
+  const res = {
+    statusCode: 200,
+    headers: new Headers(),
+    body: null,
+    finished: false,
+    setHeader(name, value) {
+      res.headers.set(name, Array.isArray(value) ? value.join(', ') : String(value));
+      return res;
+    },
+    getHeader(name) {
+      return res.headers.get(name) ?? undefined;
+    },
+    status(code) {
+      res.statusCode = code;
+      return res;
+    },
+    json(value) {
+      if (!res.headers.has('content-type')) res.headers.set('content-type', 'application/json; charset=utf-8');
+      return res.end(JSON.stringify(value));
+    },
+    send(value) {
+      if (value !== null && typeof value === 'object' && !(value instanceof Uint8Array)) return res.json(value);
+      return res.end(value);
+    },
+    end(value) {
+      if (value !== undefined && value !== null) res.body = value;
+      res.finished = true;
+      return res;
+    },
+  };
+  return res;
+}
+
+export default async (request, context) => {
+  const started = Date.now();
+  const url = new URL(request.url);
+  const name = url.pathname.replace(/^\/api\/?/, '').replace(/\/+$/, '').replace(/\.js$/, '');
+  const [target, extraQuery] = ALIASES[name] || [name, {}];
+  const handler = HANDLERS[target];
+  if (!handler) return notFound();
+
+  const req = await toNodeRequest(request, url, extraQuery);
+  const res = nodeResponse();
+  const platform = {
+    deadline: started + LIMIT_MS,
+    waitUntil: (promise) => context.waitUntil(Promise.resolve(promise)),
+  };
+  await withPlatform(platform, () => handler(req, res));
+
+  const empty = res.statusCode === 204 || res.statusCode === 304 || request.method === 'HEAD';
+  return new Response(empty ? null : res.body, { status: res.statusCode, headers: res.headers });
+};
+
+export const config = { path: ['/api', '/api/*'] };

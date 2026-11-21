@@ -35,6 +35,12 @@ namespace WishWorld
             Apply();
         }
 
+        /// <summary>
+        /// Keep the fact card shut for a while, however the creature is touched or looked at. A toy that has just
+        /// arrived is busy saying hello, and its card would cut the greeting off. Rest(0) ends the wait.
+        /// </summary>
+        public void Rest(float seconds) { cooldownUntil = Time.time + seconds; }
+
         public void OnHover(bool on) { hovered = on; }
         public void OnClick() { Learn(); }
 

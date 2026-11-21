@@ -1,6 +1,6 @@
 // The background task behind POST /api/scan: asks the free routes for a model, in order, and always
 // leaves the gift ready (see job.js for the states a gift goes through).
-import { getDeadline } from '@vercel/functions';
+import { getDeadline } from '../runtime.js';
 import { sql } from '../db.js';
 import { ROUTES } from './routes.js';
 import { storeModel, fallbackToCreature, yawFor } from './job.js';
@@ -17,8 +17,9 @@ const SECOND_MS = 44000;
 const COMFORTABLE_MS = 60000;
 
 /**
- * When Vercel will stop the function invocation we are running in. Call it at the start of a request.
- * Vercel reports the real limit; if it does not, assume the 60 seconds vercel.json gives every function.
+ * When the platform will stop the function invocation we are running in. Call it at the start of a request.
+ * Vercel and the Netlify adapter report the real limit; if neither does, assume 60 seconds (the Netlify limit
+ * for a synchronous function, and what vercel.json gives every function).
  */
 export function invocationEnd() {
   try {
@@ -36,6 +37,8 @@ function setStage(id, name) {
 
 /** Asks one route for a model and stores it. Resolves once the gift is finished (by this route, or already). */
 async function attempt(name, label, id, image, mime, deadline) {
+  // (for trellism, `image` is the array of photos, front first)
+
   const started = Date.now();
   try {
     const raw = await ROUTES[name](image, mime, { deadline, onStatus: () => {} });
@@ -67,7 +70,7 @@ async function attempt(name, label, id, image, mime, deadline) {
  *   relay  async (id) => true when another invocation has been asked to carry on
  *   debug  test switches: { mode: 'fail' | 'hang', routes: ['triposr', ...], delayMs }
  */
-export async function runScan(row, image, mime, { end = Date.now() + 60000, relay = null, debug = null } = {}) {
+export async function runScan(row, image, mime, { end = Date.now() + 60000, relay = null, debug = null, views = null } = {}) {
   const id = Number(row.id);
   const scanEnd = new Date(row.created_at).getTime() + GENERATE_MS;
   // The latest moment a route may still be working in this invocation.
@@ -92,6 +95,16 @@ export async function runScan(row, image, mime, { end = Date.now() + 60000, rela
       }
       const allowed = (name) => ROUTES[name] && (!debug || !Array.isArray(debug.routes) || debug.routes.includes(name));
       let quotaGone = false;
+      // Several photos: TRELLIS's multi-image mode first, leaving time for Stable Fast 3D on the front photo.
+      if (Array.isArray(views) && views.length > 1 && allowed('trellism') && routesEnd - Date.now() > 30000) {
+        await setStage(id, 'trellism');
+        try {
+          await attempt('trellism', 'trellism', id, views, mime, routesEnd - 9000);
+          return;
+        } catch (err) {
+          quotaGone = Boolean(err && err.quota);
+        }
+      }
       if (allowed('sf3d') && routesEnd - Date.now() > 8000) {
         await setStage(id, 'sf3d');
         try {

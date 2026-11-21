@@ -91,3 +91,6 @@ Thumbs.db
 
 # Local Netlify folder
 .netlify
+
+# Reference photographs of a toy, taken at home: keep them local (the trailing ~ also hides the folder from Unity)
+/Assets/WishWorld/Toy/*/source~/

@@ -265,7 +265,7 @@ Nobody has yet pressed Play on Windows with a headset attached.
 1. Install **Meta Horizon Link** (Meta's PC app) and sign in with the same Meta account as the headset.
 2. In Link's settings, under General, set **Meta Horizon Link as the active OpenXR runtime**.
 3. Install **Unity Hub**, then Unity **6000.3.29f1**. No extra build modules are needed for Play mode.
-4. Clone the project: `git clone https://github.com/SuryaThirukonda/andrea_tidal.git`
+4. Clone the project: `git clone https://github.com/SuryaThirukonda/tidalbyte.git`
 5. Copy your `.env` into the project folder (it is not in the repository). Without it the app runs with a placeholder
    voice and keyword matching only.
 6. Open the project in Unity. The first import takes a while. Leave the platform as Windows.

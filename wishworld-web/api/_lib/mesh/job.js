@@ -143,5 +143,5 @@ export async function fallbackToCreature(id, why) {
 // ---------- generation ----------
 
 // Both Stable Fast 3D and TripoSR build the model with its face towards -Z; the headset expects +Z.
-const YAW = { sf3d: Math.PI, triposr: Math.PI, trellis: 0, worker: Math.PI };
+const YAW = { sf3d: Math.PI, triposr: Math.PI, trellis: 0, trellism: 0, worker: Math.PI };
 export const yawFor = (route) => YAW[route] ?? 0;

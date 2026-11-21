@@ -9,7 +9,7 @@
 // "x-mesh-key" header:
 //   GET  /api/scan-status?pending=1          -> { jobs: [{ id, image_url, age_ms, ms_left }] }
 //   POST /api/scan-status { id, model }      -> { gift, used }   (model = base64 .glb, at most 3 MB)
-import { waitUntil } from '@vercel/functions';
+import { waitUntil } from './_lib/runtime.js';
 import { timingSafeEqual } from 'node:crypto';
 import { route, send, body, base64Bytes, UserError } from './_lib/http.js';
 import { sql, giftJson } from './_lib/db.js';

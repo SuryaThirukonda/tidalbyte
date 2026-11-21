@@ -1,0 +1,23 @@
+{
+  "name": "TEST CLOUD (not a real place)",
+  "count": 40000,
+  "scale": 0.01,
+  "bounds": {
+    "min": [
+      -60,
+      0,
+      -60
+    ],
+    "max": [
+      60,
+      36,
+      60
+    ]
+  },
+  "source": "Synthetic test data made by public/vr/dev/test/make-test-cloud.mjs. Not lidar",
+  "facts": [
+    "This is a test pattern, not a real place.",
+    "It checks that the Explore tab can load and show points."
+  ],
+  "colorSpace": "srgb"
+}

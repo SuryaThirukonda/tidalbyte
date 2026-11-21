@@ -22,6 +22,7 @@ namespace WishWorld.DebugTools
             (Key.N, "N", "make it snow"), (Key.M, "M", "make it night"), (Key.Y, "Y", "make it sunny"),
             (Key.K, "K", "in my room"), (Key.V, "V", "take me there"),
             (Key.X, "X", "clear"), (Key.Backspace, "Backspace", "undo"), (Key.H, "H", "go home"),
+            (Key.J, "J", "scan a toy"),
         };
 
         public static bool showHelp;

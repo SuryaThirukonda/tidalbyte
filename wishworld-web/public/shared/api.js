@@ -7,7 +7,7 @@
 // All methods use the current room. A failed call rejects with an Error whose message is safe to show to
 // the person using the app. logEvent never rejects. No secrets live here: keys stay on the server.
 
-const PRODUCTION = 'https://wishworld-web.vercel.app';
+const PRODUCTION = 'https://wishworld-web.netlify.app';
 const ROOM_KEY = 'wishworld.room';
 const DEFAULT_ROOM = 'WISH';
 const OFFLINE = 'Could not reach WishWorld. Check the connection and try again.';
@@ -177,14 +177,19 @@ export const api = {
     return (await post('/api/letter', payload, { timeoutMs: 60000 })).gift;
   },
 
-  /** Send a photo of a toy to be turned into a 3D companion (shrink it first). -> gift (kind "mesh", pending) */
-  async startScan({ sender, imageBlob } = {}) {
+  /**
+   * Send a photo of a toy to be turned into a 3D companion (shrink it first). -> gift (kind "mesh", pending)
+   * imageBlobs: 2 to 4 photos of the same toy, front first (back, sides), for a model that is right all round.
+   */
+  async startScan({ sender, imageBlob, imageBlobs } = {}) {
+    const blobs = Array.isArray(imageBlobs) && imageBlobs.length ? imageBlobs : [imageBlob];
     const payload = {
       room: room(),
       sender,
-      image: await blobToBase64(imageBlob),
-      imageType: (imageBlob && imageBlob.type) || 'image/jpeg',
+      image: await blobToBase64(blobs[0]),
+      imageType: (blobs[0] && blobs[0].type) || 'image/jpeg',
     };
+    if (blobs.length > 1) payload.images = await Promise.all(blobs.map((b) => blobToBase64(b)));
     return (await post('/api/scan', payload, { timeoutMs: 60000 })).gift;
   },
 
@@ -211,6 +216,22 @@ export const api = {
     } catch {
       return { ok: false, id: null };
     }
+  },
+
+  /** The room's saved companions (they follow the child in every tab). -> [companion] oldest first */
+  async getCompanions() {
+    return (await get('/api/companions?' + query({ room: room() }))).companions || [];
+  },
+
+  /** Keep a companion: { giftId } for a scanned toy, or { toy: 'bubby' }. -> companion */
+  async saveCompanion({ giftId, toy } = {}) {
+    const payload = toy ? { room: room(), toy } : { room: room(), gift_id: giftId };
+    return (await post('/api/companions', payload, { timeoutMs: 15000 })).companion;
+  },
+
+  /** Let a saved companion go. -> true if it was removed */
+  async removeCompanion(id) {
+    return (await post('/api/companions', { room: room(), id, remove: true }, { timeoutMs: 15000 })).removed;
   },
 
   /** The parent check-in. -> { room, child_name, events, gifts } newest first */

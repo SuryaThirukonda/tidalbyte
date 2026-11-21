@@ -9,8 +9,11 @@
 //                                         120 s at once, so it only runs with a fresh allowance.
 //   triposr  WeReCooking2/Dust3R-TripoSR  vertex colours, 35 to 70 s on a free CPU Space. No allowance to run
 //                                         out, so this is the one that works when the others are refused.
+//   trellism the same TRELLIS Space in its "Multiple Images" mode: several photos of one object (front, back,
+//            sides) go into one model, so the back is built from a real view instead of being guessed.
 //
 // Every route takes the photo bytes and returns the raw .glb the Space produced (not yet optimised).
+// trellism takes an array of photos (front first) instead of one.
 import { openSpace, findFile, SpaceError } from './gradio.js';
 
 const SPACES = {
@@ -69,6 +72,30 @@ async function trellis(image, mime, { deadline, onStatus }) {
   return assertGlb(await space.download(glbFrom(out, 'trellis')), 'trellis');
 }
 
+const fileData = (f) => ({ path: f.path, meta: { _type: 'gradio.FileData' } });
+
+/**
+ * TRELLIS from several photos of the same object, front first. The Space's "Multiple Images" tab sets a hidden
+ * is-multi-image state; passing true there makes generation use every view (the "stochastic" algorithm).
+ */
+async function trellisMulti(images, mime, { deadline, onStatus }) {
+  if (!Array.isArray(images) || images.length < 2) throw new SpaceError('trellism: needs at least two photos');
+  const space = await openSpace(SPACES.trellis(), { deadline });
+  await space.call('start_session', [], { onStatus });
+  const uploaded = [];
+  for (let i = 0; i < images.length; i++) uploaded.push(await space.upload(images[i], `view-${i}.${extFor(mime)}`, mime));
+  const pre = await space.call('preprocess_images', [uploaded.map((f) => ({ image: f, caption: null }))], { onStatus });
+  const list = Array.isArray(pre && pre[0]) ? pre[0] : [];
+  const cut = list.map((entry) => findFile(entry)).filter(Boolean);
+  if (cut.length < 2) throw new SpaceError('trellism: background removal returned too few views');
+  const out = await space.call(
+    'generate_and_extract_glb',
+    [fileData(cut[0]), cut.map((f) => ({ image: fileData(f), caption: null })), true, 0, 7.5, 12, 3, 12, 'stochastic', 0.97, 1024],
+    { onStatus },
+  );
+  return assertGlb(await space.download(glbFrom(out, 'trellism')), 'trellism');
+}
+
 /** TripoSR on a free CPU Space. Resolution 160 keeps it near 35 s; the mesh is simplified afterwards anyway. */
 async function triposr(image, mime, { deadline, onStatus }) {
   const space = await openSpace(SPACES.triposr(), { deadline });
@@ -81,4 +108,4 @@ async function triposr(image, mime, { deadline, onStatus }) {
   return assertGlb(await space.download(glbFrom(out, 'triposr')), 'triposr');
 }
 
-export const ROUTES = { sf3d, trellis, triposr };
+export const ROUTES = { sf3d, trellis, triposr, trellism: trellisMulti };

@@ -1,0 +1,87 @@
+/* Landing page layout. Colours and shared pieces (cards, buttons, ribbons) live in theme.css. */
+
+.land {
+  max-width: 940px; margin: 0 auto;
+  padding: calc(var(--safe-top) + 18px) calc(16px + var(--safe-right)) calc(var(--safe-bottom) + 40px) calc(16px + var(--safe-left));
+}
+
+.hero { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; column-gap: 12px; row-gap: 10px; max-width: 660px; margin: 6px auto 26px; }
+.penguin { width: 78px; height: auto; animation: bob 3.2s ease-in-out infinite; transform-origin: 50% 100%; }
+@keyframes bob { 0%, 100% { transform: translateY(0) rotate(-1.5deg); } 50% { transform: translateY(-5px) rotate(1.5deg); } }
+.hero-text { display: contents; }
+.wordmark {
+  font-size: clamp(38px, 11.5vw, 84px); line-height: 0.95; color: #fff; min-width: 0;
+  text-shadow: 0 3px 0 var(--slate), 3px 0 0 var(--slate), -3px 0 0 var(--slate), 0 -3px 0 var(--slate),
+    2px 2px 0 var(--slate), -2px 2px 0 var(--slate), 2px -2px 0 var(--slate), -2px -2px 0 var(--slate), 0 8px 0 rgba(51, 64, 82, 0.35);
+}
+.tagline { grid-column: 1 / -1; font-size: clamp(18px, 4.6vw, 22px); line-height: 1.3; color: var(--slate); text-align: center; text-wrap: balance; }
+
+.room-card { max-width: 620px; margin-left: auto; margin-right: auto; }
+.code-plate {
+  display: flex; flex-direction: column; align-items: center; gap: 2px;
+  margin: 14px auto 18px; padding: 12px 18px 14px; max-width: 420px;
+  background: #fff; border: 2px solid var(--slate); border-radius: 20px; box-shadow: inset 0 4px 0 #e3ebf4;
+}
+.code-label { font-family: var(--font-heading); font-size: 18px; color: var(--slate-soft); }
+.code {
+  font-family: var(--font-plain); font-weight: 800; font-size: clamp(46px, 15vw, 76px); line-height: 1; letter-spacing: 0.1em;
+  color: var(--slate); padding-left: 0.1em; overflow-wrap: anywhere; text-align: center;
+}
+.code.pop { animation: codepop 480ms cubic-bezier(0.2, 1.4, 0.4, 1); }
+@keyframes codepop { from { transform: scale(0.7); opacity: 0.3; } to { transform: scale(1); opacity: 1; } }
+
+.room-actions { display: grid; grid-template-columns: 1fr; gap: 18px; }
+.room-form { display: flex; flex-direction: column; min-width: 0; }
+.room-form h3 { font-size: 22px; margin-bottom: 6px; }
+.room-form .label.small { font-family: var(--font-body); font-size: 16px; color: var(--slate-soft); margin-left: 2px; }
+.room-form .field { margin-bottom: 12px; }
+.room-form .btn { margin-top: auto; }
+.code-input { font-family: var(--font-plain); font-weight: 700; letter-spacing: 0.18em; text-transform: uppercase; }
+.code-input::placeholder { letter-spacing: 0.18em; font-weight: 500; }
+#roomAlert { margin-top: 16px; }
+
+.two { display: grid; grid-template-columns: 1fr; gap: 26px; margin-top: 30px; }
+.two .card { margin-top: 0; display: flex; flex-direction: column; }
+.two .card .btn { margin-top: auto; }
+
+.qr { display: block; width: min(100%, 248px); margin: 0 auto 10px; border-radius: 18px; }
+.qr-box {
+  display: block; aspect-ratio: 1 / 1; padding: 10px; background: #fff;
+  border: 2px solid var(--slate); border-radius: 18px; box-shadow: 3px 4px 0 var(--shade);
+}
+.qr-box svg { display: block; width: 100%; height: 100%; }
+.addr {
+  margin: 0 auto 16px; padding: 8px 12px; max-width: 100%;
+  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; font-size: 14px; line-height: 1.35; text-align: center;
+  color: var(--slate); background: #fff; border: 2px dashed var(--ice); border-radius: 12px; overflow-wrap: anywhere;
+}
+.addr span { display: inline-block; }
+.addr.big { font-size: 17px; font-weight: 600; padding: 14px 12px; }
+.two .card > p.center:first-of-type { margin-bottom: 14px; }
+.two .card .addr.big { margin-top: auto; margin-bottom: auto; }
+.two .card .addr.big + .btn { margin-top: 16px; }
+.vr-note { margin-top: 12px; }
+.foot { text-align: center; margin-top: 34px; }
+
+.toast {
+  position: fixed; left: 50%; bottom: calc(var(--safe-bottom) + 20px); z-index: 60;
+  transform: translate(-50%, 20px); opacity: 0; pointer-events: none;
+  width: max-content; max-width: min(92vw, 480px);
+  padding: 12px 18px; border-radius: 18px; border: 2px solid var(--slate);
+  background: var(--slate); color: #fff; font-size: 17px; text-align: center;
+  transition: opacity 180ms ease, transform 180ms ease;
+}
+.toast.show { opacity: 1; transform: translate(-50%, 0); }
+.toast[data-kind="good"] { background: #25684b; }
+.toast[data-kind="warn"] { background: #8a4b1c; }
+
+@media (min-width: 600px) {
+  .room-actions { grid-template-columns: 1fr 1fr; gap: 22px; }
+  .penguin { width: 128px; grid-row: 1 / span 2; }
+  .hero { column-gap: 22px; row-gap: 12px; }
+  .wordmark { align-self: end; }
+  .tagline { grid-column: 2; text-align: left; align-self: start; }
+}
+@media (min-width: 800px) {
+  .two { grid-template-columns: 1fr 1fr; }
+}

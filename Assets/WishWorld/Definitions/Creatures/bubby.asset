@@ -1,0 +1,38 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 082e3931834005080850fd5e2ef3182b, type: 3}
+  m_Name: bubby
+  m_EditorClassIdentifier: Assembly-CSharp::WishWorld.CreatureDefinition
+  id: bubby
+  displayName: Bubby
+  keywords:
+  - bubby
+  - my toy
+  - my friend
+  prefab: {fileID: 1080813670436758478, guid: a740da02e6de2654a95178999d7ffbb9, type: 3}
+  moveType: 2
+  speed: 0.25
+  minDistance: 1.8
+  maxDistance: 2.1
+  minHeight: 0
+  maxHeight: 0
+  arScale: 0.6
+  addCount: 1
+  schooling: 0
+  voicePitch: 1
+  fact: Bubby is soft and fuzzy, and loves exploring and learning new things with
+    you.
+  quizQuestion: 
+  factChecked: 1
+  toy: 1
+  greeting: Hi {child}! I'm Bubby! I'm so excited to be on this adventure with you!
+  greeting2: I can't wait to learn new things together. Where should we go first?

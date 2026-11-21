@@ -11,8 +11,14 @@ namespace WishWorld
         public List<string> creatures = new List<string>();
         public string color, amount, size;
         public bool add, snow, night, sunny, ar, vr, clear, undo, home;
+        /// <summary>"Scan a toy": run the staged scan that brings in the toy the team prepared.</summary>
+        public bool scan;
 
         public bool Any => world != null || creatures.Count > 0 || color != null || amount != null || size != null
+                           || snow || night || sunny || ar || vr || clear || undo || home || scan;
+
+        /// <summary>True when the sentence asks for something besides the scan itself.</summary>
+        public bool AnyBesidesScan => world != null || creatures.Count > 0 || color != null || amount != null || size != null
                            || snow || night || sunny || ar || vr || clear || undo || home;
     }
 
@@ -60,6 +66,8 @@ namespace WishWorld
         static readonly string[] UndoWords = { "undo", "go back" };
         static readonly string[] HomeWords = { "go home", "home", "main menu" };
         static readonly string[] AddWords = { "add", "give me", "i want", "show me", "spawn" };
+        public const string ScanCommand = "scan a toy";
+        static readonly string[] ScanWords = { ScanCommand, "scan my toy", "scan the toy", "scan toy", "scan it" };
 
         public static string Normalize(string text)
         {
@@ -122,9 +130,14 @@ namespace WishWorld
 
             if (lib != null)
             {
+                p.scan = lib.ToysEnabled && HasAny(s, ScanWords);
                 if (lib.creatures != null)
                     foreach (var c in lib.creatures)
                         if (c != null && c.keywords != null && HasAny(s, c.keywords) && !p.creatures.Contains(c.id)) p.creatures.Add(c.id);
+                // A toy can be asked for by name only once it has been scanned. "Scan my toy" is the scan, not the toy.
+                if (!p.scan)
+                    foreach (var t in lib.ScannedToys())
+                        if (t.keywords != null && HasAny(s, t.keywords) && !p.creatures.Contains(t.id)) p.creatures.Add(t.id);
                 if (lib.worlds != null)
                     foreach (var w in lib.worlds)
                         if (w != null && w.showInMenu && w.keywords != null && HasAny(s, w.keywords)) { p.world = w.id; break; }
@@ -141,15 +154,18 @@ namespace WishWorld
             {
                 if (lib.worlds != null) foreach (var w in lib.worlds) if (w != null && w.showInMenu && w.keywords != null && w.keywords.Length > 0) worlds.Add(w.keywords[0]);
                 if (lib.creatures != null) foreach (var c in lib.creatures) if (c != null && c.keywords != null && c.keywords.Length > 0) creatures.Add(c.keywords[0]);
+                foreach (var t in lib.ScannedToys()) if (t.keywords != null && t.keywords.Length > 0) creatures.Add(t.keywords[0]);
             }
             var colors = new List<string>();
             foreach (var row in Colors) colors.Add(row.id);
+            var extras = new List<string> { "make it snow", "make it night", "make it sunny", "in my room", "take me there", "clear", "undo", "go home", "add" };
+            if (lib != null && lib.ToysEnabled) extras.Add(ScanCommand);
             return new WishOptions
             {
                 worlds = worlds.ToArray(), creatures = creatures.ToArray(), colors = colors.ToArray(),
                 amounts = new[] { "more", "fewer", "lots of" },
                 sizes = new[] { "bigger", "smaller", "giant", "tiny" },
-                extras = new[] { "make it snow", "make it night", "make it sunny", "in my room", "take me there", "clear", "undo", "go home", "add" },
+                extras = extras.ToArray(),
             };
         }
 
@@ -169,6 +185,8 @@ namespace WishWorld
             if (lib != null)
             {
                 if (lib.creatures != null) foreach (var c in lib.creatures) if (c != null && c.keywords != null) phrases.AddRange(c.keywords);
+                foreach (var t in lib.ScannedToys()) if (t.keywords != null) phrases.AddRange(t.keywords);
+                if (lib.ToysEnabled) phrases.AddRange(ScanWords);
                 if (lib.worlds != null) foreach (var w in lib.worlds) if (w != null && w.showInMenu && w.keywords != null) phrases.AddRange(w.keywords);
             }
             phrases.Sort((a, b) => b.Length.CompareTo(a.Length));      // "make it snow" before "snow"
@@ -194,10 +212,12 @@ namespace WishWorld
             {
                 if (lib.worlds != null) foreach (var w in lib.worlds) if (w != null && w.showInMenu && w.keywords != null && w.keywords.Length > 0) words.Add(w.keywords[0]);
                 if (lib.creatures != null) foreach (var c in lib.creatures) if (c != null && c.keywords != null && c.keywords.Length > 0) words.Add(c.keywords[0]);
+                foreach (var t in lib.ScannedToys()) if (t.keywords != null && t.keywords.Length > 0) words.Add(t.keywords[0]);
             }
             foreach (var row in Colors) words.Add(row.id);
             words.AddRange(new[] { "more", "fewer", "lots of", "bigger", "smaller", "giant", "tiny",
                 "make it snow", "make it night", "make it sunny", "in my room", "take me there", "clear", "undo", "go home", "add" });
+            if (lib != null && lib.ToysEnabled) words.Add(ScanCommand);
             return string.Join(", ", words);
         }
     }
