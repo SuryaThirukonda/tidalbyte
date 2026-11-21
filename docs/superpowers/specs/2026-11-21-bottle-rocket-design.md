@@ -153,3 +153,28 @@ and 0.3 m below eye height, so it suits someone sitting in bed.
 - Saving mission progress between visits.
 - Numbers, dashboards and formulas (this could be a later "older kids" mode).
 - Any change to how scanning works.
+
+## As built (2026-11-21)
+
+Where the code ended up differing from the design above. The code is the reference.
+
+- **Missions.** Room rings: mission 1 straight up at 0.8 m above the pad; mission 2 at 1.2 m ahead, 0.6 m up; mission 3
+  at (-0.8, 0.6, -1.0) then (0.5, 0.7, -2.0), angled; mission 4 a slot turned 60°, 0.5 x 0.16 m. Sky: mission 5 lands
+  in a 20 m circle at 105 m, and mission 6 lands in a 10 m circle (not on the pad), with one ring moved to (-12, 22, -60)
+  so the turn is flyable. Sky water is 12 s (the autopilot finishes the sky rings with at least 30% left).
+- **Fail reasons.** `far` (room 4 m, sky 160 m from the pad), `landed` (down before the last ring), `missed` (outside
+  the landing circle) and `empty` (the tank ran dry without the rocket ever leaving the pad). Each has its own line.
+- **Pad.** The pad is solid until the rocket has risen 3 cm (room) or 1 m (sky). A short tap leaves the rocket on
+  the pad with the rest of its water, and after a moment the buttons come back with "Hold the trigger to fly!".
+- **Parachute.** Under the parachute the rocket swings back upright (keeping its heading) but still cannot steer.
+  After a win the rocket keeps falling on its parachute instead of freezing in the air.
+- **Controls.** Launch needs a fresh trigger press after any button press. If only the left controller is tracked,
+  it flies the rocket. B or X brings the pointers back mid-flight.
+- **Force arrows** draw on top of everything (they show through the bottle). The button is hidden in flight; the
+  grip (G on a laptop) still toggles them.
+- **Scan.** `createToyScan` takes `words` and `fallbackToy`. A scan that comes back as a library creature (the
+  server's two-minute fallback) or a model too thin to fit uses the practice bottle, with a line saying so.
+- **Progress** is kept while the app is open: coming back to the tab resumes at the furthest mission reached.
+- **Files beyond the plan's list:** `math.js`, `attitude.js`, `rings.js`, `run.js`, `autopilot.js` and `sky.js`. The
+  Node checks are `dev/sim.test.mjs`; `dev/check.mjs start|autoplay <out-dir>` is the headless browser check.
+  `&standins=1` is not implemented: the practice bottle already plays without any model file.
