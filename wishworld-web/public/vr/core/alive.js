@@ -84,7 +84,7 @@ export function createAlive({ scene, renderer, rig, audio, input, haptic = () =>
       seed: Math.random() * 100, lookYaw: 0, lean: new THREE.Vector3(), hop: 0, squash: 0,
       pokedAt: -10, pettedAt: -10, nextVoice: 6 + Math.random() * 14,
     };
-    holder.userData.alive = entry;
+    // (never in userData: three.js clones userData through JSON, and the entry points back at the holder)
     living.push(entry);
     while (living.length > MAX_LIVING) unwrap(living.shift());
     return entry;
@@ -96,7 +96,6 @@ export function createAlive({ scene, renderer, rig, audio, input, haptic = () =>
       while (pivot.children.length) holder.add(pivot.children[0]);
       holder.remove(pivot);
     }
-    delete holder.userData.alive;
   }
 
   function remove(holder) {
@@ -121,7 +120,7 @@ export function createAlive({ scene, renderer, rig, audio, input, haptic = () =>
     const speakerEntry = living.find((x) => x.speaker && x.holder.visible && x.holder.parent) || null;
     for (let k = living.length - 1; k >= 0; k--) {
       const e = living[k];
-      if (!e.holder.parent) { living.splice(k, 1); delete e.holder.userData.alive; continue; }   // left the scene
+      if (!e.holder.parent) { living.splice(k, 1); continue; }   // left the scene
       if (!e.holder.visible) continue;
       const s = e.style, ph = t + e.seed, size = e.size;
       e.holder.getWorldPosition(_pos);

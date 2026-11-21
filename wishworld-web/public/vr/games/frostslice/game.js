@@ -19,7 +19,7 @@ import { createHud } from './hud.js';
 import { createVoice } from './voice.js';
 import { createAutoplay } from './autoplay.js';
 import { createCustomFruit } from './customfruit.js';
-import { createToyFruit, TOY_RADIUS } from './toyfruit.js';
+import { createToyFruit, TOY_RADIUS, TEMPLATE_OF } from './toyfruit.js';
 
 const MAX_FLYING = 16;
 const MAX_DEBRIS = 24;
@@ -469,7 +469,7 @@ export function createFrostSlice(ctx) {
     const px = f.mesh.position.x, py = f.mesh.position.y, pz = f.mesh.position.z;
     const hazard = f.hazard, kindIndex = f.kind;
     const scanned = f.custom ? custom.active : null;
-    const toyTemplate = f.toy ? f.toy.userData.toyTemplate : null;
+    const toyTemplate = f.toy ? TEMPLATE_OF.get(f.toy) || null : null;
     if (scanned || toyTemplate) _cutQ.copy(f.mesh.quaternion);
     releaseFlying(index);
     haptic(b.hand, hazard ? RULES.haptic.hazard : RULES.haptic.fruit);

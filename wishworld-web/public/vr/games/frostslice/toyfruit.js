@@ -5,6 +5,9 @@
 import { loadModelUrl } from '/shared/models.js';
 import { buildBubby } from '/shared/toys.js';
 
+/** Which template a thrown copy came from (for the two halves when it is sliced). */
+export const TEMPLATE_OF = new WeakMap();
+
 const SIZE = 0.2;          // metres across, like a big fruit
 export const TOY_RADIUS = 0.11;
 export const TOY_CHANCE = 0.45;
@@ -53,7 +56,7 @@ export function createToyFruit(ctx) {
       const t = toys[Math.floor(Math.random() * toys.length)];
       const copy = t.template.clone(true);
       copy.userData.toyName = t.name;
-      copy.userData.toyTemplate = t.template;
+      TEMPLATE_OF.set(copy, t.template);   // not in userData: three.js clones userData through JSON
       return copy;
     },
   };
