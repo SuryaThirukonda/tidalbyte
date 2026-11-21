@@ -36,13 +36,39 @@ check(SKY.thrust > SKY.gravity, 'sky: thrust beats weight');
 for (const [name, p, limit] of [['room', ROOM, 0.6], ['sky', SKY, 4]]) {
   const s = fly(p, p.waterSeconds + 0.5, { target: UPRIGHT, thrust: true });   // climb until the tank is empty
   fly(p, 6, { target: UPRIGHT, thrust: false }, s);                            // then fall under the parachute
-  check(s.chute || s.landed, `${name}: the parachute opens when falling without thrust`);
-  check(s.landed || Math.abs(s.vel[1]) < limit, `${name}: parachute descent ${Math.abs(s.vel[1]).toFixed(2)} m/s is under ${limit} m/s`);
+  check(s.chute && !s.landed, `${name}: the parachute opens when falling without thrust (still in the air)`);
+  check(s.chute && !s.landed && Math.abs(s.vel[1]) < limit, `${name}: parachute descent ${Math.abs(s.vel[1]).toFixed(2)} m/s is under ${limit} m/s`);
+  s.water = 0.5;
+  fly(p, H, { target: UPRIGHT, thrust: true }, s);
+  check(!s.chute && s.firing, `${name}: firing again closes the parachute`);
 }
 {
   const s = fly(ROOM, 0.6, { target: UPRIGHT, thrust: true });                 // hop straight up, then fall back
   fly(ROOM, 8, { target: UPRIGHT, thrust: false }, s);
   check(s.landed && s.landedOn === 'pad', `room: a straight hop lands back on the pad (landed on ${s.landedOn})`);
+  check(Object.values(s.forces).every((v) => v.every((x) => x === 0)), 'room: landing clears all four force arrows');
+}
+for (const [name, p] of [['room', ROOM], ['sky', SKY]]) {
+  const s = fly(p, 0.05, { target: UPRIGHT, thrust: true });                // a tap of the trigger
+  fly(p, 3, { target: UPRIGHT, thrust: false }, s);
+  check(!s.landed && s.pos[1] === 0 && s.water < 1, `${name}: a 0.05 s tap leaves the rocket sitting on the pad (y = ${s.pos[1]}, water ${s.water.toFixed(3)})`);
+}
+for (const [name, p] of [['room', ROOM], ['sky', SKY]]) {
+  const tipped = attitudeTarget({ pitch: 80 * DEG, yaw: 0, roll: 0 }, { pitch: true, yaw: false, roll: false });
+  const s = createState({ quat: [...tipped] });
+  let lowest = 0;
+  for (let t = 0; t < 3 && !s.landed; t += H) {
+    stepFixed(s, { target: tipped, thrust: true }, p);
+    if (Math.hypot(s.pos[0], s.pos[2]) <= p.padRadius) lowest = Math.min(lowest, s.pos[1]);
+  }
+  check(lowest >= 0, `${name}: a full-thrust launch pitched 80 degrees never sinks into the pad (lowest ${lowest.toFixed(3)} m over it)`);
+}
+{
+  const tipped = attitudeTarget({ pitch: 80 * DEG, yaw: 30 * DEG, roll: 0 }, { pitch: true, yaw: true, roll: false });
+  const s = createState({ pos: [0, 30, 0], vel: [0, -3, -5], launched: true, cleared: true, water: 0, quat: [...tipped] });
+  fly(SKY, 2, { target: tipped, thrust: false }, s);
+  const tilt = Math.acos(Math.min(1, qRotate([0, 0, 0], [0, 1, 0], s.quat)[1])) / DEG;
+  check(s.chute && tilt < 10, `sky: a rocket pitched 80 degrees hangs upright under its parachute after 2 s (tilt ${tilt.toFixed(1)} degrees)`);
 }
 {
   const s = createState({ pos: [1, 0.3, 0], launched: true, vel: [0, -0.5, 0], water: 0 });
@@ -89,9 +115,14 @@ check(MISSIONS.every((m) => m.rings.every((r) => Math.abs(Math.hypot(...r.facing
 const paramsFor = (m) => (m.place === 'sky' ? SKY : ROOM);
 MISSIONS.forEach((m, i) => {
   const run = createRun(m, paramsFor(m));
-  let t = 0;
-  while (!run.won && !run.failed && t < 40) { stepRun(run, autopilot(run), 1 / 60); t += 1 / 60; }
-  check(run.won, `mission ${i + 1} (${m.id}) ${run.won ? `won in ${t.toFixed(1)} s` : `not won: ${run.reason || 'timed out'}, ring ${run.next} of ${m.rings.length}`}`);
+  let t = 0, afterRings = null;
+  while (!run.won && !run.failed && t < 40) {
+    stepRun(run, autopilot(run), 1 / 60); t += 1 / 60;
+    if (afterRings === null && run.next === m.rings.length) afterRings = run.state.water;
+  }
+  const pct = (w) => `${Math.round(w * 100)}%`;
+  check(run.won, `mission ${i + 1} (${m.id}) ${run.won ? `won in ${t.toFixed(1)} s, water left ${pct(afterRings)} after the rings, ${pct(run.state.water)} at the end` : `not won: ${run.reason || 'timed out'}, ring ${run.next} of ${m.rings.length}`}`);
+  if (m.place === 'sky') check(afterRings !== null && afterRings >= 0.3, `mission ${i + 1} (${m.id}) leaves a child at least 30% of the tank after the rings`);
 });
 {
   const run = createRun(MISSIONS[3], ROOM);            // every control unlocked
