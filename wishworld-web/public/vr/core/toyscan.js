@@ -193,7 +193,7 @@ export function createToyScan({ ctx, ui, audio, rig, parent, takeToy, setScanVie
   async function loadToy(gift) {
     if (!gift) return prepared();
     const name = toyName(gift, w.noName);
-    const greeting = w.greeting.replace('{name}', name);
+    const greeting = w.greeting.replace('{name}', () => name);
     try {
       const model = gift.kind === 'mesh' ? await loadModelUrl(gift.model_url, 0.3) : await loadCreature(gift.option_id);
       return { model, gift, name, greeting, greeting2: w.greeting2 };
