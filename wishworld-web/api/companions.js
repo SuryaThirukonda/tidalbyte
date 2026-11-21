@@ -10,7 +10,9 @@
 //   POST /api/companions { room, gift_id }         -> { companion }   save a scanned toy (a "mesh" gift, or the
 //                                                                      library creature a failed scan became)
 //   POST /api/companions { room, toy: "bubby" }    -> { companion }   save the prepared toy
-//   POST /api/companions { room, id, remove: true }-> { removed }     let one go
+//   POST /api/companions { room, id, remove: true }-> { removed }     let one go (hidden, so a gift does not come
+//                                                                      back as a candidate; saving it again restores it)
+//   POST /api/companions { room, id, name }        -> { companion }   rename one
 //
 // companion: { id, name, toy, gift_id, kind ("mesh" | "creature" | "toy"), model_url, option_id, created_at }
 // Saving the same toy twice returns the saved one. The table is created on first use.
@@ -34,7 +36,9 @@ function ensureTable() {
         created_at timestamptz not null default now(),
         unique (room_code, gift_id),
         unique (room_code, toy)
-      )`.catch((err) => { ready = null; throw err; });
+      )`
+      .then(() => sql`alter table companions add column if not exists hidden boolean not null default false`)
+      .catch((err) => { ready = null; throw err; });
   }
   return ready;
 }
@@ -59,6 +63,7 @@ async function list(room, profile) {
     select c.*, g.kind, g.model_url, g.option_id
     from companions c left join gifts g on g.id = c.gift_id
     where c.room_code = ${room} and (c.profile_id = ${profile.id} or (${profile.isDefault} and c.profile_id is null))
+      and not c.hidden
     order by c.created_at asc, c.id asc`;
   return rows.map(json);
 }
@@ -81,7 +86,9 @@ export default route(['GET', 'POST'], async (req, res) => {
     const profile = await resolveProfile(room, q.profile);
     const companions = await list(room, profile);
     if (q.all !== '1') return send(res, 200, { companions });
-    const taken = companions.map((c) => c.gift_id).filter(Boolean);
+    // Gifts already kept as buddies, including ones let go (those stay out of the candidates).
+    const taken = (await sql`select gift_id from companions where room_code = ${room} and gift_id is not null`)
+      .map((r) => Number(r.gift_id));
     const gifts = await sql`
       select id, kind, wish, option_id, model_url, created_at from gifts
       where room_code = ${room} and status = 'ready'
@@ -99,14 +106,24 @@ export default route(['GET', 'POST'], async (req, res) => {
   const room = roomCode(b.room);
   const profile = await resolveProfile(room, b.profile_id);
 
-  if (b.remove) {
+  if (b.remove || b.name !== undefined) {
     const id = Number(b.id);
     if (!Number.isSafeInteger(id) || id <= 0) throw new UserError('That companion id does not look right.');
-    const gone = await sql`delete from companions where id = ${id} and room_code = ${room} returning id`;
-    return send(res, 200, { removed: gone.length > 0 });
+    if (b.remove) {
+      const gone = await sql`update companions set hidden = true where id = ${id} and room_code = ${room}
+        and (profile_id = ${profile.id} or (${profile.isDefault} and profile_id is null)) returning id`;
+      return send(res, 200, { removed: gone.length > 0 });
+    }
+    const name = text(b.name, 24);
+    if (!name) throw new UserError('A buddy needs a name.');
+    const done = await sql`update companions set name = ${name} where id = ${id} and room_code = ${room}
+      and (profile_id = ${profile.id} or (${profile.isDefault} and profile_id is null)) and not hidden returning id`;
+    if (!done.length) throw new UserError('That buddy is not here.', 404);
+    const rows = await list(room, profile);
+    return send(res, 200, { companion: rows.find((c) => c.id === id) || null });
   }
 
-  const count = await sql`select count(*)::int as n from companions where room_code = ${room}`;
+  const count = await sql`select count(*)::int as n from companions where room_code = ${room} and not hidden`;
   if (count[0].n >= MAX_PER_ROOM) throw new UserError(`A room can keep ${MAX_PER_ROOM} companions. Let one go first.`, 409);
 
   if (b.toy !== undefined) {
@@ -114,7 +131,7 @@ export default route(['GET', 'POST'], async (req, res) => {
     if (!TOYS[toy]) throw new UserError('That toy is not known.');
     await ensureRoom(room);
     await sql`insert into companions (room_code, toy, name, profile_id) values (${room}, ${toyKey(toy, profile)}, ${TOYS[toy]}, ${profile.id})
-              on conflict (room_code, toy) do nothing`;
+              on conflict (room_code, toy) do update set hidden = false`;
   } else {
     const giftId = Number(b.gift_id);
     if (!Number.isSafeInteger(giftId) || giftId <= 0) throw new UserError('"gift_id" must be a gift id.');
@@ -124,7 +141,7 @@ export default route(['GET', 'POST'], async (req, res) => {
     const usable = gift.status === 'ready' && ((gift.kind === 'mesh' && gift.model_url) || (gift.kind === 'creature' && gift.option_id));
     if (!usable) throw new UserError('That gift is not a companion yet.', 409);
     await sql`insert into companions (room_code, gift_id, name, profile_id) values (${room}, ${giftId}, ${nameOf(gift)}, ${profile.id})
-              on conflict (room_code, gift_id) do nothing`;
+              on conflict (room_code, gift_id) do update set hidden = false`;
   }
   const rows = await list(room, profile);
   const saved = b.toy !== undefined

@@ -3,6 +3,7 @@
 //
 //   Buddies          this profile's saved companions and the gifts that could be buddies, each with a
 //                    "follows me" toggle. At most three follow at once, so the frame rate holds on a Quest 2.
+//                    "Edit" gives a buddy a new name (pick one, or type one outside the headset) or lets it go.
 //   Sound            volume, and the guide's voice on or off (captions stay).
 //   Calm microphone  how easily the Calm tab hears a breath.
 //   Profiles         switch to another child in this room.
@@ -14,6 +15,11 @@ export const meta = { id: 'settings', label: 'Settings', order: 8 };
 
 const MAX_FOLLOWING = 3;
 const MAX_ROWS = 7;
+// Names a child can pick in the headset, where there is no keyboard. Shown six at a time.
+const NAMES = [
+  'Sunny', 'Pip', 'Bubbles', 'Biscuit', 'Ziggy', 'Coco', 'Pebble', 'Maple', 'Nugget', 'Waffles', 'Juniper', 'Sprout',
+  'Doodle', 'Comet', 'Peanut', 'Mochi', 'Pickles', 'Button', 'Noodle', 'Twinkle', 'Marshmallow', 'Rocket', 'Clover', 'Jelly',
+];
 const _head = new THREE.Vector3(), _fwd = new THREE.Vector3();
 
 export function createTab(ctx) {
@@ -71,6 +77,9 @@ export function createTab(ctx) {
   let active = false, epoch = 0, placed = false;
   let buddies = [];             // [{ key, name, companionId, giftId }]
   let unlisten = null;
+  let editing = null;           // the buddy being renamed or let go, or null for the list
+  let confirmGo = false;        // "Let go" asks once more before it happens
+  let nameStart = 0;            // which six of NAMES are showing
 
   // ---------- helpers ----------
   const settings = () => (ctx.profile && ctx.profile.current ? ctx.profile.current.settings : {});
@@ -113,6 +122,7 @@ export function createTab(ctx) {
   }
 
   function drawBuddies() {
+    if (editing) return drawEditor();
     clearGroup(buddyRows);
     const follow = following();
     const name = ctx.profile && ctx.profile.current ? ctx.profile.current.name : '';
@@ -126,19 +136,56 @@ export function createTab(ctx) {
     buddies.slice(0, MAX_ROWS).forEach((b, i) => {
       const y = 0.235 - i * 0.092;
       const on = b.companionId && follow.includes(b.companionId);
-      const label = ui.makeLabel(b.name, { width: 0.33, height: 0.07, size: 0.03, align: 'left' });
-      label.position.set(-0.47, y, 0.006);
+      const label = ui.makeLabel(b.name, { width: 0.26, height: 0.07, size: 0.03, align: 'left' });
+      label.position.set(-0.5, y, 0.006);
       const toggle = ui.makeButton(on ? 'Follows me' : 'Stays here', () => toggleFollow(b), {
-        width: 0.25, height: 0.075, textHeight: 0.028, fill: on ? colors.peach : undefined,
+        width: 0.22, height: 0.075, textHeight: 0.026, fill: on ? colors.peach : undefined,
       });
-      toggle.position.set(-0.16, y, 0.006);
-      buddyRows.add(label, toggle);
+      toggle.position.set(-0.245, y, 0.006);
+      const edit = ui.makeButton('Edit', () => openEditor(b), { width: 0.1, height: 0.075, textHeight: 0.024 });
+      edit.position.set(-0.075, y, 0.006);
+      buddyRows.add(label, toggle, edit);
     });
     if (buddies.length > MAX_ROWS) {
       const more = ui.makeLabel(`and ${buddies.length - MAX_ROWS} more`, { width: 0.5, height: 0.05, size: 0.024 });
       more.position.set(-0.33, 0.235 - MAX_ROWS * 0.092, 0.006);
       buddyRows.add(more);
     }
+  }
+
+  /** The edit panel for one buddy, in place of the list: six names to pick, more names, type a name (outside the
+   *  headset), let it go, back. */
+  function drawEditor() {
+    clearGroup(buddyRows);
+    const b = editing;
+    panel.setText(`Pick a new name for ${b.name}.`, 1);
+    const names = [];
+    for (let i = 0; names.length < 6 && i < NAMES.length; i++) {
+      const n = NAMES[(nameStart + i) % NAMES.length];
+      if (n !== b.name) names.push(n);
+    }
+    names.forEach((n, i) => {
+      const btn = ui.makeButton(n, () => renameTo(n), { width: 0.26, height: 0.075, textHeight: 0.028 });
+      btn.position.set(-0.475 + (i % 2) * 0.28, 0.235 - Math.floor(i / 2) * 0.09, 0.006);
+      buddyRows.add(btn);
+    });
+    const more = ui.makeButton('More names', () => { nameStart = (nameStart + 6) % NAMES.length; drawEditor(); },
+      { width: 0.26, height: 0.075, textHeight: 0.026 });
+    more.position.set(-0.475, -0.04, 0.006);
+    buddyRows.add(more);
+    const typing = !ctx.isImmersive() && typeof window.prompt === 'function';
+    if (typing) {
+      const type = ui.makeButton('Type a name', () => typeName(), { width: 0.26, height: 0.075, textHeight: 0.026 });
+      type.position.set(-0.195, -0.04, 0.006);
+      buddyRows.add(type);
+    }
+    const go = ui.makeButton(confirmGo ? `Yes, let ${b.name} go` : `Let ${b.name} go`, () => letGo(), {
+      width: 0.54, height: 0.075, textHeight: 0.026, fill: confirmGo ? colors.peach : undefined,
+    });
+    go.position.set(-0.335, -0.14, 0.006);
+    const back = ui.makeButton('Back to buddies', () => closeEditor(), { width: 0.54, height: 0.075, textHeight: 0.026 });
+    back.position.set(-0.335, -0.235, 0.006);
+    buddyRows.add(go, back);
   }
 
   function drawAll() { drawSound(); drawProfiles(); drawBuddies(); }
@@ -209,6 +256,68 @@ export function createTab(ctx) {
     drawBuddies();
   }
 
+  // ---------- renaming and letting go ----------
+  function openEditor(b) { editing = b; confirmGo = false; say(''); drawBuddies(); }
+  function closeEditor() { editing = null; confirmGo = false; drawBuddies(); }
+
+  /** A gift that is not a buddy yet is kept first, so it has a companion to rename. -> companion id or null */
+  async function keep(b) {
+    if (b.companionId) return b.companionId;
+    try {
+      const saved = await ctx.api.saveCompanion({ giftId: b.giftId });
+      if (saved && saved.id) b.companionId = saved.id;
+    } catch (err) {
+      say((err && err.message) || 'That buddy could not be changed just now.');
+    }
+    return b.companionId;
+  }
+
+  async function renameTo(name) {
+    const b = editing;
+    if (!b) return;
+    const old = b.name;
+    const id = await keep(b);
+    if (!id) return;
+    try {
+      const saved = await ctx.api.renameCompanion(id, name);
+      b.name = (saved && saved.name) || name;
+    } catch (err) {
+      say((err && err.message) || 'That name could not be saved just now.');
+      return;
+    }
+    if (editing === b) { editing = null; confirmGo = false; }
+    say(`${old} is now called ${b.name}!`);
+    drawBuddies();
+  }
+
+  function typeName() {
+    const b = editing;
+    if (!b) return;
+    const typed = window.prompt(`A new name for ${b.name}:`, b.name);
+    const name = String(typed || '').trim().slice(0, 24);
+    if (name && name !== b.name) renameTo(name);
+  }
+
+  async function letGo() {
+    const b = editing;
+    if (!b) return;
+    if (!confirmGo) { confirmGo = true; say(`Tap again to let ${b.name} go. Their gift stays in the mailbox.`); drawEditor(); return; }
+    if (b.companionId) {
+      try {
+        await ctx.api.removeCompanion(b.companionId);
+      } catch (err) {
+        say((err && err.message) || 'That buddy could not be let go just now.');
+        return;
+      }
+      const follow = following();
+      if (follow.includes(b.companionId)) await save({ following: follow.filter((id) => id !== b.companionId) });
+    }
+    buddies = buddies.filter((x) => x !== b);
+    editing = null; confirmGo = false;
+    say(`Bye bye, ${b.name}!`);
+    drawBuddies();
+  }
+
   async function switchTo(p) {
     if (!ctx.profile || (ctx.profile.current && p.id === ctx.profile.current.id)) return;
     say(`Switching to ${p.name}...`);
@@ -233,6 +342,7 @@ export function createTab(ctx) {
       placed = !ctx.isAR();
       say('');
       buddies = [];
+      editing = null; confirmGo = false;
       drawAll();
       loadBuddies();
       if (ctx.profile && ctx.profile.onChange) unlisten = ctx.profile.onChange(() => { if (active) drawAll(); });

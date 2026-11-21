@@ -276,7 +276,16 @@ export const api = {
 
   /** Let a saved companion go. -> true if it was removed */
   async removeCompanion(id) {
-    return (await post('/api/companions', { room: room(), id, remove: true }, { timeoutMs: 15000 })).removed;
+    const payload = { room: room(), id, remove: true };
+    if (profile()) payload.profile_id = profile();
+    return (await post('/api/companions', payload, { timeoutMs: 15000 })).removed;
+  },
+
+  /** Give a saved companion a new name. -> companion */
+  async renameCompanion(id, name) {
+    const payload = { room: room(), id, name };
+    if (profile()) payload.profile_id = profile();
+    return (await post('/api/companions', payload, { timeoutMs: 15000 })).companion;
   },
 
   /** The parent check-in. -> { room, child_name, events, gifts } newest first */
