@@ -75,6 +75,16 @@ console.log('aim assist');
   expect(!assistThrow(court, top.x, HAND_Y, top.z, ideal.x, -1, ideal.z, out, opts), 'a throw downward is left alone');
   expect(!assistThrow(court, top.x, HAND_Y, top.z, 0.3, 0.6, -0.5, out, opts), 'a gentle drop is left alone');
   expect(!assistThrow(court, top.x, HAND_Y, top.z, raw.x, raw.y, raw.z, out, { ...opts, amount: 0 }), 'assist 0 turns it off');
+  // a child's throw: 5.4 m/s at the ideal angle, 2 degrees off line (the ideal arc needs ~7.6 m/s)
+  court.spots.forEach((s, i) => {
+    idealVelocity(court, s.x, HAND_Y, s.z, ideal, THROW.idealElevation);
+    const k = 5.4 / Math.hypot(ideal.x, ideal.y, ideal.z);
+    const kid = yawVelocity({ x: ideal.x * k, y: ideal.y * k, z: ideal.z * k }, 2);
+    const alone = fly(s.x, HAND_Y, s.z, kid);
+    assistThrow(court, s.x, HAND_Y, s.z, kid.x * THROW.boost, kid.y * THROW.boost, kid.z * THROW.boost, out, opts);
+    const helpedKid = fly(s.x, HAND_Y, s.z, out);
+    expect(!alone.made && helpedKid.made, `${COURT.spotNames[i]}: a 5.4 m/s throw 2 degrees off misses alone, goes in with the x${THROW.boost} boost and ${Math.round(THROW.assist * 100)}% assist`);
+  });
 }
 
 // ------------------------------------------------------------------------------------------------ tracker

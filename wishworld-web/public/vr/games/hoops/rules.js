@@ -39,7 +39,8 @@ export const THROW = {
   velocityWindow: 0.09,          // s: the release velocity is the hand's average over this much tracked motion
   trackSamples: 24,
   idealElevation: 55,            // degrees: the arc the aim assist blends toward
-  assist: 0.35,                  // 0 = off, 1 = every throw toward the hoop is perfect
+  boost: 1.4,                    // a real hand's release speed is multiplied by this: ~5.4 m/s reaches the hoop (the ideal arc is ~7.6)
+  assist: 0.78,                  // 0 = off, 1 = every throw toward the hoop is perfect
   assistCone: 35,                // degrees: only a throw this close to the hoop's direction (seen from above) is helped
   assistMinSpeed: 2.0,           // m/s: slower than this is a drop, not a throw, and is not helped
   putBackSpeed: 0.6,             // m/s: a ball let go this gently near the rack goes back on it
@@ -47,7 +48,7 @@ export const THROW = {
   grabRadius: 0.25,              // m from the hand to the front ball
   holdOffset: [0, -0.02, -0.06], // the ball's centre in the grip's frame
   desktop: {                     // mouse: press to pick up, drag up for power and sideways to aim, let go to shoot
-    restPower: 0.6, powerPerScreen: 1.2, minPower: 0.4, maxPower: 1.4,   // 1.0 is the ideal arc's speed
+    restPower: 0.85, powerPerScreen: 1.2, minPower: 0.4, maxPower: 1.4,  // 1.0 is the ideal arc's speed: a drag of 1/8 of the screen
     yawPerScreen: 40,            // degrees across the whole width
     previewSeconds: 0.45,        // the dotted aim line shows this much of the flight
   },

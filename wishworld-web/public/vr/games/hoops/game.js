@@ -21,6 +21,7 @@ import { createTracker } from './tracker.js';
 import { createCourt } from './court.js';
 import { createSfx } from './sfx.js';
 import { createSparkles } from './fx.js';
+import { createCrowd, crowdSpots } from './crowd.js';
 import { createHud } from './hud.js';
 import { listChoices, createBallCache } from './balls.js';
 import { makeRack } from './ballshape.js';
@@ -62,6 +63,8 @@ export function createSnowHoops(ctx) {
   const sparkles = createSparkles();
   world.add(sparkles.points);
   const sfx = createSfx(ctx, { muted });
+  const crowd = createCrowd(crowdSpots(COURT.hoop), { x: COURT.hoop[0], z: COURT.hoop[2] + COURT.arcRadius * 0.6 });
+  world.add(crowd.group);
 
   // the desktop's dotted aim line: the first part of the flight only
   const aimPos = new Float32Array(PREVIEW_DOTS * 3);
@@ -221,8 +224,8 @@ export function createSnowHoops(ctx) {
     return s;
   }
 
-  /** Let go of a held ball at court-frame point p with velocity v (court frame). */
-  function release(s, hand, px, py, pz, vx, vy, vz) {
+  /** Let go of a held ball at court-frame point p with velocity v (court frame). `boost` scales a real hand's throw. */
+  function release(s, hand, px, py, pz, vx, vy, vz, boost = 1) {
     held[hand] = null;
     const speed = Math.hypot(vx, vy, vz);
     if (speed < THROW.putBackSpeed && Math.hypot(px - rackFront.x, py - rackFront.y, pz - rackFront.z) < THROW.putBackDistance && contest.putBack(s.ball)) {
@@ -230,6 +233,7 @@ export function createSnowHoops(ctx) {
       boardDirty = true;
       return 'back';
     }
+    vx *= boost; vy *= boost; vz *= boost;
     const helped = assistThrow(pc, px, py, pz, vx, vy, vz, _out, assistOpts, _ideal);
     contest.throwBall(s.ball, clock);
     launchBall(s.sim, px, py, pz, _out.x, _out.y, _out.z);
@@ -241,7 +245,7 @@ export function createSnowHoops(ctx) {
     s.rate = BALL.spinRevsPerSecond * Math.PI * 2;
     haptic(hand, HAPTIC.release);
     boardDirty = true;
-    if (dev) log('throw', `${hand} ${speed.toFixed(2)} m/s${helped ? ' (aim assist)' : ''} -> ${Math.hypot(_out.x, _out.y, _out.z).toFixed(2)} m/s, ball ${s.ball.index + 1}${s.ball.money ? ' (money)' : ''}`);
+    if (dev) log('throw', `${hand} ${speed.toFixed(2)} m/s${boost !== 1 ? ' x' + boost : ''}${helped ? ' (aim assist)' : ''} -> ${Math.hypot(_out.x, _out.y, _out.z).toFixed(2)} m/s, ball ${s.ball.index + 1}${s.ball.money ? ' (money)' : ''}`);
     return helped ? 'assisted' : 'thrown';
   }
 
@@ -261,6 +265,7 @@ export function createSnowHoops(ctx) {
         if (s.ball.money) sfx.play('chime', VOLUME.money, toWorld(pc.rim.x, pc.rim.y, pc.rim.z));
         if (clean) haptic(s.hand, HAPTIC.swish);
         court.swish(clean ? 1 : 0.6);
+        crowd.cheer(s.ball.money ? 2 : 1);
         sparkles.burst(pc.rim.x, pc.rim.y - 0.1, pc.rim.z, s.ball.money ? COLORS.gold : COLORS.ice, s.ball.money ? 40 : 22);
         boardDirty = true;
         if (dev) log('basket', `+${points}${clean ? ' swish' : ''} score ${contest.score}`);
@@ -318,7 +323,7 @@ export function createSnowHoops(ctx) {
     if (!s) return;
     trackers[hand].velocity(clock, THROW.velocityWindow, _vel);
     const p = s.obj.position;
-    release(s, hand, p.x, p.y, p.z, _vel.x, _vel.y, _vel.z);
+    release(s, hand, p.x, p.y, p.z, _vel.x, _vel.y, _vel.z, THROW.boost);
   }
 
   // ---- desktop: press to pick up, drag up for power and sideways to aim, let go to shoot -----------------------
@@ -569,6 +574,7 @@ export function createSnowHoops(ctx) {
     hud.update(dt);
     court.update(dt);
     sparkles.update(dt);
+    crowd.update(dt, clock);
     snow.update(ctx.elapsed || clock);
     if (chosen) chosen.gold.setGlow(0.22 + 0.14 * Math.sin(clock * 4));
     updateAutoplay(dt);
@@ -600,7 +606,7 @@ export function createSnowHoops(ctx) {
         choices: choices.map((c) => c.label), ball: chosen ? { label: chosen.label, triangles: chosen.triangles } : null,
         visibleOnRack, slots: slots.map((s) => s.state), shown: slots.filter((s) => s.obj.visible).length, held: { left: Boolean(held.left), right: Boolean(held.right), desk: Boolean(held.desk) },
         picker: hud.pickerVisible, results: hud.resultsVisible, board: hud.boardVisible, spoken: spoken.slice(), sounds: sfx.played,
-        sparkles: sparkles.emitted, peak: { calls: perfPeakCalls, triangles: perfPeakTris },
+        sparkles: sparkles.emitted, crowd: { penguins: crowd.count, cheers: crowd.cheers }, peak: { calls: perfPeakCalls, triangles: perfPeakTris },
       };
     },
     setTimeLeft(s) { contest.setTimeLeft(s); boardDirty = true; },
@@ -636,7 +642,7 @@ export function createSnowHoops(ctx) {
       for (let k = 0; k < 8; k++) { const t = clock - (7 - k) / 72; tr.push(t, _v.x + vx * (t - clock), _v.y + vy * (t - clock), _v.z + vz * (t - clock)); }
       s.obj.position.copy(_v);
       tr.velocity(clock, THROW.velocityWindow, _vel);
-      const result = release(s, 'right', _v.x, _v.y, _v.z, _vel.x, _vel.y, _vel.z);
+      const result = release(s, 'right', _v.x, _v.y, _v.z, _vel.x, _vel.y, _vel.z, THROW.boost);
       return { given: [vx, vy, vz], measured: [_vel.x, _vel.y, _vel.z], launched: [s.sim.vx, s.sim.vy, s.sim.vz], result };
     },
   };
@@ -651,6 +657,7 @@ export function createSnowHoops(ctx) {
       active = true; enterId++; clock = 0; moving = false; readyIn = 0; side = 1;
       try { if (typeof ctx.setEnvironment === 'function') ctx.setEnvironment(null); } catch { /* the default is fine */ }
       placeAt(2);                                           // the top of the key is the shell's origin
+      crowd.load();
       if (ctx.rig && typeof ctx.rig.setHome === 'function' && !(ctx.isAR && ctx.isAR())) ctx.rig.setHome(spotPoint, toHoop, false);
       for (const s of slots) { s.state = 'gone'; s.obj.visible = false; s.sim.live = false; }
       listen(true);
@@ -669,6 +676,7 @@ export function createSnowHoops(ctx) {
       hud.hideAll();
       aimDots.visible = false; desk.down = false;
       sparkles.clear();
+      crowd.clear();
       setRoundInput(false);
       phase = 'off';
     },
@@ -682,7 +690,7 @@ export function createSnowHoops(ctx) {
 
     dispose() {
       this.exit();
-      court.dispose(); sparkles.dispose(); sfx.dispose(); balls.dispose();
+      court.dispose(); sparkles.dispose(); crowd.dispose(); sfx.dispose(); balls.dispose();
       aimGeo.dispose(); aimDots.material.dispose(); snow.dispose();
       if (dev && window.__hoops === debug) delete window.__hoops;
     },

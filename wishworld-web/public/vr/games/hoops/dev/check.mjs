@@ -90,19 +90,21 @@ try {
     if (standins) expect(m.triangles === 19220 && s.visibleOnRack === 3, `a 19,220-triangle scan shows ${s.visibleOnRack} balls on the rack at once`);
     expect(s.spot === 0 && s.rack === 0 && s.board, 'the player is at the left corner, scoreboard up');
     expect(s.shown === s.visibleOnRack, `${s.shown} balls shown on the rack`);
-    // desktop throw: press, drag up a third of the screen, let go
+    // desktop throw: press, drag up an eighth of the screen (100 px), let go: that should go in
     const before = s.shots;
     await browser.mouse('mousePressed', W / 2, H / 2, { button: 'left', clickCount: 1 });
-    for (let k = 1; k <= 10; k++) { await browser.mouse('mouseMoved', W / 2 + k, H / 2 - k * 27, { button: 'left' }); await sleep(30); }
+    for (let k = 1; k <= 10; k++) { await browser.mouse('mouseMoved', W / 2, H / 2 - k * 10, { button: 'left' }); await sleep(30); }
     await sleep(200);
     await shot('desktop-aim');
     s = await state();
     expect(s.held.desk, 'pressing the mouse picks up the front ball; dragging shows the aim line');
-    await browser.mouse('mouseReleased', W / 2 + 10, H / 2 - 270, { button: 'left', clickCount: 1 });
+    await browser.mouse('mouseReleased', W / 2, H / 2 - 100, { button: 'left', clickCount: 1 });
     await sleep(300);
     s = await state();
     expect(s.shots === before + 1 && !s.held.desk, 'letting go throws it: ' + s.shots + ' shot(s)');
     await sleep(2500);
+    s = await state();
+    expect(s.makes === 1, 'a short 100 px drag is enough to score: ' + s.makes + ' basket(s)');
     // a hand path at a known speed through the real tracker: the release velocity is measured, then assisted
     const r = await browser.evaluate('window.__hoops.scriptedThrow(4.6, 4.2, 0.4)');   // toward the hoop, up, a little right
     console.log('  scripted: ' + JSON.stringify(r));
@@ -162,6 +164,7 @@ try {
     console.log('  state: ' + JSON.stringify({ score: s.score, makes: s.makes, shots: s.shots, money: s.moneyMakes, rack: s.rack, endedBy: s.endedBy, peak: s.peak }));
     expect(s.shots >= 10 && s.makes >= 3, `autoplay took ${s.shots} shots and made ${s.makes} (score ${s.score})`);
     expect(s.sparkles > 0 && (s.sounds.clank || 0) + (s.sounds.swish || 0) > 0, 'sparkles and sounds: ' + JSON.stringify(s.sounds));
+    expect(s.crowd.penguins === 15 && s.crowd.cheers === s.makes, `${s.crowd.penguins} penguins watching; they cheered ${s.crowd.cheers} times for ${s.makes} baskets`);
     expect(s.peak.calls < 60 && s.peak.triangles < 100000, `peak ${s.peak.calls} draw calls, ${s.peak.triangles} triangles (budget 60 / 100,000)`);
   }
 
