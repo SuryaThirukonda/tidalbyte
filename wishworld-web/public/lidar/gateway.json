@@ -1,0 +1,56 @@
+{
+  "name": "Gateway Arch",
+  "count": 461823,
+  "scale": 0.01,
+  "bounds": {
+    "min": [
+      -250.0,
+      -0.29,
+      -250.0
+    ],
+    "max": [
+      250.0,
+      209.19,
+      250.0
+    ]
+  },
+  "source": "USGS St. Louis lidar (NAVD88 metres). USGS 3DEP public-domain lidar, Entwine Point Tiles: https://s3-us-west-2.amazonaws.com/usgs-lidar-public/USGS_LPC_MO_StLouis_2017_LAS_2018/ept.json",
+  "facts": [
+    "The Gateway Arch is as wide as it is tall: 630 feet, about 192 metres, each way. It is the tallest monument in the United States.",
+    "It is covered in shiny stainless steel. Little egg-shaped tram cars ride up inside its legs to windows at the very top."
+  ],
+  "factSources": [
+    "https://www.nps.gov/jeff/planyourvisit/gateway-arch-facts.htm"
+  ],
+  "axes": "+X east, +Y up, +Z south; metres = int16 * scale; y = 0 is the water level",
+  "center": {
+    "lat": 38.62453,
+    "lon": -90.18478
+  },
+  "sizeMetres": 500.0,
+  "datasets": [
+    {
+      "name": "USGS_LPC_MO_StLouis_2017_LAS_2018",
+      "url": "https://s3-us-west-2.amazonaws.com/usgs-lidar-public/USGS_LPC_MO_StLouis_2017_LAS_2018/ept.json"
+    }
+  ],
+  "colorSpace": "srgb",
+  "order": "random (the first N points are an even subsample)",
+  "landmark": {
+    "label": "arch",
+    "points": 2253,
+    "x": -21.29,
+    "z": 4.4,
+    "baseY": 16.76,
+    "topY": 209.19
+  },
+  "waterLevelNavd88": 118.76,
+  "categories": {
+    "landmark": 2253,
+    "structure": 23378,
+    "veg": 22176,
+    "ground": 365129,
+    "water": 48887
+  },
+  "baseCell": 0.0
+}

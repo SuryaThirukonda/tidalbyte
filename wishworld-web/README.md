@@ -42,6 +42,12 @@ Decisions and file formats: [`docs/CONTRACT.md`](docs/CONTRACT.md). What the Uni
   hop. See `public/vr/core/companions.js` and `api/companions.js`.
 
 Headset tabs: `hub`, `reef`, `worlds`, `frostslice`, `snowcircuit`, `explore`, `calm`, `mailbox`
+
+**Explore** shows real places scanned by USGS lidar: the Statue of Liberty, Niagara Falls, the Golden Gate Bridge,
+the Gateway Arch, the Washington Monument, Devils Tower and the Grand Canyon. Each starts as a tabletop model;
+**Walk around it** makes it life-size and puts you on the ground near the landmark, facing it. Walk with the left
+thumbstick (W A S D, the on-screen stick or a game controller off the headset) and turn with the right thumbstick;
+**Back to the table** returns. `&place=<id>` opens Explore on one place (for example `&tab=explore&place=goldengate`).
 (listed in `public/vr/tabs/tabs.json`; the shell is documented in `public/vr/core/README.md`).
 
 ## Layout

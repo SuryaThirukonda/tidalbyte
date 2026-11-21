@@ -1,0 +1,57 @@
+{
+  "name": "Washington Monument",
+  "count": 659776,
+  "scale": 0.01,
+  "bounds": {
+    "min": [
+      -249.99,
+      -16.95,
+      -250.0
+    ],
+    "max": [
+      249.99,
+      181.22,
+      250.0
+    ]
+  },
+  "source": "USGS National Capital Region lidar (NAVD88 metres). USGS 3DEP public-domain lidar, Entwine Point Tiles: https://s3-us-west-2.amazonaws.com/usgs-lidar-public/USGS_LPC_MD_VA_Sandy_NCR_2014_LAS_2015/ept.json",
+  "facts": [
+    "The Washington Monument is a giant stone obelisk, about 555 feet or 169 metres tall, built to honour George Washington.",
+    "Look closely and the stone changes colour about a third of the way up. Building stopped for many years, and the new marble came from a different quarry."
+  ],
+  "factSources": [
+    "https://www.nps.gov/wamo/learn/historyculture/index.htm",
+    "https://www.nps.gov/wamo/faqs.htm"
+  ],
+  "axes": "+X east, +Y up, +Z south; metres = int16 * scale; y = 0 is the water level",
+  "center": {
+    "lat": 38.88948,
+    "lon": -77.03524
+  },
+  "sizeMetres": 500.0,
+  "datasets": [
+    {
+      "name": "USGS_LPC_MD_VA_Sandy_NCR_2014_LAS_2015",
+      "url": "https://s3-us-west-2.amazonaws.com/usgs-lidar-public/USGS_LPC_MD_VA_Sandy_NCR_2014_LAS_2015/ept.json"
+    }
+  ],
+  "colorSpace": "srgb",
+  "order": "random (the first N points are an even subsample)",
+  "landmark": {
+    "label": "obelisk",
+    "points": 5615,
+    "x": 2.93,
+    "z": 6.45,
+    "baseY": 12.63,
+    "topY": 181.22
+  },
+  "waterLevelNavd88": -0.7,
+  "categories": {
+    "landmark": 5615,
+    "structure": 261247,
+    "veg": 70706,
+    "ground": 320550,
+    "water": 1658
+  },
+  "baseCell": 0.69
+}

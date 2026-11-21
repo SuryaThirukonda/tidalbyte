@@ -1,9 +1,9 @@
 # WishWorld on Windows: setup
 
 Written for the ThinkPad P14s Gen 6 AMD booted into Windows, with the project copied to
-`C:\Users\thiru\tamu2\ecs\repos\tidalbyte`. Nothing in this file has been tried on Windows yet.
+`C:\Projects\WishWorld` (any folder works; this file uses that one). Nothing in this file has been tried on Windows yet.
 
-What is in that folder: the whole project as a git clone of `github.com/SuryaThirukonda/tidalbyte` (branch `main`),
+What is in that folder: the whole project as a git clone of its GitHub repository (branch `main`),
 plus `.env` with the ElevenLabs and Anthropic keys. Not copied, because they are rebuilt or downloaded: Unity's
 `Library` cache, the APK, the demo videos, and the original third-party downloads (those are on the project's first GitHub release
 if you ever need to re-bake models or skies).
@@ -57,7 +57,7 @@ AMD RX card; everything below applies to that laptop the same way.
 2. Install Unity **6000.3.29f1** exactly (Hub > Installs > Install Editor > Archive, or
    `unityhub://6000.3.29f1` from the download archive). For Goal A no extra modules are needed.
    For Goal B tick **Android Build Support** with **OpenJDK** and **Android SDK & NDK Tools**.
-3. Hub > Projects > **Add** > choose `C:\Users\thiru\tamu2\ecs\repos\tidalbyte`. Open it.
+3. Hub > Projects > **Add** > choose `C:\Projects\WishWorld`. Open it.
    The first import takes a long time (around 20 to 40 minutes): it rebuilds the `Library` cache.
 4. If Unity asks to switch the platform, leave it on **Windows** for Goal A.
 
@@ -131,7 +131,7 @@ The project already contains the Pipeline package the MCP server needs.
 ## Things that may come up
 
 - **"detected dubious ownership" from git.** The folder was written from Linux, so Windows sees a different owner.
-  Run once: `git config --global --add safe.directory C:/Users/thiru/tamu2/ecs/repos/tidalbyte`
+  Run once: `git config --global --add safe.directory C:/Projects/WishWorld` (your project folder)
 - **Line endings.** The clone has `core.autocrlf false` so git does not report every file as changed. Leave it.
 - **Pulling later changes:** `git pull` in the folder (it is linked to GitHub).
 - **Compile errors on first open** about Meta or OpenXR types usually clear after the import finishes and Unity

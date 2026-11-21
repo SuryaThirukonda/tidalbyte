@@ -865,3 +865,34 @@ room), and on a laptop or phone a "Room" chip in the top left that takes a typed
   0:52.4, best lap 0:16.8, no knocks. A top-down render shows the valley's tyre stacks on the snow bank just outside
   the new kerbs, nothing on the road.
 - Not checked on a headset: faster turning also turns the view faster, which some players may find less comfortable.
+
+## Walking around landmarks, and five more places in Explore
+
+**More places.** Explore had the Statue of Liberty and Niagara Falls. It now also has the Golden Gate Bridge, the
+Gateway Arch, the Washington Monument, Devils Tower and the Grand Canyon, built by the same lidar pipeline
+(`tools/lidar/preprocess.py`) from public USGS 3DEP surveys found through the survey index. The pipeline gained a
+general `landmark` colouring (a circle or a segment), `strata` for canyon rock layers, `max_depth` and
+`min_coverage`. Colours: the bridge in International Orange, the arch in brushed steel, the monument in two marbles
+(the colour change partway up), the tower in grey-tan rock, the canyon's walls in its layers (Kaibab, Toroweap,
+Coconino, Hermit, Supai, Redwall). Each file is about 6 MB and 0.46 to 0.66 million points, like the first two.
+
+- The Golden Gate segment was first placed by hand about 120 m off the deck and caught nothing; it is now fitted
+  to the survey's bridge-class returns. Kept whole, the bridge was 97 MB; it is thinned like everything else.
+- Mount Rushmore and Half Dome have no 3DEP lidar in the index.
+
+**Walking.** "Walk around it" in Explore makes the place life-size and starts the child on land (above the water
+level) near the landmark, turned to face it. The child stays put and the place moves under them: left thumbstick on
+a headset, W A S D, the on-screen stick or a game controller elsewhere; the right thumbstick turns in 30 degree
+steps. A 2 m ground grid built from the lowest dot in each cell keeps the feet on the ground; the edges of the box
+stop the walk. Dots are smaller and capped at 22 px while walking. The shell's snowy floor is hidden meanwhile.
+
+### Checked
+
+In the desktop preview (local files): walked up to the Statue of Liberty's fort and pedestal; started on the Golden
+Gate deck (the water under it returns no lidar, so the deck is the ground there) looking along the bridge to the
+far tower. Each new place rendered in `/lidar/preview.html`. `shell.test.mjs` and `explore.test.mjs`: all checks
+passed.
+
+### Not checked
+
+On a headset: thumbstick walking and turning, comfort, and the frame rate at life size.

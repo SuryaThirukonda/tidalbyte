@@ -1,7 +1,8 @@
 # Lidar preprocessing for the Explore tab
 
-Turns public USGS 3DEP lidar into two small static point clouds, `public/lidar/liberty.*` and
-`public/lidar/niagara.*`. Run once on a laptop; the headset only ever loads the finished files.
+Turns public USGS 3DEP lidar into small static point clouds in `public/lidar/`: the Statue of Liberty, Niagara
+Falls, the Golden Gate Bridge, the Gateway Arch, the Washington Monument, Devils Tower and the Grand Canyon. Run once
+on a laptop; the headset only ever loads the finished files.
 
 ## Run
 
@@ -9,7 +10,8 @@ Turns public USGS 3DEP lidar into two small static point clouds, `public/lidar/l
 cd tools/lidar
 python -m venv .venv
 .venv\Scripts\python -m pip install -r requirements.txt      (macOS/Linux: .venv/bin/python)
-.venv\Scripts\python preprocess.py all                        (or: liberty | niagara)
+.venv\Scripts\python preprocess.py all                        (or one: liberty, niagara, goldengate, gateway,
+                                                              washington, devilstower, grandcanyon)
 ```
 
 No PDAL or conda needed: `ept.py` reads the Entwine Point Tiles octree over plain HTTPS and
@@ -34,6 +36,23 @@ Extra query options: `az`, `el`, `dist`, `tx`, `ty`, `tz`, `size`, `n` (draw onl
 |---|---|---|---|
 | Statue of Liberty | 340 m square centred 40.68945, -74.04480 | `NY_NewYorkCity` (USGS CMGP Post-Sandy lidar) | 0.72 million, 6.2 per m² |
 | Niagara Falls | 1250 m square centred 43.0813, -79.07175 | `NY_3County_2019` plus `NY_FEMAR2_Central_B1_2018` | 16.4 million, 10.5 per m² |
+| Golden Gate Bridge | 1800 m square centred 37.8183, -122.4783 (mid span) | `USGS_LPC_CA_NoCal_Wildfires_B5b_QL1_2018`, `USGS_LPC_CA_WestCoastElNinoUTM10_2016_LAS_2017` and `CA_SanFrancisco_1_B23` merged | 33.0 million, 10.2 per m² |
+| Gateway Arch | 500 m square centred 38.62453, -90.18478 | `USGS_LPC_MO_StLouis_2017_LAS_2018` | 0.46 million, 1.8 per m² |
+| Washington Monument | 500 m square centred 38.88948, -77.03524 | `USGS_LPC_MD_VA_Sandy_NCR_2014_LAS_2015` | 1.9 million, 7.7 per m² |
+| Devils Tower | 900 m square centred 44.5904, -104.7153 | `WY_FEMA_East_B3_2019` | 4.2 million, 5.2 per m² |
+| Grand Canyon (Mather Point) | 1500 m square centred 36.0617, -112.1078, octree level 9 | `AZ_GrandCanyonNP_1_2019` | 9.9 million, 4.4 per m² |
+
+Options a place can set in `preprocess.py` besides the box and palette:
+
+- `landmark`: colour what rises well above its surroundings inside a `circle` (lat, lon, radius) or along a
+  `segment` (two lat/lon ends and a `half_width`), from `low` to `high` by height; `rise` is how far above the
+  median of the ring just outside the shape a return must be. The landmark's position goes into the `.json`
+  (`landmark: {x, z, baseY, topY}`), which is where walking starts from.
+- `strata`: below the rim, colour by depth in bands (the Grand Canyon's rock layers).
+- `max_depth`: read the octree only to this level (a lighter download for very dense surveys).
+- `min_coverage`: share of the box that must have returns (default 0.25; the Golden Gate box is mostly open water).
+
+Survey names (and the bucket addresses in each `.json`) are the USGS dataset identifiers, kept as they are.
 
 Found through the index at https://usgs.entwine.io/ (`boundaries/resources.geojson`). Notes:
 
@@ -110,6 +129,10 @@ and for Liberty `statue: { x, z, pedestalTopY, topY }`).
      gorge walls keep their 3D shape at a finer voxel.
 
 ## Known limits (say these plainly)
+
+- New places: the Gateway Arch's legs and the Washington Monument's sides are nearly vertical, so they are thin
+  outlines; the arch's lower legs barely show. The Golden Gate's open water returns few points, and the Grand
+  Canyon survey has no returns in the north-east corner of its box (the base shows there).
 
 - Every point is a real measured return. Nothing is modelled or filled in. Only the colours are
   chosen by the script.

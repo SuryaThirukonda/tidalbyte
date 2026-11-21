@@ -21,16 +21,25 @@
 </head>
 <body>
 <div id="info"><h1 id="name">Loading…</h1><p id="stats"></p><p id="facts"></p><p id="err"></p></div>
-<div id="nav"><a href="?place=liberty">Statue of Liberty</a><a href="?place=niagara">Niagara Falls</a></div>
+<div id="nav"><a href="?place=liberty">Statue of Liberty</a><a href="?place=niagara">Niagara Falls</a><a href="?place=goldengate">Golden Gate Bridge</a><a href="?place=gateway">Gateway Arch</a><a href="?place=washington">Washington Monument</a><a href="?place=devilstower">Devils Tower</a><a href="?place=grandcanyon">Grand Canyon</a></div>
 <script type="module">
 // Desktop check for /lidar/<place>.bin + .json. Shows the place the way the headset does: a
 // diorama 1 m across. Drag to orbit, wheel to zoom, [ and ] change the point size, B toggles the base.
-// Optional query: ?place=liberty|niagara &az=deg &el=deg &dist=m &size=pointSizeMultiplier &base=0 &n=maxPoints
+// Optional query: ?place=liberty|niagara|goldengate|gateway|washington|devilstower|grandcanyon &az=deg &el=deg &dist=m &size=pointSizeMultiplier &base=0 &n=maxPoints
 import * as THREE from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 
 const q = new URLSearchParams(location.search);
-const place = q.get("place") === "niagara" ? "niagara" : "liberty";
+const PLACES = {
+  liberty: { slab: 0x13222e, view: { az: 125, el: 24 } },
+  niagara: { slab: 0x0b3a41, view: { az: 200, el: 35 } },
+  goldengate: { slab: 0x12303f, view: { az: 230, el: 26 } },
+  gateway: { slab: 0x25332f, view: { az: 200, el: 22 } },
+  washington: { slab: 0x1d2f2a, view: { az: 160, el: 22 } },
+  devilstower: { slab: 0x2a2b22, view: { az: 200, el: 24 } },
+  grandcanyon: { slab: 0x3a2a20, view: { az: 190, el: 30 } },
+};
+const place = PLACES[q.get("place")] ? q.get("place") : "liberty";
 const $ = (id) => document.getElementById(id);
 
 /** Load one place. Returns { meta, geometry } with positions in metres (Int16 * scale applied by the material). */
@@ -115,14 +124,14 @@ try {
   // A plain dark slab under the model. It is not lidar data. Calm water and vertical walls return
   // no lidar, so the slab shows through there as deep water or shadow instead of the room.
   base = new THREE.Mesh(new THREE.BoxGeometry(max[0] - min[0], across * 0.02, max[2] - min[2]),
-    new THREE.MeshBasicMaterial({ color: place === "niagara" ? 0x0b3a41 : 0x13222e }));
+    new THREE.MeshBasicMaterial({ color: PLACES[place].slab }));
   base.position.set((min[0] + max[0]) / 2, min[1] - across * 0.011, (min[2] + max[2]) / 2);
   base.visible = q.get("base") !== "0";
   diorama.add(base);
   scene.add(diorama);
 
   // az: compass direction the camera sits in, seen from the model (0 = south, 90 = east, 180 = north, 270 = west)
-  const view = place === "niagara" ? { az: 200, el: 35 } : { az: 125, el: 24 };
+  const view = PLACES[place].view;
   const az = THREE.MathUtils.degToRad(Number(q.get("az") ?? view.az)), el = THREE.MathUtils.degToRad(Number(q.get("el") ?? view.el));
   const dist = Number(q.get("dist")) || 1.25;
   const ty = Number(q.get("ty") ?? (max[1] / across) * 0.3);

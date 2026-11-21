@@ -1,8 +1,7 @@
 #!/usr/bin/env python
 """Turn public USGS 3DEP lidar into the small static point clouds used by the Explore tab.
 
-    python preprocess.py liberty
-    python preprocess.py niagara
+    python preprocess.py liberty            (or niagara, gateway, goldengate, washington, devilstower, grandcanyon)
     python preprocess.py all
 
 What it does for one place:
@@ -119,6 +118,148 @@ PLACES = {
         ],
         "fact_sources": ["https://www.niagarafallsstatepark.com/niagara-falls-state-park/amazing-niagara-facts"],
     },
+    # ---- more landmarks. "landmark" colours the returns that rise well above their surroundings inside
+    # a circle (lat, lon, radius) or along a segment (two lat/lon ends and a half width): see build().
+    "gateway": {
+        "name": "Gateway Arch",
+        "center": (38.62453, -90.18478),
+        "size": 500.0,
+        "datasets": ["USGS_LPC_MO_StLouis_2017_LAS_2018"],
+        "dataset_notes": "USGS St. Louis lidar (NAVD88 metres)",
+        "target": 660_000,
+        "grid": 1.0,
+        "water_below": 0.8,
+        "thin": {"landmark": 0.0, "structure": 0.8, "veg": 1.0, "ground": 1.2, "water": 2.2},
+        "landmark": {"circle": (38.62453, -90.18478, 110.0), "rise": 4.0,
+                     "low": "#8d97a3", "high": "#eef3f8", "label": "arch"},
+        "grass_range": (0.5, 0.85),
+        "palette": {
+            "water_deep": "#4a6b6a", "water_light": "#7e9c8f", "foam": "#b8cfc4",
+            "ground_dark": "#8f8a7e", "ground_light": "#76ad55",
+            "veg_dark": "#2f6b3a", "veg_light": "#86c25a",
+            "roof_dark": "#9b8f82", "roof_light": "#ddd0bf",
+            "low": "#ada392",
+        },
+        "facts": [
+            "The Gateway Arch is as wide as it is tall: 630 feet, about 192 metres, each way. It is the tallest monument in the United States.",
+            "It is covered in shiny stainless steel. Little egg-shaped tram cars ride up inside its legs to windows at the very top.",
+        ],
+        "fact_sources": ["https://www.nps.gov/jeff/planyourvisit/gateway-arch-facts.htm"],
+    },
+    "goldengate": {
+        "name": "Golden Gate Bridge",
+        # Box centre: the middle of the main span, so both towers and the deck between them fit.
+        "center": (37.81830, -122.47830),
+        "size": 1800.0,
+        "datasets": ["USGS_LPC_CA_NoCal_Wildfires_B5b_QL1_2018", "USGS_LPC_CA_WestCoastElNinoUTM10_2016_LAS_2017",
+                     "CA_SanFrancisco_1_B23"],
+        "dataset_notes": "USGS Northern California, West Coast and San Francisco lidar merged (NAVD88 metres)",
+        "min_coverage": 0.08,   # the box is mostly open water, which returns little lidar
+        "target": 660_000,
+        "grid": 2.0,
+        "water_below": 0.8,
+        "surface_only": True,
+        "thin": {"landmark": 0.45, "structure": 0.85, "veg": 0.95, "ground": 1.1, "water": 1.6},
+        # along the deck, fitted to the survey's bridge-class returns (south end, north end of the box)
+        "landmark": {"segment": ((37.810305, -122.477443), (37.826295, -122.479318)), "half_width": 20.0, "rise": 6.0,
+                     "low": "#a3311f", "high": "#e2553a", "label": "bridge"},
+        "grass_range": (0.45, 0.85),
+        "palette": {
+            "water_deep": "#1d5675", "water_light": "#4a8fb0", "foam": "#cfe6f0",
+            "ground_dark": "#8a8274", "ground_light": "#7aa357",
+            "veg_dark": "#2b5e36", "veg_light": "#79b052",
+            "roof_dark": "#a79a8a", "roof_light": "#e6d8c3",
+            "low": "#a99e8b",
+        },
+        "facts": [
+            "The Golden Gate Bridge is not gold. Its colour is called International Orange, so ships can see it in the fog.",
+            "Its two towers rise 746 feet, about 227 metres, above the water, and giant cables hang between them to hold up the road.",
+        ],
+        "fact_sources": ["https://www.goldengate.org/bridge/history-research/statistics-data/design-construction-stats/",
+                         "https://www.goldengate.org/bridge/history-research/international-orange/"],
+    },
+    "washington": {
+        "name": "Washington Monument",
+        "center": (38.88948, -77.03524),
+        "size": 500.0,
+        "datasets": ["USGS_LPC_MD_VA_Sandy_NCR_2014_LAS_2015"],
+        "dataset_notes": "USGS National Capital Region lidar (NAVD88 metres)",
+        "target": 660_000,
+        "grid": 1.0,
+        "water_below": 0.8,
+        "thin": {"landmark": 0.0, "structure": 0.8, "veg": 1.0, "ground": 1.25, "water": 2.4},
+        # marble, a little darker low down: the stone from the second quarry starts about 46 m up
+        "landmark": {"circle": (38.88948, -77.03524, 13.0), "rise": 2.0,
+                     "low": "#cfc5b4", "high": "#f4efe6", "band_above": 46.0, "band_colour": "#ded5c6", "label": "obelisk"},
+        "grass_range": (0.55, 0.9),
+        "palette": {
+            "water_deep": "#2c6f86", "water_light": "#5da6bf", "foam": "#a9d3e2",
+            "ground_dark": "#948b7b", "ground_light": "#79b356",
+            "veg_dark": "#2f6b3a", "veg_light": "#86c25a",
+            "roof_dark": "#a9957c", "roof_light": "#e6d3b3",
+            "low": "#b3a58c",
+        },
+        "facts": [
+            "The Washington Monument is a giant stone obelisk, about 555 feet or 169 metres tall, built to honour George Washington.",
+            "Look closely and the stone changes colour about a third of the way up. Building stopped for many years, and the new marble came from a different quarry.",
+        ],
+        "fact_sources": ["https://www.nps.gov/wamo/learn/historyculture/index.htm", "https://www.nps.gov/wamo/faqs.htm"],
+    },
+    "devilstower": {
+        "name": "Devils Tower",
+        "center": (44.59040, -104.71530),
+        "size": 900.0,
+        "datasets": ["WY_FEMA_East_B3_2019"],
+        "dataset_notes": "USGS Wyoming FEMA East lidar (NAVD88 metres)",
+        "target": 660_000,
+        "grid": 1.5,
+        "thin": {"landmark": 0.5, "structure": 0.85, "veg": 0.95, "ground": 1.15, "water": 1.5},
+        "landmark": {"circle": (44.59040, -104.71530, 170.0), "rise": 20.0,
+                     "low": "#7b6d5e", "high": "#d8c6a8", "label": "tower"},
+        "grass_range": (0.4, 0.85),
+        "palette": {
+            "water_deep": "#3c6a7a", "water_light": "#6fa0b0", "foam": "#bcd6de",
+            "ground_dark": "#9a8466", "ground_light": "#9fb06a",
+            "veg_dark": "#2c5434", "veg_light": "#6f9a4c",
+            "roof_dark": "#a1907a", "roof_light": "#dfcfb5",
+            "low": "#ad9c80",
+        },
+        "facts": [
+            "Devils Tower was the very first national monument in the United States. It rises about 867 feet, or 264 metres, above the river below.",
+            "Its sides are made of giant stone columns, most with five or six sides, that formed when hot melted rock slowly cooled underground.",
+        ],
+        "fact_sources": ["https://www.nps.gov/deto/learn/nature/geologicformations.htm", "https://www.nps.gov/deto/faqs.htm"],
+    },
+    "grandcanyon": {
+        "name": "Grand Canyon",
+        # Mather Point on the South Rim: the rim along the south and west, the canyon dropping away to the north
+        "center": (36.06170, -112.10780),
+        "size": 1500.0,
+        "datasets": ["AZ_GrandCanyonNP_1_2019"],
+        "dataset_notes": "USGS Grand Canyon National Park lidar (NAVD88 metres)",
+        "target": 660_000,
+        "grid": 2.0,
+        "max_depth": 9,          # the survey is very dense; level 9 is plenty for a 1.5 km box
+        "surface_only": True,
+        # Below the rim the walls take the colours of the canyon's rock layers, by depth below the rim (metres):
+        # Kaibab, Toroweap, Coconino, Hermit, Supai, Redwall, then the greenish Bright Angel shale.
+        "strata": {"start": 12.0, "bands": [(0, "#d8c8a6"), (90, "#c49a6c"), (160, "#e4d0a2"), (260, "#a9472d"),
+                                            (350, "#b85a3a"), (650, "#9e4a32"), (830, "#8d8a68")]},
+        "thin": {"landmark": 0.6, "structure": 0.85, "veg": 0.95, "ground": 1.0, "water": 1.5},
+        "grass_range": (0.35, 0.8),
+        "palette": {
+            "water_deep": "#3e6e6a", "water_light": "#6aa39a", "foam": "#c0dcd6",
+            "ground_dark": "#9a5a3c", "ground_light": "#e0a878",
+            "veg_dark": "#3f5a33", "veg_light": "#8aa35a",
+            "roof_dark": "#a08c78", "roof_light": "#dcc8ae",
+            "low": "#b38662",
+        },
+        "facts": [
+            "The Grand Canyon was carved by the Colorado River, which has been cutting down through the rock for millions of years.",
+            "It is about a mile deep. The rock layers in its walls are like the pages of a giant book about Earth's past.",
+        ],
+        "fact_sources": ["https://www.nps.gov/grca/learn/nature/grca-geology.htm", "https://www.nps.gov/grca/faqs.htm"],
+    },
 }
 
 
@@ -133,7 +274,7 @@ def fetch(place: str, cfg: dict, refresh: bool = False) -> dict:
     """Points inside the box as local metres: e (east), n (north), z (NAVD88 m), plus attributes."""
     lat, lon = cfg["center"]
     half = cfg["size"] / 2
-    sig = hashlib.sha1(json.dumps([cfg["center"], cfg["size"], cfg["datasets"]]).encode()).hexdigest()[:10]
+    sig = hashlib.sha1(json.dumps([cfg["center"], cfg["size"], cfg["datasets"], cfg.get("max_depth", 99)]).encode()).hexdigest()[:10]
     raw_path = CACHE / f"{place}_raw_{sig}.npz"
     if raw_path.exists() and not refresh:
         log(f"[{place}] using cached crop {raw_path.name}")
@@ -149,7 +290,8 @@ def fetch(place: str, cfg: dict, refresh: bool = False) -> dict:
         srs = ept.meta.get("srs", {})
         if str(srs.get("horizontal")) != "3857":
             raise SystemExit(f"{ds}: expected EPSG:3857, got {srs.get('authority')}:{srs.get('horizontal')}")
-        nodes = ept.find_nodes(box, lambda lo, hi: 99)
+        depth = cfg.get("max_depth", 99)
+        nodes = ept.find_nodes(box, lambda lo, hi: depth)
         log(f"[{place}] {ds}: {len(nodes)} nodes touch the box (deepest level {max((d for d, *_ in nodes), default=-1)})")
         p = ept.read_nodes(nodes, box, log=log) if nodes else None
         if p is None:
@@ -176,7 +318,7 @@ def fetch(place: str, cfg: dict, refresh: bool = False) -> dict:
     covered = float((g.reduce(g.index(raw["e"], raw["n"]), None, "count") > 0).mean())
     log(f"[{place}] {len(raw['e']):,} points; {covered:.0%} of the box has returns "
         f"({len(raw['e']) / cfg['size'] ** 2:.1f} points per square metre)")
-    if covered < 0.25:
+    if covered < cfg.get("min_coverage", 0.25):
         raise SystemExit(f"[{place}] coverage is too thin to be usable. Not writing anything.")
     np.savez(raw_path, **raw)
     return raw
@@ -462,6 +604,20 @@ def build(place: str, cfg: dict, raw: dict, seed: int = 7) -> tuple[np.ndarray, 
         category[falling] = LANDMARK
         keep3d = falling | rock
 
+    # ---- rock layers (canyons): below the rim, colour by depth --------------------------------------
+    strata = cfg.get("strata")
+    if strata:
+        rim = float(np.percentile(h, 97))
+        depth = rim - h
+        below = (depth > strata["start"]) & (category != WATER)
+        edges = np.array([b[0] for b in strata["bands"]], dtype=np.float32)
+        tones = np.stack([rgb(b[1]) for b in strata["bands"]])
+        band = np.clip(np.searchsorted(edges, depth, side="right") - 1, 0, len(edges) - 1)
+        rock = tones[band] * (0.88 + 0.24 * inten)[:, None]
+        share = np.where(category == VEG, 0.55, 0.92)[:, None]     # shrubs on ledges keep a little green
+        col[below] = col[below] * (1 - share[below]) + rock[below] * share[below]
+        log(f"[{place}] rock layers: {below.sum():,} points below the rim at {rim:.0f} m")
+
     # ---- the statue ---------------------------------------------------------------------------
     st = cfg.get("statue")
     if st:
@@ -488,6 +644,49 @@ def build(place: str, cfg: dict, raw: dict, seed: int = 7) -> tuple[np.ndarray, 
                            "copperPoints": int(copper.sum())}
         log(f"[{place}] statue axis at east {ax_e:.1f} m, north {ax_n:.1f} m; {copper.sum():,} copper points, "
             f"{pedestal.sum():,} pedestal points; torch tip {h[copper].max():.1f} m above the water")
+
+    # ---- a landmark (other places): what rises well above its surroundings inside a circle or along
+    # a segment. "Surroundings" = the median height of the returns in a ring just outside the shape.
+    lm = cfg.get("landmark")
+    if lm:
+        lat0, lon0 = cfg["center"]
+        cx0, cy0 = lonlat_to_mercator(lon0, lat0)
+        kk = math.cos(math.radians(lat0))
+
+        def local(lat_, lon_):
+            x_, y_ = lonlat_to_mercator(lon_, lat_)
+            return (x_ - cx0) * kk, (y_ - cy0) * kk
+
+        if "circle" in lm:
+            la, lo, rad = lm["circle"]
+            pe, pn = local(la, lo)
+            dist = np.hypot(e - pe, n - pn)
+            reach = rad
+        else:
+            (la1, lo1), (la2, lo2) = lm["segment"]
+            ae, an = local(la1, lo1)
+            be, bn = local(la2, lo2)
+            vx, vy = be - ae, bn - an
+            t = np.clip(((e - ae) * vx + (n - an) * vy) / (vx * vx + vy * vy), 0, 1)
+            dist = np.hypot(e - (ae + t * vx), n - (an + t * vy))
+            reach = lm["half_width"]
+        ring = (dist > reach) & (dist < reach * 1.6 + 10)
+        base = float(np.median(h[ring])) if ring.sum() > 50 else float(np.percentile(h, 5))
+        mark = (dist <= reach) & (h > base + lm["rise"])
+        if mark.sum() < 50:
+            raise SystemExit(f"[{place}] expected the {lm.get('label', 'landmark')} in the box and found only {mark.sum()} returns")
+        top = float(h[mark].max())
+        hz = np.clip((h - base) / max(top - base, 1.0), 0, 1)
+        col[mark] = lerp(rgb(lm["low"]), rgb(lm["high"]), (0.25 + 0.75 * hz)[mark])
+        if lm.get("band_above"):
+            low_band = mark & (h - base < lm["band_above"])
+            col[low_band] = rgb(lm["band_colour"])
+        lum[mark] = (0.86 + 0.18 * (inten - 0.5))[mark]
+        category[mark] = LANDMARK
+        extra["landmark"] = {"label": lm.get("label", "landmark"), "points": int(mark.sum()),
+                             "x": round(float(np.median(e[mark])), 2), "z": round(float(-np.median(n[mark])), 2),
+                             "baseY": round(base, 2), "topY": round(top, 2)}
+        log(f"[{place}] {lm.get('label', 'landmark')}: {mark.sum():,} returns, from y {base:.1f} to {top:.1f} m")
 
     # gentle overall height cue + a little grain so flat areas are not flat colour
     lum *= 0.94 + 0.10 * smoothstep(h, 0, max(float(np.percentile(h, 99)), 1.0))

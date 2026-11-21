@@ -1,0 +1,57 @@
+{
+  "name": "Devils Tower",
+  "count": 658873,
+  "scale": 0.02,
+  "bounds": {
+    "min": [
+      -450.0,
+      -25.22,
+      -450.0
+    ],
+    "max": [
+      450.0,
+      331.42,
+      450.0
+    ]
+  },
+  "source": "USGS Wyoming FEMA East lidar (NAVD88 metres). USGS 3DEP public-domain lidar, Entwine Point Tiles: https://s3-us-west-2.amazonaws.com/usgs-lidar-public/WY_FEMA_East_B3_2019/ept.json",
+  "facts": [
+    "Devils Tower was the very first national monument in the United States. It rises about 867 feet, or 264 metres, above the river below.",
+    "Its sides are made of giant stone columns, most with five or six sides, that formed when hot melted rock slowly cooled underground."
+  ],
+  "factSources": [
+    "https://www.nps.gov/deto/learn/nature/geologicformations.htm",
+    "https://www.nps.gov/deto/faqs.htm"
+  ],
+  "axes": "+X east, +Y up, +Z south; metres = int16 * scale; y = 0 is the water level",
+  "center": {
+    "lat": 44.5904,
+    "lon": -104.7153
+  },
+  "sizeMetres": 900.0,
+  "datasets": [
+    {
+      "name": "WY_FEMA_East_B3_2019",
+      "url": "https://s3-us-west-2.amazonaws.com/usgs-lidar-public/WY_FEMA_East_B3_2019/ept.json"
+    }
+  ],
+  "colorSpace": "srgb",
+  "order": "random (the first N points are an even subsample)",
+  "landmark": {
+    "label": "tower",
+    "points": 240146,
+    "x": 7.96,
+    "z": -21.56,
+    "baseY": 102.34,
+    "topY": 331.51
+  },
+  "waterLevelNavd88": 1226.91,
+  "categories": {
+    "landmark": 144796,
+    "structure": 1350,
+    "veg": 351817,
+    "ground": 160910,
+    "water": 0
+  },
+  "baseCell": 2.172
+}

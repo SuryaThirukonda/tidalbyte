@@ -1,0 +1,49 @@
+{
+  "name": "Grand Canyon",
+  "count": 659870,
+  "scale": 0.05,
+  "bounds": {
+    "min": [
+      -750.0,
+      -153.85,
+      -750.0
+    ],
+    "max": [
+      750.0,
+      857.15,
+      750.0
+    ]
+  },
+  "source": "USGS Grand Canyon National Park lidar (NAVD88 metres). USGS 3DEP public-domain lidar, Entwine Point Tiles: https://s3-us-west-2.amazonaws.com/usgs-lidar-public/AZ_GrandCanyonNP_1_2019/ept.json",
+  "facts": [
+    "The Grand Canyon was carved by the Colorado River, which has been cutting down through the rock for millions of years.",
+    "It is about a mile deep. The rock layers in its walls are like the pages of a giant book about Earth's past."
+  ],
+  "factSources": [
+    "https://www.nps.gov/grca/learn/nature/grca-geology.htm",
+    "https://www.nps.gov/grca/faqs.htm"
+  ],
+  "axes": "+X east, +Y up, +Z south; metres = int16 * scale; y = 0 is the water level",
+  "center": {
+    "lat": 36.0617,
+    "lon": -112.1078
+  },
+  "sizeMetres": 1500.0,
+  "datasets": [
+    {
+      "name": "AZ_GrandCanyonNP_1_2019",
+      "url": "https://s3-us-west-2.amazonaws.com/usgs-lidar-public/AZ_GrandCanyonNP_1_2019/ept.json"
+    }
+  ],
+  "colorSpace": "srgb",
+  "order": "random (the first N points are an even subsample)",
+  "waterLevelNavd88": 1330.72,
+  "categories": {
+    "landmark": 0,
+    "structure": 7342,
+    "veg": 295495,
+    "ground": 357033,
+    "water": 0
+  },
+  "baseCell": 2.27
+}

@@ -6,6 +6,11 @@
 // single THREE.Points, one draw call, with only one place in memory at a time.
 //
 // If a place's files are missing or broken the card says so. Nothing is ever drawn in their place.
+//
+// "Walk around it" makes the place life-size and puts the child on the ground near the landmark, facing it. The
+// child stays where they are and the place moves under them (left thumbstick, or W A S D, the on-screen stick or
+// a game controller; the right thumbstick turns in steps). A ground grid made from the dots keeps their feet on
+// the ground. "Back to the table" brings the tabletop model back.
 
 export const meta = { id: 'explore', label: 'Explore', order: 6 };
 
@@ -15,7 +20,18 @@ export const meta = { id: 'explore', label: 'Explore', order: 6 };
 const PLACES = [
   { id: 'liberty', label: 'Statue of Liberty', slab: '#13222e' },
   { id: 'niagara', label: 'Niagara Falls', slab: '#0b3a41' },
+  { id: 'goldengate', label: 'Golden Gate', slab: '#12303f' },
+  { id: 'gateway', label: 'Gateway Arch', slab: '#25332f' },
+  { id: 'washington', label: 'Washington Mon.', slab: '#1d2f2a' },
+  { id: 'devilstower', label: 'Devils Tower', slab: '#2a2b22' },
+  { id: 'grandcanyon', label: 'Grand Canyon', slab: '#3a2a20' },
 ];
+
+// Walking: life-size metres a second (faster in big places, so the far side is not minutes away), the step
+// the right thumbstick turns by, and the size of the ground grid cells.
+const WALK_SPEED = 4;
+const SNAP_TURN = Math.PI / 6;
+const GROUND_CELL = 2;
 
 // Colours of the Unity game (WWTheme.cs). /shared/creatures.js THEME replaces these when it loads.
 const FALLBACK_THEME = {
@@ -80,10 +96,13 @@ export function createTab(ctx) {
   let coloursAreSrgb = true;
   // Dots never shrink below 1.5 px (no sparkle from far away) and never grow past 56 px (leaning right in
   // would otherwise fill the whole view with a few huge squares, which is slow on a headset).
+  // While walking at life size the cap is lower: dots right by the feet would otherwise be huge squares.
+  const maxDotPx = { value: 56 };
   const clampDots = (shader) => {
-    shader.vertexShader = shader.vertexShader.replace(
+    shader.uniforms.uMaxDotPx = maxDotPx;
+    shader.vertexShader = 'uniform float uMaxDotPx;\n' + shader.vertexShader.replace(
       '#include <fog_vertex>',
-      'gl_PointSize = clamp( gl_PointSize, 1.5, 56.0 );\n\t#include <fog_vertex>',
+      'gl_PointSize = clamp( gl_PointSize, 1.5, uMaxDotPx );\n\t#include <fog_vertex>',
     );
   };
   const decodeSrgb = (shader) => {
@@ -139,9 +158,13 @@ export function createTab(ctx) {
   let built = false;            // the cards and buttons exist
   let session = 0;              // goes up on every enter and exit, so late promises can tell they are stale
   let currentId = PLACES[0].id; // remembered between visits
+  // ?place=<id> (for example /vr/?tab=explore&place=goldengate) opens on that place.
+  const askedPlace = ctx.params && typeof ctx.params.get === 'function' ? ctx.params.get('place') : null;
+  if (askedPlace && PLACES.some((p) => p.id === askedPlace)) currentId = askedPlace;
   let loadToken = 0;
   let abort = null;
-  let loaded = null;            // { id, name, count, worldSize } for the cloud now in memory
+  let loaded = null;            // { id, name, count, worldSize, fit, spawn } for the cloud now in memory
+  let loaded_spawn = null;
   let pending = null;           // a fetched place waiting for the fade-out to finish
   let fade = 0;                 // 0 hidden .. 1 shown
   let fadeDir = 0;              // -1 fading out, +1 fading in
@@ -158,6 +181,13 @@ export function createTab(ctx) {
   let placedAt = 0;
   let userMoved = false;
   let clock = 0;
+
+  // Walking around a place at life size.
+  let walking = false;
+  let ground = null;            // { cells, n, cell, minX, minZ } heights in metres, from the dots
+  let walkUi = null, walkTitle = null, walkBack = null, walkHelp = null;
+  let snapReady = true;
+  let walkY = 0;                // the place's height under the feet, eased
 
   // Grips.
   const held = { left: null, right: null };
@@ -179,6 +209,7 @@ export function createTab(ctx) {
   const pickButtons = [];
   let toolButtons = [];
   let resetButton = null;
+  let walkButton = null;
   const plateSize = new THREE.Vector3(0.3, 0.07, 0);
   const PLATE_TILT = THREE.MathUtils.degToRad(38);
   const sizeOut = new THREE.Vector3();
@@ -251,7 +282,7 @@ export function createTab(ctx) {
     pickTitle = ui.makeTextPanel('Pick a place', { width: 0.44, fontSize: 0.04, ...text });
     leftColumn.add(pickTitle);
     for (const place of PLACES) {
-      const button = makeButton(place.label, () => choose(place.id), 0.44, 0.1);
+      const button = makeButton(place.label, () => choose(place.id), 0.215, 0.085);
       button.userData.placeId = place.id;
       pickButtons.push(button);
       leftColumn.add(button);
@@ -269,8 +300,19 @@ export function createTab(ctx) {
       makeButton('Smaller', () => nudge(1 / 1.3, 0), 0.17, 0.085),
     ];
     resetButton = makeButton('Put it back', resetModel, 0.36, 0.085);
-    rightColumn.add(...toolButtons, resetButton);
+    walkButton = makeButton('Walk around it', () => startWalking(), 0.36, 0.095);
+    rightColumn.add(...toolButtons, resetButton, walkButton);
     root.add(rightColumn);
+
+    // While walking: one small panel by the child, with the place's name and the way back to the table.
+    walkUi = new THREE.Group();
+    walkUi.name = 'WalkPanel';
+    walkTitle = ui.makeTextPanel('Explore', { width: 0.42, fontSize: 0.036, color: theme.slate, background: theme.panel });
+    walkHelp = ui.makeTextPanel(walkHelpText(), { width: 0.42, fontSize: 0.024, ...text });
+    walkBack = makeButton('Back to the table', () => stopWalking(), 0.42, 0.09);
+    walkUi.add(walkTitle, walkHelp, walkBack);
+    walkUi.visible = false;
+    root.add(walkUi);
 
     // On the front edge of the base: the name plate. It belongs to the model, so it turns and grows with it.
     namePlate = ui.makeTextPanel(PLACES[0].label, { width: 0.34, fontSize: 0.032, color: theme.slate, background: theme.panel });
@@ -299,8 +341,10 @@ export function createTab(ctx) {
     leftColumn.rotation.y = angle;
     rightColumn.position.set(Math.sin(angle) * radius, 0, -Math.cos(angle) * radius);
     rightColumn.rotation.y = -angle;
-    stack([pickTitle, ...pickButtons, helpPanel], eye + 0.22, 0.03);
-    stack([infoPanel, toolButtons, resetButton], eye + 0.22, 0.03);
+    const pairs = [];
+    for (let i = 0; i < pickButtons.length; i += 2) pairs.push(pickButtons.slice(i, i + 2));
+    stack([pickTitle, ...pairs, helpPanel], eye + 0.22, 0.025);
+    stack([infoPanel, toolButtons, resetButton, walkButton], eye + 0.22, 0.03);
   }
 
   function setFacts(text) {
@@ -351,6 +395,7 @@ export function createTab(ctx) {
 
   function choose(id) {
     if (!entered) return;
+    if (walking) stopWalking();
     if (loaded && loaded.id === id && !pending) {
       sayFacts(loaded);   // the same place again: just hear the facts again
       return;
@@ -473,9 +518,13 @@ export function createTab(ctx) {
       material.needsUpdate = true;
     }
 
+    ground = buildGround(positions, count, info.scale, min, max);
+    loaded_spawn = spawnPoint(info, min, max);
+
     const name = typeof info.name === 'string' && info.name ? info.name : place.label;
     const facts = Array.isArray(info.facts) ? info.facts.filter((f) => typeof f === 'string' && f.trim()).slice(0, 2) : [];
-    loaded = { id: place.id, name, count, worldSize, facts };
+    loaded = { id: place.id, name, count, worldSize, facts, fit, sizeX, sizeZ, spawn: loaded_spawn };
+    if (walkTitle) walkTitle.setText(name);
     budget = 1;
     slowFor = 0;
     geometry.setDrawRange(0, count);
@@ -596,6 +645,7 @@ export function createTab(ctx) {
   }
 
   function onSqueezeStart(hand, controller) {
+    if (walking) return;
     if (!entered || (hand !== 'left' && hand !== 'right')) return;
     const object = gripOf(hand, controller);
     if (!object) return;
@@ -639,7 +689,9 @@ export function createTab(ctx) {
       }
     }
 
-    if (grab.count > 0) {
+    if (walking) {
+      walk(dt);
+    } else if (grab.count > 0) {
       applyGrab();
     } else {
       const ease = 1 - Math.exp(-dt * 9);
@@ -683,8 +735,244 @@ export function createTab(ctx) {
       } else {
         slowFor = 0;
       }
-      material.size = (loaded.worldSize / Math.sqrt(budget)) * scale * activeProjection();
+      material.size = (loaded.worldSize / Math.sqrt(budget)) * scale * activeProjection() * (walking ? 0.6 : 1);
+      maxDotPx.value = walking ? 22 : 56;
     }
+  }
+
+  // ---------- walking around a place at life size ----------
+
+  function walkHelpText() {
+    if (ctx.isImmersive()) return 'Left stick: walk. Right stick: turn.';
+    if (ctx.input && ctx.input.state && ctx.input.state.play && window.matchMedia && window.matchMedia('(pointer: coarse)').matches) {
+      return 'Stick on the left: walk. Drag: look.';
+    }
+    return 'W A S D: walk. Mouse or arrows: look.';
+  }
+
+  /** Lowest dot in every 2 m cell (the ground, the water, a roof seen from above), gaps filled from neighbours. */
+  function buildGround(positions, count, k, min, max) {
+    const cell = GROUND_CELL;
+    const nx = Math.max(1, Math.ceil((max[0] - min[0]) / cell) + 1);
+    const nz = Math.max(1, Math.ceil((max[2] - min[2]) / cell) + 1);
+    const cells = new Float32Array(nx * nz).fill(Infinity);
+    for (let i = 0; i < count; i++) {
+      const x = positions[i * 3] * k, y = positions[i * 3 + 1] * k, z = positions[i * 3 + 2] * k;
+      const c = Math.floor((z - min[2]) / cell) * nx + Math.floor((x - min[0]) / cell);
+      if (y < cells[c]) cells[c] = y;
+    }
+    // Fill empty cells (calm water, shadowed ground) from filled neighbours, a few rings at a time.
+    for (let pass = 0; pass < 40; pass++) {
+      let empty = 0;
+      const next = cells.slice();
+      for (let zi = 0; zi < nz; zi++) {
+        for (let xi = 0; xi < nx; xi++) {
+          const c = zi * nx + xi;
+          if (cells[c] !== Infinity) continue;
+          let sum = 0, n = 0;
+          for (let dz = -1; dz <= 1; dz++) {
+            for (let dx = -1; dx <= 1; dx++) {
+              const x2 = xi + dx, z2 = zi + dz;
+              if (x2 < 0 || z2 < 0 || x2 >= nx || z2 >= nz) continue;
+              const v = cells[z2 * nx + x2];
+              if (v !== Infinity) { sum += v; n++; }
+            }
+          }
+          if (n) next[c] = sum / n; else empty++;
+        }
+      }
+      cells.set(next);
+      if (!empty) break;
+    }
+    for (let c = 0; c < cells.length; c++) if (cells[c] === Infinity) cells[c] = 0;
+    return { cells, nx, nz, cell, minX: min[0], minZ: min[2], maxX: max[0], maxZ: max[2] };
+  }
+
+  /** Ground height in metres at (x, z) in the place's metres (bilinear between cells). */
+  function groundAt(x, z) {
+    if (!ground) return 0;
+    const g = ground;
+    const fx = THREE.MathUtils.clamp((x - g.minX) / g.cell - 0.5, 0, g.nx - 1), fz = THREE.MathUtils.clamp((z - g.minZ) / g.cell - 0.5, 0, g.nz - 1);
+    const x0 = Math.floor(fx), z0 = Math.floor(fz), x1 = Math.min(x0 + 1, g.nx - 1), z1 = Math.min(z0 + 1, g.nz - 1);
+    const tx = fx - x0, tz = fz - z0;
+    const a = g.cells[z0 * g.nx + x0], b = g.cells[z0 * g.nx + x1], c = g.cells[z1 * g.nx + x0], d = g.cells[z1 * g.nx + x1];
+    return (a + (b - a) * tx) + ((c + (d - c) * tx) - (a + (b - a) * tx)) * tz;
+  }
+
+  /**
+   * Where walking starts and what the child faces: a spot on land (above the water level) some way from the
+   * landmark, south of it if possible, turned towards it. Without a landmark: the middle, facing north.
+   */
+  function spawnPoint(info, min, max) {
+    const mark = info.statue || info.landmark;
+    const size = Math.max(max[0] - min[0], max[2] - min[2]);
+    const inside = (x, z) => x > min[0] + 5 && x < max[0] - 5 && z > min[2] + 5 && z < max[2] - 5;
+    if (mark && typeof mark.x === 'number' && typeof mark.z === 'number') {
+      for (const share of [0.3, 0.22, 0.15, 0.4]) {
+        const back = THREE.MathUtils.clamp(size * share, 60, 320);
+        for (let k = 0; k < 12; k++) {
+          const a = (k % 2 ? 1 : -1) * Math.ceil(k / 2) * (Math.PI / 6);   // south first, then either side
+          const x = mark.x + Math.sin(a) * back, z = mark.z + Math.cos(a) * back;
+          if (inside(x, z) && groundAt(x, z) > 1.5) return { x, z, lookX: mark.x, lookZ: mark.z };
+        }
+      }
+      return { x: mark.x, z: Math.min(mark.z + 60, max[2] - 5), lookX: mark.x, lookZ: mark.z };
+    }
+    const cx = (min[0] + max[0]) / 2, cz = (min[2] + max[2]) / 2;
+    return { x: cx, z: cz, lookX: cx, lookZ: cz - 100 };
+  }
+
+  function viewerInRoot(out) {
+    ctx.viewerPosition(out);
+    return root.worldToLocal(out);
+  }
+
+  function startWalking() {
+    if (!entered || !loaded || walking || pending) return;
+    walking = true;
+    held.left = held.right = null;
+    grab.count = 0;
+    const life = 1 / loaded.fit;                     // pivot scale at which one metre of the place is one metre
+    scale = targetScale = life;
+    const sp = loaded.spawn;
+    // Turn the place so the way from the spawn to the landmark points straight ahead (-Z of the root, the way
+    // the child faced when the tab opened): rotating by yaw adds yaw to atan2(x, z), and ahead is atan2(0, -1).
+    yaw = targetYaw = Math.PI - Math.atan2(sp.lookX - sp.x, sp.lookZ - sp.z);
+    pivot.scale.setScalar(scale);
+    pivot.rotation.y = yaw;
+    // Put the spawn point under the viewer's feet: its place in the pivot's own space, turned and scaled.
+    viewerInRoot(vA);
+    const sx = (points.position.x + sp.x * loaded.fit) * scale, sz = (points.position.z + sp.z * loaded.fit) * scale;
+    const c = Math.cos(yaw), s_ = Math.sin(yaw);
+    pivot.position.x = vA.x - (sx * c + sz * s_);
+    pivot.position.z = vA.z - (-sx * s_ + sz * c);
+    walkY = groundAt(sp.x, sp.z);
+    pivot.position.y = -(points.position.y + walkY * loaded.fit) * scale;
+    targetPos.copy(pivot.position);
+    userMoved = true;
+    setColumnsVisible(false);
+    placeWalkUi();
+    if (walkHelp) walkHelp.setText(walkHelpText());
+    walkUi.visible = true;
+    ctx.ui.popIn(walkUi);
+    if (ctx.input && ctx.input.state) ctx.input.state.desktopMoveEnabled = false;
+    if (ctx.setEnvironment) ctx.setEnvironment(null, { ground: false });   // the place is the ground now
+    ctx.log('explore_walked', { id: loaded.id, place: loaded.name });
+    if (ctx.say) ctx.say(`Welcome to the ${loaded.name}! Walk around and take a look.`);
+  }
+
+  function stopWalking(quiet = false) {
+    if (!walking) return;
+    walking = false;
+    if (walkUi) walkUi.visible = false;
+    setColumnsVisible(true);
+    if (ctx.input && ctx.input.state) ctx.input.state.desktopMoveEnabled = true;
+    if (ctx.setEnvironment && !quiet) ctx.setEnvironment(null);
+    scale = targetScale = 1;
+    yaw = targetYaw = 0;
+    userMoved = false;
+    if (!quiet) place();
+    targetPos.copy(home);
+    pivot.position.copy(home);
+  }
+
+  function setColumnsVisible(on) {
+    centre.visible = on; leftColumn.visible = on; rightColumn.visible = on;
+    plinthSide.visible = on; plinthRim.visible = on;
+    if (namePlate) namePlate.visible = on && Boolean(loaded);
+  }
+
+  /** The walking panel: low and a little to the left of where the child looks now. */
+  function placeWalkUi() {
+    if (!walkUi) return;
+    viewerInRoot(vA);
+    ctx.viewerForward(vB);
+    vB.y = 0;
+    if (vB.lengthSq() < 1e-4) vB.set(0, 0, -1);
+    vB.normalize();
+    // the forward direction in root space
+    qA.copy(root.quaternion).invert();
+    vB.applyQuaternion(qA);
+    vC.set(-vB.z, 0, vB.x);                          // to the right
+    walkUi.position.set(vA.x + vB.x * 0.85 - vC.x * 0.45, vA.y - 0.35, vA.z + vB.z * 0.85 - vC.z * 0.45);
+    walkUi.rotation.set(0, Math.atan2(vA.x - walkUi.position.x, vA.z - walkUi.position.z), 0);
+    stack([walkTitle, walkHelp, walkBack], 0.12, 0.02);
+  }
+
+  /** One frame of walking: read the sticks or keys, move the place under the child, keep their feet on the ground. */
+  function walk(dt) {
+    let mx = 0, mz = 0, turn = 0;
+    const cs = ctx.controllers || {};
+    if (ctx.isImmersive()) {
+      const l = cs.left, r = cs.right;
+      if (l && l.stick) { mx = l.stick.x || 0; mz = l.stick.y || 0; }
+      const rx = r && r.stick ? r.stick.x || 0 : 0;
+      if (Math.abs(rx) > 0.7 && snapReady) { turn = rx > 0 ? -SNAP_TURN : SNAP_TURN; snapReady = false; }
+      if (Math.abs(rx) < 0.3) snapReady = true;
+    } else {
+      const st = ctx.input && ctx.input.state, desk = ctx.input && ctx.input.desk;
+      const k = st ? st.keys : new Set();
+      if (k.has('KeyW')) mz -= 1;
+      if (k.has('KeyS')) mz += 1;
+      if (k.has('KeyD')) mx += 1;
+      if (k.has('KeyA')) mx -= 1;
+      if (desk) {
+        if (desk.joy) { mx += desk.joy.x || 0; mz += desk.joy.y || 0; }
+        if (desk.pad) { mx += desk.pad.lx || 0; mz += desk.pad.ly || 0; }
+      }
+    }
+    if (Math.abs(mx) < 0.12) mx = 0;
+    if (Math.abs(mz) < 0.12) mz = 0;
+    const len = Math.hypot(mx, mz);
+    if (len > 1) { mx /= len; mz /= len; }
+
+    viewerInRoot(vA);
+    if (turn) {
+      // Turn the place about the child.
+      const c = Math.cos(turn), s_ = Math.sin(turn);
+      const dx = pivot.position.x - vA.x, dz = pivot.position.z - vA.z;
+      pivot.position.x = vA.x + dx * c + dz * s_;
+      pivot.position.z = vA.z - dx * s_ + dz * c;
+      yaw += turn; targetYaw = yaw;
+      pivot.rotation.y = yaw;
+      if (ctx.haptic) ctx.haptic('right', 0.2, 20);
+    }
+    if (mx || mz) {
+      // Forward is where the child looks, flattened; the place slides the other way.
+      ctx.viewerForward(vB);
+      vB.y = 0;
+      if (vB.lengthSq() < 1e-4) vB.set(0, 0, -1);
+      vB.normalize();
+      qA.copy(root.quaternion).invert();
+      vB.applyQuaternion(qA);
+      vC.set(-vB.z, 0, vB.x);
+      const speed = Math.max(WALK_SPEED, Math.max(loaded.sizeX, loaded.sizeZ) / 120);
+      const fx = (vB.x * -mz + vC.x * mx) * speed * dt, fz = (vB.z * -mz + vC.z * mx) * speed * dt;
+      pivot.position.x -= fx;
+      pivot.position.z -= fz;
+    }
+    // The place's metres under the child: undo the pivot (position, yaw, scale), then the points' offset.
+    const px = vA.x - pivot.position.x, pz = vA.z - pivot.position.z;
+    const c = Math.cos(-yaw), s_ = Math.sin(-yaw);
+    let lx = (px * c + pz * s_) / scale, lz = (-px * s_ + pz * c) / scale;
+    let mxM = (lx - points.position.x) / loaded.fit, mzM = (lz - points.position.z) / loaded.fit;
+    // Stay inside the scanned box.
+    const g = ground;
+    if (g) {
+      const cx = THREE.MathUtils.clamp(mxM, g.minX + 2, g.maxX - 2), cz = THREE.MathUtils.clamp(mzM, g.minZ + 2, g.maxZ - 2);
+      if (cx !== mxM || cz !== mzM) {
+        // push the place back so the child stays on the edge
+        const ddx = (cx - mxM) * loaded.fit * scale, ddz = (cz - mzM) * loaded.fit * scale;
+        const c2 = Math.cos(yaw), s2 = Math.sin(yaw);
+        pivot.position.x -= ddx * c2 + ddz * s2;
+        pivot.position.z -= -ddx * s2 + ddz * c2;
+        mxM = cx; mzM = cz;
+      }
+    }
+    const want = groundAt(mxM, mzM);
+    walkY += (want - walkY) * (1 - Math.exp(-dt * 6));
+    pivot.position.y = -(points.position.y + walkY * loaded.fit) * scale;
+    targetPos.copy(pivot.position);
   }
 
   // ---------- enter / exit ----------
@@ -721,6 +1009,7 @@ export function createTab(ctx) {
     ctx.audio.stop();
     held.left = held.right = null;
     grab.count = 0;
+    if (walking) stopWalking(true);
     fade = 0;
     fadeDir = 0;
     freeCloud();   // give the memory back: the points are fetched again (from the browser cache) next time
@@ -729,6 +1018,7 @@ export function createTab(ctx) {
   /** The shell's recentre button: bring the model and its cards back in front of the viewer. */
   function onRecenter() {
     if (!entered || !built) return;
+    if (walking) { placeWalkUi(); return; }
     held.left = held.right = null;
     grab.count = 0;
     userMoved = false;

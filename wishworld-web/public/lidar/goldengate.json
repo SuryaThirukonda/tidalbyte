@@ -1,0 +1,65 @@
+{
+  "name": "Golden Gate Bridge",
+  "count": 659690,
+  "scale": 0.05,
+  "bounds": {
+    "min": [
+      -900.0,
+      -1.5,
+      -900.0
+    ],
+    "max": [
+      899.2,
+      286.25,
+      900.0
+    ]
+  },
+  "source": "USGS Northern California, West Coast and San Francisco lidar merged (NAVD88 metres). USGS 3DEP public-domain lidar, Entwine Point Tiles: https://s3-us-west-2.amazonaws.com/usgs-lidar-public/USGS_LPC_CA_NoCal_Wildfires_B5b_QL1_2018/ept.json and https://s3-us-west-2.amazonaws.com/usgs-lidar-public/USGS_LPC_CA_WestCoastElNinoUTM10_2016_LAS_2017/ept.json and https://s3-us-west-2.amazonaws.com/usgs-lidar-public/CA_SanFrancisco_1_B23/ept.json",
+  "facts": [
+    "The Golden Gate Bridge is not gold. Its colour is called International Orange, so ships can see it in the fog.",
+    "Its two towers rise 746 feet, about 227 metres, above the water, and giant cables hang between them to hold up the road."
+  ],
+  "factSources": [
+    "https://www.goldengate.org/bridge/history-research/statistics-data/design-construction-stats/",
+    "https://www.goldengate.org/bridge/history-research/international-orange/"
+  ],
+  "axes": "+X east, +Y up, +Z south; metres = int16 * scale; y = 0 is the water level",
+  "center": {
+    "lat": 37.8183,
+    "lon": -122.4783
+  },
+  "sizeMetres": 1800.0,
+  "datasets": [
+    {
+      "name": "USGS_LPC_CA_NoCal_Wildfires_B5b_QL1_2018",
+      "url": "https://s3-us-west-2.amazonaws.com/usgs-lidar-public/USGS_LPC_CA_NoCal_Wildfires_B5b_QL1_2018/ept.json"
+    },
+    {
+      "name": "USGS_LPC_CA_WestCoastElNinoUTM10_2016_LAS_2017",
+      "url": "https://s3-us-west-2.amazonaws.com/usgs-lidar-public/USGS_LPC_CA_WestCoastElNinoUTM10_2016_LAS_2017/ept.json"
+    },
+    {
+      "name": "CA_SanFrancisco_1_B23",
+      "url": "https://s3-us-west-2.amazonaws.com/usgs-lidar-public/CA_SanFrancisco_1_B23/ept.json"
+    }
+  ],
+  "colorSpace": "srgb",
+  "order": "random (the first N points are an even subsample)",
+  "landmark": {
+    "label": "bridge",
+    "points": 10784481,
+    "x": -13.73,
+    "z": -66.55,
+    "baseY": 0.71,
+    "topY": 286.32
+  },
+  "waterLevelNavd88": -0.38,
+  "categories": {
+    "landmark": 183702,
+    "structure": 17983,
+    "veg": 4451,
+    "ground": 35885,
+    "water": 417669
+  },
+  "baseCell": 1.396
+}
