@@ -6,7 +6,7 @@
 // speaks, the "WishWorld" banner and the cards. In AR it is only the banner and the cards, floating in the
 // real room.
 //
-// Unity's four cards map onto the web tabs: Games opens the games menu (Frost Slice, Snow Circuit); Worlds
+// Unity's four cards map onto the web tabs: Games opens the games menu (Frost Slice, Snow Hoops, Snow Circuit); Worlds
 // opens the worlds tab; AR Worlds and Wish both open the reef (the fish in your room; Wish goes straight
 // to the spoken wish). Explore, Calm and Mailbox are new cards in the same style.
 
@@ -156,9 +156,11 @@ export function createTab(ctx) {
   games.add(gamesBanner);
   ui.popIn(gamesBanner, { bob: 0.006, bobSpeed: 0.9 });
   const frostCard = card(games, 'Frost Slice', 'Slice the flying fruit', go('frostslice'), { width: 0.5 });
-  frostCard.position.set(-0.28, 0, 0);
+  frostCard.position.set(-0.54, 0, 0);
+  const hoopsCard = card(games, 'Snow Hoops', 'Shoot your toy!', go('hoops'), { width: 0.5 });
+  hoopsCard.position.set(0, 0, 0);
   const snowCard = card(games, 'Snow Circuit', 'Race a snowy track', go('snowcircuit'), { width: 0.5 });
-  snowCard.position.set(0.28, 0, 0);
+  snowCard.position.set(0.54, 0, 0);
   const back = ui.makeButton('Back', () => show('main'), { width: 0.3, height: 0.11, textHeight: 0.045 });
   back.position.set(0, -0.3, 0);
   games.add(back);
@@ -177,6 +179,7 @@ export function createTab(ctx) {
     calmCard.setEnabled(has('calm'));
     mailCard.setEnabled(has('mailbox'));
     frostCard.setEnabled(has('frostslice'));
+    hoopsCard.setEnabled(has('hoops'));
     snowCard.setEnabled(has('snowcircuit'));
     const waiting = ctx.gifts ? ctx.gifts.waitingLetters() : 0;
     mailCard.setSubtitle(waiting === 1 ? 'One new letter!' : waiting > 1 ? `${waiting} new letters!` : 'Letters for you');
