@@ -18,6 +18,7 @@ export function createSky(ctx) {
 
   const ground = new THREE.Mesh(new THREE.CircleGeometry(radius * 0.98, 48), new THREE.MeshBasicMaterial({ color: '#f5f7fa', fog: false }));
   ground.rotation.x = -Math.PI / 2;
+  ground.position.y = -0.01;                                   // 1 cm under the pad's top face (y = 0): no z-fighting
 
   const clouds = new MeshBuilder();
   for (const [x, y, z, s] of [[-40, 45, -90, 14], [30, 55, -120, 18], [70, 40, -60, 12], [-80, 50, -40, 16], [10, 60, -150, 20]]) {
