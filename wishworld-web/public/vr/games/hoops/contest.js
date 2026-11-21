@@ -36,6 +36,7 @@ export function createContest(rules, roundSeconds = rules.roundSeconds) {
   return {
     get phase() { return phase; },
     get rack() { return rack; },
+    get taken() { return taken; },
     get score() { return score; },
     get timeLeft() { return timeLeft; },
     get max() { return max; },
@@ -80,6 +81,7 @@ export function createContest(rules, roundSeconds = rules.roundSeconds) {
       if (ball.rack === rack) landed++;
       balls[ball.rack][ball.index] = made ? 3 : 4;
       if (!made || !ball.thrown) return 0;
+      if (phase === 'over' || phase === 'idle') return 0;   // the results are up: nothing changes them now
       makes++;
       if (ball.money) moneyMakes++;
       score += ball.points;

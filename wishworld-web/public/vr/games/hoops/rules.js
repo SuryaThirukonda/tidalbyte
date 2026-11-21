@@ -77,8 +77,8 @@ export const VOLUME = { swish: 0.7, clank: 0.6, buzzer: 0.8, grab: 0.35, money: 
 export const LAYOUT = {
   rack: { side: 0.32, ahead: 0.22, spacing: 0.27, rise: 0.03, waistOfHead: 0.55, waistMin: 0.7, waistMax: 1.05 },
   picker: { distance: 1.3, y: 1.42 },
-  results: { distance: 1.25, y: 1.4 },
-  scoreboard: { above: 0.75, size: [1.3, 0.5] },   // above the top of the backboard
+  results: { distance: 1.25, y: 1.55 },
+  scoreboard: { above: 0.32, size: [1.3, 0.5] },   // its centre this far above the top of the backboard
 };
 
 export const COLORS = {
