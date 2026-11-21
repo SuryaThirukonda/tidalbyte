@@ -19,7 +19,7 @@ thrust, pitch, yaw, roll, then lift and drag.
 
 1. The child opens **Bottle Rocket** from the tab menu.
 2. **Scan your bottle.** This runs the existing toy-scan flow (phone Scan tab -> 3D model). The returned model
-   becomes the rocket body with a nose cone, three fins and a nozzle attached. **Use a practice bottle** skips the
+   becomes the rocket body with a nose cone, four fins (two big peach side fins that must line up with slots, two small ones) and a nozzle attached. **Use a practice bottle** skips the
    scan, and the built-in bottle also stands in while the model is being made, or if the scan fails or times out.
 3. The rocket stands on a launch pad in front of the child, and the missions begin.
 
@@ -30,15 +30,19 @@ thrust, pitch, yaw, roll, then lift and drag.
 | Pitch (nose up or down) | Tip the right controller forward or back | Mouse up / down (or W / S) |
 | Yaw (nose left or right) | Twist the controller left or right | Mouse left / right (or A / D) |
 | Roll (spin about the nose) | Rotate the wrist | Q / E |
-| Thrust | Hold the trigger | Hold Space |
-| Force arrows on or off | A button | F |
+| Thrust | Hold the trigger | Hold the left mouse button |
+| Force arrows on or off | Grip, or the Force arrows button | G, or the button |
+
+(A is push-to-talk, B and X open the menu, and Space and F are taken by the shell's play and desktop modes, so the
+game does not use them.)
 
 The controller's orientation relative to its orientation at launch is the target attitude. The rocket turns toward
 it smoothly, at a limited turn rate. Controls that are not unlocked yet are ignored.
 
-Thrust uses water from a tank (a gauge on the HUD). When the tank is empty, thrust stops. Gravity and drag take over
-and a parachute opens automatically once the rocket starts to fall, so it drifts down slowly. Landing on any surface
-(floor or pad) ends the flight. The tank refills on the pad.
+Thrust uses water from a tank (a gauge on the HUD). When the tank is empty, thrust stops. Gravity and drag take over.
+Whenever the rocket falls while not firing, a parachute opens so it drifts down slowly, and firing again closes it.
+The rocket cannot steer under the parachute. Landing on any surface (floor or pad) ends the flight. The tank refills
+on the pad.
 
 ### Missions
 
@@ -55,9 +59,11 @@ reset.
 | 5 | Sky | Lift and drag | all | Long glide course: fly fast through the rings, then run dry and parachute onto a target | "Out here you can go fast! Fins make lift so you can steer, and air drag slows you down." |
 | 6 | Sky | All together | all | Ring course, then land on the pad | "You know it all now. Fly the course and land on the pad!" |
 
-Between missions 4 and 5, a **Go outside** button fades to white and switches to the sky field (a snowy outdoor
-environment through `ctx.setEnvironment`, full VR). In the sky the rocket and course are scaled so ring spacing is
-tens of metres and the camera follows behind the rocket. In the room the child watches from where they sit.
+Between missions 4 and 5, a **Go outside** button fades to white and switches to the sky field: an opaque sky
+sphere, a snowy ground and clouds that the game draws itself, so it covers the room in AR passthrough as well. In the
+sky the numbers are half real scale, the rocket is drawn 8 times bigger, and the course fits inside about 120 m. The
+viewer stays on a fixed spot behind the pad (no chase camera, for comfort in bed). In the room the child watches from
+where they sit.
 
 Progress (which missions are done) is kept for the session only. Saving between visits is out of scope.
 
@@ -109,10 +115,9 @@ hands the model to `rocket.js` instead of making it a companion. `rocket.js` the
 2. scales it to bottle length (about 0.30 m in the room),
 3. adds the nose cone on top and the fins and nozzle at the bottom of the box.
 
-If `toyscan.js`'s spoken lines can be passed in as options, the rocket passes bottle wording ("Hold your bottle up
-in front of me!"). If they cannot, a small change adds optional `lines` to `createToyScan`, defaulting to the
-current text so the Reef is unchanged. If the scan brings Bubby (no photo arrived), the rocket uses the built-in
-bottle instead.
+`createToyScan` gets two optional options, `words` (what the scan says and shows) and `fallbackToy` (used
+instead of Bubby). Their defaults are the current text and Bubby, so the Reef is unchanged. The rocket passes
+bottle wording ("Hold your bottle up in front of me!") and the practice bottle as its fallback.
 
 ### Room placement
 
