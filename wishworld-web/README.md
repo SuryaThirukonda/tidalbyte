@@ -41,7 +41,11 @@ Decisions and file formats: [`docs/CONTRACT.md`](docs/CONTRACT.md). What the Uni
   child in every tab and world, and again next time the room is opened. The newest four follow; poke one to make it
   hop. See `public/vr/core/companions.js` and `api/companions.js`.
 
-Headset tabs: `hub`, `reef`, `worlds`, `frostslice`, `snowcircuit`, `explore`, `calm`, `mailbox`
+Headset tabs: `hub`, `reef`, `worlds`, `frostslice`, `snowcircuit`, `rocket`, `explore`, `calm`, `mailbox`
+
+**Bottle Rocket** turns the child's scanned water bottle (or a practice bottle) into a rocket they pilot through six
+missions, four in the room and two in a sky field, that teach thrust, pitch, yaw, roll, lift and drag. See
+`public/vr/games/rocket/game.js`.
 
 **Explore** shows real places scanned by USGS lidar: the Statue of Liberty, Niagara Falls, the Golden Gate Bridge,
 the Gateway Arch, the Washington Monument, Devils Tower and the Grand Canyon. Each starts as a tabletop model;

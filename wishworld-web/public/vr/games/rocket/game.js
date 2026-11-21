@@ -4,7 +4,7 @@
 //
 // Phases: choose -> scanning -> ready -> flying -> won | failed -> ready (next or again) ... -> done.
 // ("outside" is the short fade between mission 4 and mission 5.)
-// Room missions sit on a "stage": a group at the pad, 0.8 m in front of the viewer and 0.3 m below the eyes, local -Z
+// Room missions sit on a "stage": a group at the pad, 0.75 m in front of the viewer and 0.45 m below the eyes, local -Z
 // facing away from them. Sky missions sit on a stage 6 m ahead on the ground, inside the sky field.
 //
 // Dev only (localhost): ?autoplay=1 flies every mission with the autopilot and the practice bottle,
@@ -24,6 +24,8 @@ import { createHud } from './hud.js';
 import { createToyScan } from '/vr/core/toyscan.js';
 
 const SKY_SCALE = 8;
+const STUCK_SECONDS = 2.5;         // a launch that never cleared the pad and is no longer firing goes back to ready
+const ROOM_AHEAD = 0.75, ROOM_BELOW = 0.45;   // the room pad, from the eyes (clear of the guide's caption)
 const SKY_GROUND_DROP = 0.05;      // metres the sky field's ground sits under the pad top and landing circle (no z-fighting)
 const BOTTLE_WORDS = {
   hold: 'Hold your bottle up in front of me!',
@@ -77,6 +79,9 @@ export function createRocketGame(ctx) {
   let armed = false;               // the trigger has been let go since the mission was set up (a button press is not a launch)
   const pendingLines = [];         // said (queued) on the next frame, after whatever the scan is saying
   let gen = 0;                     // bumped on enter and exit, so a fade that outlives the tab does nothing
+  let furthest = startAt;          // the furthest mission reached this session: a return to the tab carries on from it
+  let stuckT = 0, nudged = false;  // a tap that never left the pad: seconds since, and whether the hint was said
+  let sayBatch = 0;                // the latest queued batch of lines (an older one stops)
   let settle = null;               // after a win or a far fail: the rocket keeps falling (visuals only) until it lands
   const COAST = { target: null, thrust: false };
   let roomParams = { ...ROOM };
@@ -87,8 +92,11 @@ export function createRocketGame(ctx) {
     fallbackToy: () => ({ model: buildPracticeBottle(), name: 'Practice bottle', greeting: PRACTICE_LINE, greeting2: '' }),
     // The scan speaks its greeting right after this, so the mission's own line waits for it.
     takeToy(model, gift) {
-      if (gift) { useBody(model, true); return; }
-      disposeGeometry(model);                        // the fallback's own copy: the rocket builds its practice bottle
+      if (gift && gift.kind === 'mesh') { useBody(model, true); return; }
+      // The fallback's own copy (the rocket builds its practice bottle), or a failed scan that came back as a library
+      // creature: neither is the child's bottle, so the practice bottle flies.
+      disposeGeometry(model);
+      if (gift) pendingLines.push(PRACTICE_LINE);
       useBody(null, true);
     },
     setScanView(on) { stage.visible = !on; },
@@ -99,6 +107,20 @@ export function createRocketGame(ctx) {
     arrowsOn = !arrowsOn;
     forces.group.visible = arrowsOn;
     if (arrowsOn && run) drawForces();
+  }
+
+  /**
+   * Say the waiting lines one after another once the voice is idle. The scan's greeting is started in the same tick
+   * as takeToy, so its speak() is still looking up the recording when the next frame flushes: a { queue: true } say
+   * would see nothing speaking and talk over it. whenIdle() covers the whole voice chain, including that lookup.
+   */
+  async function sayInTurn(lines) {
+    const token = gen, mine = ++sayBatch;
+    await ctx.audio.whenIdle();
+    for (const line of lines) {
+      if (!active || token !== gen || mine !== sayBatch) return;
+      await ctx.say(line);
+    }
   }
 
   function disposeGeometry(model) {
@@ -129,7 +151,7 @@ export function createRocketGame(ctx) {
 
   function placeRoom() {
     ctx.viewerPosition(_head); ctx.rig.viewerForwardFlat(_fwd);
-    stage.position.set(_head.x + _fwd.x * 0.8, _head.y - 0.3, _head.z + _fwd.z * 0.8);
+    stage.position.set(_head.x + _fwd.x * ROOM_AHEAD, _head.y - ROOM_BELOW, _head.z + _fwd.z * ROOM_AHEAD);
     stage.rotation.set(0, Math.atan2(-_fwd.x, -_fwd.z), 0);
     roomParams = { ...ROOM, floorY: ctx.rig.floorY() - stage.position.y };
     setOutside(false);
@@ -182,7 +204,8 @@ export function createRocketGame(ctx) {
     hud.show(['arrows']);
     controls.reset();
     ctx.input.state.pointersEnabled = true;
-    if (queueLine) pendingLines.push(mission.line); else ctx.say(mission.line);
+    if (queueLine) pendingLines.push(mission.line); else { sayBatch++; ctx.say(mission.line); }
+    stuckT = 0; nudged = false;
     phase = 'ready';
     armed = false;
     autoWait = 1.2;
@@ -205,6 +228,7 @@ export function createRocketGame(ctx) {
     ctx.input.state.pointersEnabled = true;
     if (run.won) {
       phase = 'won';
+      furthest = Math.max(furthest, Math.min(MISSIONS.length - 1, index + 1));
       ctx.audio.sfx('success', 0.7);
       ctx.say(mission.win);
       const last = index === MISSIONS.length - 1;
@@ -260,10 +284,12 @@ export function createRocketGame(ctx) {
       place = null;
       placeRoom();
       phase = 'choose';
-      index = startAt;
+      index = furthest;
       run = null; settle = null; pendingLines.length = 0;
       stage.visible = true; hud.group.visible = true;
-      hud.setMessage('Bottle Rocket', 'Turn your water bottle into a rocket!');
+      hud.setMessage('Bottle Rocket', furthest > 0
+        ? `Turn your water bottle into a rocket! Mission ${furthest + 1}, ${MISSIONS[furthest].title}, is next.`
+        : 'Turn your water bottle into a rocket!');
       hud.show(['scan', 'practice']);
       // Whatever the last visit left (a sky course, a rocket in mid-air) waits out of the way: no course until a
       // mission starts, and the rocket upright on the pad at room scale.
@@ -290,8 +316,7 @@ export function createRocketGame(ctx) {
     update(dt) {
       if (!active) return;
       toyScan.update(dt);
-      for (const line of pendingLines) ctx.say(line, { queue: true });
-      pendingLines.length = 0;
+      if (pendingLines.length) { sayInTurn(pendingLines.slice()); pendingLines.length = 0; }
       if (autoMode) autoStep(dt);
       if (phase !== 'ready' && phase !== 'flying') {
         if (settle && run) coast(dt);
@@ -323,8 +348,22 @@ export function createRocketGame(ctx) {
         ctx.haptic(handName, 0.6, 80);
       }
       run.events.length = 0;
-      if (run.won || run.failed) finish();
+      if (run.won || run.failed) { finish(); return; }
+      // A short tap that never lifted the rocket off the pad: after a moment, back to ready (same run, same water),
+      // with the buttons and pointers back, so the child is never stuck with nothing to press.
+      if (s.launched && !s.cleared && !s.firing) stuckT += dt; else stuckT = 0;
+      if (stuckT > STUCK_SECONDS) {
+        stuckT = 0;
+        phase = 'ready';
+        armed = false;
+        controls.reset();
+        hud.show(['arrows']);
+        ctx.input.state.pointersEnabled = true;
+        if (!nudged) { nudged = true; ctx.say('Hold the trigger to fly!'); }
+      }
     },
+    // B or X while flying brings the pointers back (the menu opens on them too), as in Frost Slice.
+    onButtonDown(hand, name) { if (name === 'b' || name === 'x') ctx.input.state.pointersEnabled = true; },
     onSqueezeStart() { if (phase === 'ready' || phase === 'flying') toggleArrows(); },
     onRecenter() {
       if (phase === 'outside') return;

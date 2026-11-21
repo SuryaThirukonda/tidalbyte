@@ -4,7 +4,7 @@
 
 import { createRocketGame } from '/vr/games/rocket/game.js';
 
-export const meta = { id: 'rocket', label: 'Bottle Rocket', order: 4 };
+export const meta = { id: 'rocket', label: 'Bottle Rocket', order: 5.5 };
 
 export function createTab(ctx) {
   return createRocketGame(ctx);

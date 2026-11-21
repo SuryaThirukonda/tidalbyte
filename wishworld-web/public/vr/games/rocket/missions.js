@@ -53,8 +53,8 @@ export const MISSIONS = [
   },
   {
     id: 'course', title: 'Sky Course', place: 'sky', unlocked: { pitch: true, yaw: true, roll: true }, arrows: false,
-    line: 'You know it all now. Fly the course and land on the pad!',
-    tip: 'Rings, a slot, then let go to land on the far pad.',
+    line: 'You know it all now. Fly the course and land in the circle!',
+    tip: 'Rings, a slot, then let go to land in the circle.',
     win: "You're a rocket scientist!",
     rings: [
       { at: [0, 15, -30], facing: [0, 0, -1], radius: 6 },

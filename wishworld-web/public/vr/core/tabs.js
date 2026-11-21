@@ -3,7 +3,7 @@
 // with a console warning, so a tab is added by dropping in a file and listing its id.
 
 const VALID_ID = /^[a-z0-9][a-z0-9_-]*$/i;
-const FALLBACK_IDS = ['hub', 'reef', 'worlds', 'frostslice', 'snowcircuit', 'explore', 'calm', 'mailbox'];
+const FALLBACK_IDS = ['hub', 'reef', 'worlds', 'frostslice', 'snowcircuit', 'rocket', 'explore', 'calm', 'mailbox'];
 
 export function createTabs({ scene, ctx, hooks }) {
   const tabs = [];                 // { id, meta, tab }
