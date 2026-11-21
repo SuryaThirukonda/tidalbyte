@@ -7,6 +7,7 @@
 import { route, send, body, roomCode, UserError } from './_lib/http.js';
 import { sql, ensureRoom, logEvent, giftJson } from './_lib/db.js';
 import { resolveProfile, listProfiles, profileJson } from './_lib/profiles.js';
+import { FRUIT_EVENT } from './_lib/fruit.js';
 
 // The contract's types are world_visited, creature_learned, breath_session, explore_visited and gift_opened.
 // Any other lower_snake_case type is stored too, so a new tab can log something new without a change
@@ -18,6 +19,7 @@ const log = route('POST', async (req, res) => {
   const room = roomCode(b.room);
   const type = typeof b.type === 'string' ? b.type.trim() : '';
   if (!/^[a-z][a-z0-9_]{2,39}$/.test(type)) throw new UserError('That event type does not look right.');
+  if (type === FRUIT_EVENT) throw new UserError('Send fruit through /api/scan.');   // its rows hold picture addresses only the server writes
 
   let detail = b.detail;
   if (detail === undefined || detail === null) detail = {};

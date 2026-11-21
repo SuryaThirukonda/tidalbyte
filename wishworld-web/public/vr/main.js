@@ -46,6 +46,7 @@ async function loadApi() {
       base: '', room: () => code, setRoom: () => code,
       createRoom: offline, sendWish: offline, sendLetter: offline, startScan: offline, scanStatus: offline,
       getGifts: offline, openGift: offline, getInbox: offline, tts: offline, stt: offline, guide: offline, health: offline,
+      sendFruit: offline, getFruit: offline, clearFruit: offline,
       logEvent: async () => ({ ok: false, id: null }),
       pollGifts: () => () => {},
     };

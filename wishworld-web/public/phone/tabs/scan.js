@@ -1,5 +1,6 @@
 // Scan tab: photograph a toy (one photo, or up to four: front, back and sides, so the back is not guessed), shrink
 // the photos, send them to be built into a 3D companion, show progress, then a spinnable preview.
+// A switch at the top swaps to the fruit side (scan-fruit.js): a fruit photo cut out for Frost Slice.
 import { h, fill, icon, thumb, creatureInfo, plainName, errorText, clock, store, shrinkToJpeg, companion } from "/phone/lib.js";
 
 const POLL_MS = 3000;
@@ -70,7 +71,37 @@ export function mount(root, ctx) {
   // ---- step 3: result
   const resultCard = h("div", { class: "card snowcap done", id: "scan-result", hidden: true, "aria-live": "polite" });
 
-  root.append(pickCard, buildCard, resultCard);
+  // ---- toy or fruit
+  const toyRoot = h("div", { id: "scan-toy" });
+  const fruitRoot = h("div", { id: "scan-fruit", hidden: true });
+  const toyBtn = h("button", { class: "btn", type: "button", id: "scan-mode-toy", "aria-pressed": "true" }, h("span", { class: "emoji", "aria-hidden": "true" }, "🧸"), "Scan a toy");
+  const fruitBtn = h("button", { class: "btn", type: "button", id: "scan-mode-fruit", "aria-pressed": "false" }, h("span", { class: "emoji", "aria-hidden": "true" }, "🍌"), "Scan Fruit for Frost Slice");
+  let fruitTab = null, fruitLoading = null;
+
+  async function setMode(mode) {
+    const fruit = mode === "fruit";
+    toyBtn.classList.toggle("on", !fruit); toyBtn.setAttribute("aria-pressed", String(!fruit));
+    fruitBtn.classList.toggle("on", fruit); fruitBtn.setAttribute("aria-pressed", String(fruit));
+    toyRoot.hidden = fruit; fruitRoot.hidden = !fruit;
+    store.set("ww_scan_mode", mode);
+    if (!fruit) return;
+    if (!fruitLoading) {
+      fruitLoading = import("/phone/tabs/scan-fruit.js")
+        .then((m) => { fruitTab = m.mount(fruitRoot, ctx) || {}; })
+        .catch((err) => {
+          fruitLoading = null;
+          console.error("[scan] the fruit scanner could not start", err);
+          fill(fruitRoot, h("div", { class: "card" }, h("div", { class: "note bad", role: "alert" }, h("span", { html: icon("warn") }),
+            h("span", null, "The fruit scanner could not load. Check the connection, then tap the button again."))));
+        });
+    } else if (fruitTab && fruitTab.onShow) fruitTab.onShow();
+    await fruitLoading;
+  }
+  toyBtn.addEventListener("click", () => setMode("toy"));
+  fruitBtn.addEventListener("click", () => setMode("fruit"));
+
+  toyRoot.append(pickCard, buildCard, resultCard);
+  root.append(h("div", { class: "scan-switch", role: "group", "aria-label": "What to scan" }, toyBtn, fruitBtn), toyRoot, fruitRoot);
 
   // ------------------------------------------------------------------ choosing
 
@@ -302,16 +333,22 @@ export function mount(root, ctx) {
 
   drawPhotos();
 
+  // #scan/fruit or ?scan=fruit opens the fruit side; otherwise the side used last time.
+  const wantFruit = /^#\/?scan\/fruit/i.test(location.hash) || ctx.query.get("scan") === "fruit";
+  const wantToy = /^#\/?scan\/toy/i.test(location.hash) || ctx.query.get("scan") === "toy";
+  setMode(wantFruit ? "fruit" : wantToy || pendingId ? "toy" : store.get("ww_scan_mode", "toy") === "fruit" ? "fruit" : "toy");
+
   // Dev only: ?debugImage=<url> (repeat it for more views) loads test pictures as if they had been chosen
   // (there is no camera in automated checks).
   const debugUrls = ctx.query.getAll("debugImage");
-  if (debugUrls.length && !pendingId) {
+  if (debugUrls.length && !pendingId && ctx.query.get("scan") !== "fruit") {
     Promise.all(debugUrls.map((u) => fetch(u).then((r) => { if (!r.ok) throw new Error("debugImage " + r.status); return r.blob(); })))
       .then((blobs) => addPhotos(blobs))
       .catch((err) => showAlert("The test image could not be loaded: " + errorText(err)));
   }
 
   return {
-    onRoomChange() { stopWatching(); reset(); },
+    onShow() { if (!fruitRoot.hidden && fruitTab && fruitTab.onShow) fruitTab.onShow(); },
+    onRoomChange(code) { stopWatching(); reset(); if (fruitTab && fruitTab.onRoomChange) fruitTab.onRoomChange(code); },
   };
 }

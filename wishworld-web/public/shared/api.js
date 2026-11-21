@@ -13,22 +13,15 @@ const DEFAULT_ROOM = 'WISH';
 const OFFLINE = 'Could not reach WishWorld. Check the connection and try again.';
 const BROKEN = 'Something went wrong. Please try again.';
 
-/** "" on the deployed site. A page opened from a local static server or a file uses the deployed API. */
+/**
+ * "" = same origin. On localhost / LAN use `node tools/local-dev.mjs` (fruit is handled locally; other
+ * /api routes are proxied to production). file: URLs still use the deployed API.
+ */
 function findBase() {
   try {
     const loc = globalThis.location;
-    if (!loc || !loc.hostname) return PRODUCTION; // file: URLs and non-browser use
-    const host = loc.hostname;
-    const local =
-      loc.protocol === 'file:' ||
-      host === 'localhost' ||
-      host === '127.0.0.1' ||
-      host === '[::1]' ||
-      host === '0.0.0.0' ||
-      host.endsWith('.localhost') ||
-      host.endsWith('.local') ||
-      /^(10\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.)/.test(host); // a phone on the same wifi as a dev laptop
-    return local ? PRODUCTION : '';
+    if (!loc || !loc.hostname || loc.protocol === 'file:') return PRODUCTION;
+    return '';
   } catch {
     return PRODUCTION;
   }
@@ -163,7 +156,7 @@ async function blobToBase64(blob) {
 // ---------- the client ----------
 
 export const api = {
-  /** "" on the deployed site; the production URL when the page runs on localhost or from a file. */
+  /** "" on the deployed site and on local-dev; production URL only for file: pages. */
   base,
 
   /** The current room code: ?room= in the address, else the one remembered, else "WISH". */
@@ -230,6 +223,26 @@ export const api = {
     };
     if (blobs.length > 1) payload.images = await Promise.all(blobs.map((b) => blobToBase64(b)));
     return (await post('/api/scan', payload, { timeoutMs: 60000 })).gift;
+  },
+
+  /**
+   * Send a fruit for Frost Slice: a PNG Blob with a see-through background, cut out on the phone.
+   * method: "auto" | "box" | "oval" (how it was cut out). -> { id, room, type, assetUrl, width, height, method, createdAt }
+   */
+  async sendFruit({ sender, pngBlob, method } = {}) {
+    const payload = { room: room(), kind: 'fruit', sender, method, image: await blobToBase64(pngBlob) };
+    return (await post('/api/scan', payload, { timeoutMs: 60000 })).fruit;
+  },
+
+  /** The room's current Frost Slice fruit, or null for the normal fruit. */
+  async getFruit() {
+    return (await get('/api/scan?' + query({ room: room(), kind: 'fruit' }), { timeoutMs: 15000 })).fruit || null;
+  },
+
+  /** Put Frost Slice back to the normal fruit (the scanned picture is deleted). */
+  async clearFruit() {
+    await post('/api/scan', { room: room(), kind: 'fruit', action: 'clear' });
+    return null;
   },
 
   /** How a scan is getting on. -> gift (status "pending", then "ready") */
