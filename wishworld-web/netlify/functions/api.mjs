@@ -2,8 +2,12 @@
 // (req, res) shape; this turns a web Request into that shape, runs the handler with Netlify's context
 // (so waitUntil and the invocation deadline work, see api/_lib/runtime.js) and returns a web Response.
 // The rewrites vercel.json had (/api/inbox, /api/tts, /api/stt) are the ALIASES below.
+// netlify.toml redirects /api/* here (status 200, a rewrite), so the request may arrive as /api/<name> or as
+// /.netlify/functions/api/<name>; both are understood. /api/files/<path> serves a stored file (api/files.js).
 import { withPlatform } from '../../api/_lib/runtime.js';
 import companions from '../../api/companions.js';
+import files from '../../api/files.js';
+import profiles from '../../api/profiles.js';
 import events from '../../api/events.js';
 import gifts from '../../api/gifts.js';
 import giftsOpen from '../../api/gifts/open.js';
@@ -21,6 +25,7 @@ const HANDLERS = {
   events,
   gifts,
   'gifts/open': giftsOpen,
+  profiles,
   guide,
   health,
   letter,
@@ -116,14 +121,17 @@ function nodeResponse() {
 export default async (request, context) => {
   const started = Date.now();
   const url = new URL(request.url);
-  const name = url.pathname.replace(/^\/api\/?/, '').replace(/\/+$/, '').replace(/\.js$/, '');
-  const [target, extraQuery] = ALIASES[name] || [name, {}];
-  const handler = HANDLERS[target];
+  const name = url.pathname.replace(/^\/(?:\.netlify\/functions\/api|api)\/?/, '').replace(/\/+$/, '').replace(/\.js$/, '');
+  let [target, extraQuery] = ALIASES[name] || [name, {}];
+  if (name.startsWith('files/')) { target = 'files'; extraQuery = { key: decodeURIComponent(name.slice(6)) }; }
+  const handler = target === 'files' ? files : HANDLERS[target];
   if (!handler) return notFound();
 
   const req = await toNodeRequest(request, url, extraQuery);
   const res = nodeResponse();
   const platform = {
+    netlify: true,
+    siteUrl: (context.site && context.site.url) || url.origin,
     deadline: started + LIMIT_MS,
     waitUntil: (promise) => context.waitUntil(Promise.resolve(promise)),
   };
@@ -133,4 +141,4 @@ export default async (request, context) => {
   return new Response(empty ? null : res.body, { status: res.statusCode, headers: res.headers });
 };
 
-export const config = { path: ['/api', '/api/*'] };
+// No `path` here: netlify.toml's redirect sends /api/* to /.netlify/functions/api/*.

@@ -13,7 +13,10 @@ What it does for one place:
      no photo colour and no vegetation/building classes), and colours every point.
   4. Thins to the point budget, keeping more points on the landmark and steep faces and fewer
      on flat ground and water.
-  5. Writes public/lidar/<place>.bin and <place>.json in the format fixed by docs/CONTRACT.md:
+  5. Builds a smooth surface: a height grid (at most 320 x 320 cells) of the top of everything solid,
+     coloured from the dots, which the Explore tab draws as one continuous mesh. Parts that hang over
+     open space (the statue's figure, a bridge deck, an arch) are left out of it and kept as dots.
+  6. Writes public/lidar/<place>.bin and <place>.json in the format fixed by docs/CONTRACT.md:
         .bin  = Int16 x,y,z for every point (little-endian), then Uint8 r,g,b for every point
         .json = { name, count, scale, bounds, source, facts, ... }
      metres = int16 * scale.  +X east, +Y up, +Z south (north is -Z).  Origin: centre of the
@@ -130,7 +133,7 @@ PLACES = {
         "grid": 1.0,
         "water_below": 0.8,
         "thin": {"landmark": 0.0, "structure": 0.8, "veg": 1.0, "ground": 1.2, "water": 2.2},
-        "landmark": {"circle": (38.62453, -90.18478, 110.0), "rise": 4.0,
+        "landmark": {"circle": (38.62453, -90.18478, 110.0), "rise": 4.0, "floating": True,
                      "low": "#8d97a3", "high": "#eef3f8", "label": "arch"},
         "grass_range": (0.5, 0.85),
         "palette": {
@@ -161,7 +164,7 @@ PLACES = {
         "surface_only": True,
         "thin": {"landmark": 0.45, "structure": 0.85, "veg": 0.95, "ground": 1.1, "water": 1.6},
         # along the deck, fitted to the survey's bridge-class returns (south end, north end of the box)
-        "landmark": {"segment": ((37.810305, -122.477443), (37.826295, -122.479318)), "half_width": 20.0, "rise": 6.0,
+        "landmark": {"segment": ((37.810305, -122.477443), (37.826295, -122.479318)), "half_width": 20.0, "rise": 6.0, "floating": True,
                      "low": "#a3311f", "high": "#e2553a", "label": "bridge"},
         "grass_range": (0.45, 0.85),
         "palette": {
@@ -410,6 +413,68 @@ def voxel_pick(e, n, y, cell, level):
     return first
 
 
+def surface(cfg: dict, e, n, h, col, category, solid, pal, clear=None) -> dict:
+    """The top of everything solid as a height grid with a colour per cell, in the file's axes.
+
+    Each cell takes the highest solid return in it (ground, roof, treetop, cliff top) and the mean colour of the
+    returns within 0.75 m of that top. Cells with no return (calm water, shadows) take the lowest height around
+    them and the nearest colour; low empty cells in a place with water are coloured as water. Cells crossed by
+    `clear` returns (a bridge deck, an arch) are treated as empty too, so no wall rises up to them. Heights are
+    smoothed a little so the mesh reads as a surface rather than steps.
+    """
+    half = cfg["size"] / 2
+    cell = max(cfg["size"] / 320.0, cfg["grid"])
+    nx = int(math.ceil(2 * half / cell))
+    x, z = e[solid], -n[solid]
+    hh, cc, cat = h[solid], col[solid], category[solid]
+    ix = np.clip(((x + half) / cell).astype(np.int64), 0, nx - 1)
+    iz = np.clip(((z + half) / cell).astype(np.int64), 0, nx - 1)
+    idx = iz * nx + ix
+    top = np.full(nx * nx, -np.inf, dtype=np.float32)
+    np.maximum.at(top, idx, hh)
+    filled = np.isfinite(top)
+    if clear is not None and clear.any():
+        cx = np.clip(((e[clear] + half) / cell).astype(np.int64), 0, nx - 1)
+        cz = np.clip(((-n[clear] + half) / cell).astype(np.int64), 0, nx - 1)
+        crossed = np.zeros(nx * nx, bool)
+        crossed[cz * nx + cx] = True
+        crossed = ndi.binary_dilation(crossed.reshape(nx, nx), iterations=1).ravel()
+        filled &= ~crossed
+    near_top = hh >= top[idx] - 0.75
+    cnt = np.bincount(idx[near_top], minlength=nx * nx).astype(np.float32)
+    rgb_sum = np.stack([np.bincount(idx[near_top], weights=cc[near_top, k], minlength=nx * nx) for k in range(3)], axis=1)
+    colour = np.where(cnt[:, None] > 0, rgb_sum / np.maximum(cnt, 1)[:, None], np.nan).astype(np.float32)
+    water_share = np.bincount(idx, weights=(cat == WATER).astype(np.float32), minlength=nx * nx) / np.maximum(
+        np.bincount(idx, minlength=nx * nx), 1)
+
+    height = np.where(filled, top, np.nan).reshape(nx, nx)
+    empty = ~filled.reshape(nx, nx)
+    height = fill_nearest(height)
+    if empty.any():
+        low = ndi.grey_erosion(height, size=7)          # empty cells take the low side: water, not the wall beside it
+        height = np.where(empty, np.minimum(height, low), height)
+    height = ndi.gaussian_filter(height, 0.6)
+    colour = colour.reshape(nx, nx, 3)
+    for k in range(3):
+        colour[..., k] = fill_nearest(colour[..., k])
+    if "water_deep" in pal:
+        wet = empty & (height < 1.0)
+        if cfg.get("water_below"):
+            # Still water: one water colour with a gentle ripple, so the seams between merged surveys (which
+            # record water at different brightness) do not show as patches. Moving water keeps its foam.
+            wet |= (water_share.reshape(nx, nx) > 0.5) & (height < 1.5)
+            rip = ndi.gaussian_filter(np.random.default_rng(3).random((nx, nx)).astype(np.float32), 2.0)
+            rip = (rip - rip.min()) / max(float(rip.max() - rip.min()), 1e-6)
+            tone = pal["water_deep"][None, None, :] * (1 - 0.3 * rip[..., None]) + pal["water_light"][None, None, :] * (0.3 * rip[..., None])
+            colour[wet] = tone[wet] * 0.95
+        else:
+            colour[wet] = pal["water_deep"] * 0.92
+    water_cells = int((water_share.reshape(nx, nx) > 0.5).sum())
+    log(f"[surface] {nx} x {nx} cells of {cell:.2f} m; {empty.mean():.0%} empty and filled; {water_cells:,} water cells")
+    return {"height": height.astype(np.float32), "colour": np.round(np.clip(colour, 0, 1) * 255).astype(np.uint8),
+            "cell": float(cell), "min": -half, "n": nx}
+
+
 def build(place: str, cfg: dict, raw: dict, seed: int = 7) -> tuple[np.ndarray, np.ndarray, dict]:
     rng = np.random.default_rng(seed)
     half = cfg["size"] / 2
@@ -618,6 +683,10 @@ def build(place: str, cfg: dict, raw: dict, seed: int = 7) -> tuple[np.ndarray, 
         col[below] = col[below] * (1 - share[below]) + rock[below] * share[below]
         log(f"[{place}] rock layers: {below.sum():,} points below the rim at {rim:.0f} m")
 
+    # what hangs over open space: kept as dots, left out of the smooth surface
+    floating = np.zeros(len(e), bool)
+    clear = np.zeros(len(e), bool)          # floating parts with open space under them (not the statue)
+
     # ---- the statue ---------------------------------------------------------------------------
     st = cfg.get("statue")
     if st:
@@ -639,6 +708,7 @@ def build(place: str, cfg: dict, raw: dict, seed: int = 7) -> tuple[np.ndarray, 
         col[pedestal] = lerp(rgb("#b9ab95"), rgb("#efe3cc"), smoothstep(z, st["pedestal_above"], st["copper_above"])[pedestal])
         lum[pedestal] = (0.84 + 0.14 * np.clip(sun, -1, 1))[pedestal]
         category[copper | pedestal] = LANDMARK
+        floating |= copper
         extra["statue"] = {"x": round(ax_e, 2), "z": round(-ax_n, 2),
                            "pedestalTopY": round(st["copper_above"] - y0, 2), "topY": round(float(h[copper].max()), 2),
                            "copperPoints": int(copper.sum())}
@@ -683,6 +753,9 @@ def build(place: str, cfg: dict, raw: dict, seed: int = 7) -> tuple[np.ndarray, 
             col[low_band] = rgb(lm["band_colour"])
         lum[mark] = (0.86 + 0.18 * (inten - 0.5))[mark]
         category[mark] = LANDMARK
+        if lm.get("floating"):
+            floating |= mark
+            clear |= mark
         extra["landmark"] = {"label": lm.get("label", "landmark"), "points": int(mark.sum()),
                              "x": round(float(np.median(e[mark])), 2), "z": round(float(-np.median(n[mark])), 2),
                              "baseY": round(base, 2), "topY": round(top, 2)}
@@ -692,6 +765,15 @@ def build(place: str, cfg: dict, raw: dict, seed: int = 7) -> tuple[np.ndarray, 
     lum *= 0.94 + 0.10 * smoothstep(h, 0, max(float(np.percentile(h, 99)), 1.0))
     lum *= 1.0 + rng.uniform(-0.04, 0.04, len(e)).astype(np.float32)
     col = np.clip(col * lum[:, None], 0, 1)
+
+    # ---- smooth surface ---------------------------------------------------------------------------
+    extra["_surface"] = surface(cfg, e, n, h, col, category, ~dead & ~floating, pal, clear & ~dead)
+    fl = np.flatnonzero(~dead & floating)
+    if len(fl):
+        fl = fl[rng.permutation(len(fl))][: cfg.get("floating_budget", 150_000)]
+        extra["_floating"] = (np.stack([e[fl], h[fl], -n[fl]], axis=1).astype(np.float64),
+                              np.round(col[fl] * 255).astype(np.uint8))
+        log(f"[{place}] {len(fl):,} dots kept apart from the surface (they hang over open space)")
 
     # ---- thin to the budget ----------------------------------------------------------------------
     # One point per voxel, with a voxel size per category. With "surface_only" (large areas) the
@@ -746,6 +828,8 @@ def build(place: str, cfg: dict, raw: dict, seed: int = 7) -> tuple[np.ndarray, 
 # ------------------------------------------------------------------------------------------
 def write(place: str, cfg: dict, pos: np.ndarray, colour: np.ndarray, extra: dict) -> None:
     OUT.mkdir(parents=True, exist_ok=True)
+    surf = extra.pop("_surface", None)
+    floating = extra.pop("_floating", None)
     reach = float(np.abs(pos).max())
     scale = next(s for s in (0.005, 0.01, 0.02, 0.025, 0.05, 0.1, 0.25) if reach <= 32767 * s)
     q = np.round(pos / scale).astype("<i2")
@@ -774,6 +858,26 @@ def write(place: str, cfg: dict, pos: np.ndarray, colour: np.ndarray, extra: dic
         "order": "random (the first N points are an even subsample)",
         **extra,
     }
+    if surf is not None:
+        # <place>.surface.bin: Int16 heights (row by row, north to south along +Z, then west to east along +X;
+        # metres = int16 * scale), then Uint8 r,g,b for every cell in the same order. Cell centres are at
+        # min + (i + 0.5) * cell on both axes.
+        hq = np.round(surf["height"] / scale).astype("<i2")
+        with open(OUT / f"{place}.surface.bin", "wb") as f:
+            f.write(hq.tobytes())
+            f.write(surf["colour"].tobytes())
+        meta["surface"] = {"file": f"{place}.surface.bin", "n": surf["n"], "cell": round(surf["cell"], 4),
+                           "min": round(surf["min"], 3), "scale": scale}
+    if floating is not None:
+        fpos, fcol = floating
+        fq = np.round(fpos / scale).astype("<i2")
+        with open(OUT / f"{place}.floating.bin", "wb") as f:
+            f.write(fq.tobytes())
+            f.write(fcol.tobytes())
+        meta["floating"] = {"file": f"{place}.floating.bin", "count": int(len(fq))}
+    for old in ("surface", "floating"):
+        if old not in meta and (OUT / f"{place}.{old}.bin").exists():
+            (OUT / f"{place}.{old}.bin").unlink()
     (OUT / f"{place}.json").write_text(json.dumps(meta, indent=2) + "\n", encoding="utf-8")
     log(f"[{place}] wrote {bin_path} ({bin_path.stat().st_size / 1e6:.2f} MB, {len(q):,} points, scale {scale})")
 

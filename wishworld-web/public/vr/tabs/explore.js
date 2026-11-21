@@ -7,6 +7,14 @@
 //
 // If a place's files are missing or broken the card says so. Nothing is ever drawn in their place.
 //
+// Smooth view (the default when a place has /lidar/<place>.surface.bin): the dots are joined into one continuous
+// coloured surface (a height grid of the top of everything solid, made by tools/lidar/preprocess.py), so ground,
+// roofs, trees and cliffs read as solid shapes. What hangs over open space (the statue's figure, a bridge deck, an
+// arch) cannot be a height grid and stays as dots on top: those come from <place>.floating.bin and sit at the
+// start of the same dot geometry, so there is still one THREE.Points. "Show dots" switches to the measured dots.
+// While walking at life size the surface's cells (2 to 6 m) would be blobs right by the face, so walking shows a
+// solid ground mesh made from the lowest dots (the real ground) with every measured dot standing on it.
+//
 // "Walk around it" makes the place life-size and puts the child on the ground near the landmark, facing it. The
 // child stays where they are and the place moves under them (left thumbstick, or W A S D, the on-screen stick or
 // a game controller; the right thumbstick turns in steps). A ground grid made from the dots keeps their feet on
@@ -127,6 +135,28 @@ export function createTab(ctx) {
   points.visible = false;
   pivot.add(points);
 
+  // The smooth surface: one mesh, colours already shaded (made linear on load), so a plain material is enough.
+  // Front faces only: they face up and outwards, so from under a tree crown (while walking) the child sees out
+  // through it instead of into its walls.
+  const surfaceMaterial = new THREE.MeshBasicMaterial({ vertexColors: true, side: THREE.FrontSide });
+  surfaceMaterial.toneMapped = false;
+  surfaceMaterial.fog = false;
+  const surfaceMesh = new THREE.Mesh(new THREE.BufferGeometry(), surfaceMaterial);
+  surfaceMesh.name = 'LidarSurface';
+  surfaceMesh.visible = false;
+  pivot.add(surfaceMesh);
+  let smoothView = true;        // remembered between places
+
+  // The walking ground (made when walking starts, freed with the place).
+  const groundMaterial = new THREE.MeshBasicMaterial({ vertexColors: true });
+  groundMaterial.toneMapped = false;
+  groundMaterial.fog = false;
+  const groundMesh = new THREE.Mesh(new THREE.BufferGeometry(), groundMaterial);
+  groundMesh.name = 'LidarWalkGround';
+  groundMesh.visible = false;
+  pivot.add(groundMesh);
+  let groundBuilt = false;
+
   const plinthSide = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), new THREE.MeshBasicMaterial({ color: FALLBACK_THEME.slate }));
   const plinthTop = new THREE.Mesh(new THREE.PlaneGeometry(1, 1).rotateX(-Math.PI / 2), new THREE.MeshBasicMaterial({ color: PLACES[0].slab }));
   const plinthRim = new THREE.Mesh(new THREE.PlaneGeometry(1, 1).rotateX(-Math.PI / 2), new THREE.MeshBasicMaterial({ color: FALLBACK_THEME.ice }));
@@ -161,6 +191,7 @@ export function createTab(ctx) {
   // ?place=<id> (for example /vr/?tab=explore&place=goldengate) opens on that place.
   const askedPlace = ctx.params && typeof ctx.params.get === 'function' ? ctx.params.get('place') : null;
   if (askedPlace && PLACES.some((p) => p.id === askedPlace)) currentId = askedPlace;
+  if (ctx.params && typeof ctx.params.get === 'function' && ctx.params.get('view') === 'dots') smoothView = false;
   let loadToken = 0;
   let abort = null;
   let loaded = null;            // { id, name, count, worldSize, fit, spawn } for the cloud now in memory
@@ -188,6 +219,7 @@ export function createTab(ctx) {
   let walkUi = null, walkTitle = null, walkBack = null, walkHelp = null;
   let snapReady = true;
   let walkY = 0;                // the place's height under the feet, eased
+  let topGrid = null;           // the smooth surface's heights (the top of trees and roofs), when there is one
 
   // Grips.
   const held = { left: null, right: null };
@@ -210,6 +242,7 @@ export function createTab(ctx) {
   let toolButtons = [];
   let resetButton = null;
   let walkButton = null;
+  let viewButton = null;
   const plateSize = new THREE.Vector3(0.3, 0.07, 0);
   const PLATE_TILT = THREE.MathUtils.degToRad(38);
   const sizeOut = new THREE.Vector3();
@@ -301,7 +334,8 @@ export function createTab(ctx) {
     ];
     resetButton = makeButton('Put it back', resetModel, 0.36, 0.085);
     walkButton = makeButton('Walk around it', () => startWalking(), 0.36, 0.095);
-    rightColumn.add(...toolButtons, resetButton, walkButton);
+    viewButton = makeButton('Show dots', () => toggleView(), 0.36, 0.085);
+    rightColumn.add(...toolButtons, resetButton, walkButton, viewButton);
     root.add(rightColumn);
 
     // While walking: one small panel by the child, with the place's name and the way back to the table.
@@ -344,7 +378,7 @@ export function createTab(ctx) {
     const pairs = [];
     for (let i = 0; i < pickButtons.length; i += 2) pairs.push(pickButtons.slice(i, i + 2));
     stack([pickTitle, ...pairs, helpPanel], eye + 0.22, 0.025);
-    stack([infoPanel, toolButtons, resetButton, walkButton], eye + 0.22, 0.03);
+    stack([infoPanel, toolButtons, resetButton, walkButton, viewButton], eye + 0.22, 0.03);
   }
 
   function setFacts(text) {
@@ -419,7 +453,27 @@ export function createTab(ctx) {
     if (!dataResponse.ok) throw new Error(`${id}.bin: HTTP ${dataResponse.status}`);
     const buffer = await dataResponse.arrayBuffer();
     if (buffer.byteLength < count * 9) throw new Error(`${id}.bin is too short for ${count} points`);
-    return { id, info, buffer };
+    // Optional extras: the smooth surface and the dots that hang over open space. Without them, dots only.
+    const extra = async (meta, bytes) => {
+      if (!meta || typeof meta.file !== 'string') return null;
+      try {
+        const r = await fetch(base + meta.file, { signal });
+        if (!r.ok) return null;
+        const b = await r.arrayBuffer();
+        return b.byteLength >= bytes ? b : null;
+      } catch (err) {
+        if (err && err.name === 'AbortError') throw err;
+        return null;
+      }
+    };
+    const s = info.surface, f = info.floating;
+    const surfaceOk = s && Number.isInteger(s.n) && s.n > 1 && s.n <= 1024 && s.cell > 0 && Number.isFinite(s.min) && s.scale > 0;
+    const floatOk = f && Number.isInteger(f.count) && f.count > 0 && f.count <= 400000;
+    const [surfaceBuffer, floatBuffer] = await Promise.all([
+      surfaceOk ? extra(s, s.n * s.n * 5) : null,
+      floatOk ? extra(f, f.count * 9) : null,
+    ]);
+    return { id, info, buffer, surfaceBuffer, floatBuffer };
   }
 
   function showPlace(id) {
@@ -455,7 +509,76 @@ export function createTab(ctx) {
     if (namePlate) namePlate.visible = false;
     points.geometry.dispose();
     points.geometry = new THREE.BufferGeometry();
+    surfaceMesh.visible = false;
+    surfaceMesh.geometry.dispose();
+    surfaceMesh.geometry = new THREE.BufferGeometry();
+    groundMesh.visible = false;
+    groundMesh.geometry.dispose();
+    groundMesh.geometry = new THREE.BufferGeometry();
+    groundBuilt = false;
     loaded = null;
+  }
+
+  /** The smooth surface as one indexed mesh, in the same int16 units as the dots (so it shares their transform). */
+  function buildSurface(info, buffer) {
+    const s = info.surface, n = s.n, k = 1 / info.scale;
+    const heights = new Int16Array(buffer, 0, n * n);
+    const bytes = new Uint8Array(buffer, n * n * 2, n * n * 3);
+    const pos = new Float32Array(n * n * 3), col = new Float32Array(n * n * 3);
+    const h = (i, j) => heights[Math.min(n - 1, Math.max(0, j)) * n + Math.min(n - 1, Math.max(0, i))] * info.scale;
+    const lx = -0.48, ly = 0.75, lz = -0.45;        // light from the north-west and above, as the dots are shaded
+    const ll = Math.hypot(lx, ly, lz);
+    const toLinear = (c) => (c <= 0.04045 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4));
+    for (let j = 0; j < n; j++) {
+      for (let i = 0; i < n; i++) {
+        const v = j * n + i;
+        pos[v * 3] = (s.min + (i + 0.5) * s.cell) * k;
+        pos[v * 3 + 1] = heights[v];
+        pos[v * 3 + 2] = (s.min + (j + 0.5) * s.cell) * k;
+        // slope shading: walls and cliffs facing away from the light come out darker
+        const dx = (h(i + 1, j) - h(i - 1, j)) / (2 * s.cell), dz = (h(i, j + 1) - h(i, j - 1)) / (2 * s.cell);
+        const nl = Math.hypot(dx, 1, dz);
+        const lit = Math.max(0, (-dx * lx + ly - dz * lz) / (nl * ll));
+        const shade = 0.62 + 0.45 * lit;
+        for (let c = 0; c < 3; c++) col[v * 3 + c] = toLinear(Math.min(1, (bytes[v * 3 + c] / 255) * shade));
+      }
+    }
+    const index = new Uint32Array((n - 1) * (n - 1) * 6);
+    let t = 0;
+    for (let j = 0; j < n - 1; j++) {
+      for (let i = 0; i < n - 1; i++) {
+        const a = j * n + i, b = a + 1, c = a + n, d = c + 1;
+        index[t++] = a; index[t++] = c; index[t++] = b;
+        index[t++] = b; index[t++] = c; index[t++] = d;
+      }
+    }
+    const g = new THREE.BufferGeometry();
+    g.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+    g.setAttribute('color', new THREE.BufferAttribute(col, 3));
+    g.setIndex(new THREE.BufferAttribute(index, 1));
+    g.computeBoundingBox();
+    g.computeBoundingSphere();
+    return g;
+  }
+
+  /** Which of the two is drawn: the smooth surface (plus the hanging dots), or every measured dot. */
+  function applyView() {
+    if (!loaded) return;
+    const smooth = smoothView && loaded.hasSurface && !walking;
+    surfaceMesh.visible = points.visible && smooth;
+    groundMesh.visible = points.visible && walking && groundBuilt;
+    const g = points.geometry;
+    if (smooth) g.setDrawRange(0, loaded.floatCount);
+    else g.setDrawRange(loaded.floatCount, Math.floor(loaded.count * budget));
+    const label = loaded.hasSurface ? (smooth ? 'Show dots' : 'Show smooth') : 'Dots only';
+    if (viewButton && typeof viewButton.setLabel === 'function') viewButton.setLabel(label);
+    else if (viewButton && typeof viewButton.setText === 'function') viewButton.setText(label);
+  }
+
+  function toggleView() {
+    if (!loaded || !loaded.hasSurface) return;
+    smoothView = !smoothView;
+    applyView();
   }
 
   /** Mix the points once, so drawing only the first N still shows the whole place evenly. */
@@ -490,9 +613,22 @@ export function createTab(ctx) {
     const colours = new Uint8Array(buffer, count * 6, count * 3);
     if (!(typeof info.order === 'string' && /^random/i.test(info.order))) shuffle(positions, colours, count);
 
+    // The hanging dots go first in the same geometry: drawing [0, floatCount) is the smooth view's dots,
+    // drawing from floatCount on is every measured dot.
+    const floatCount = result.floatBuffer ? info.floating.count : 0;
+    let allPositions = positions, allColours = colours;
+    if (floatCount) {
+      allPositions = new Int16Array((floatCount + count) * 3);
+      allColours = new Uint8Array((floatCount + count) * 3);
+      allPositions.set(new Int16Array(result.floatBuffer, 0, floatCount * 3), 0);
+      allColours.set(new Uint8Array(result.floatBuffer, floatCount * 6, floatCount * 3), 0);
+      allPositions.set(positions, floatCount * 3);
+      allColours.set(colours, floatCount * 3);
+    }
+
     const geometry = new THREE.BufferGeometry();
-    geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3, false));
-    geometry.setAttribute('color', new THREE.BufferAttribute(colours, 3, true));
+    geometry.setAttribute('position', new THREE.BufferAttribute(allPositions, 3, false));
+    geometry.setAttribute('color', new THREE.BufferAttribute(allColours, 3, true));
     // Bounds come from the file (in metres); the attribute is in int16 units.
     const min = info.bounds.min, max = info.bounds.max, k = 1 / info.scale;
     geometry.boundingBox = new THREE.Box3(new THREE.Vector3(min[0] * k, min[1] * k, min[2] * k), new THREE.Vector3(max[0] * k, max[1] * k, max[2] * k));
@@ -507,6 +643,13 @@ export function createTab(ctx) {
     footprintZ = sizeZ * fit;
     points.scale.setScalar(info.scale * fit);
     points.position.set(-(min[0] + max[0]) * 0.5 * fit, -min[1] * fit + 0.0005, -(min[2] + max[2]) * 0.5 * fit);
+    const hasSurface = Boolean(result.surfaceBuffer);
+    if (hasSurface) {
+      surfaceMesh.geometry.dispose();
+      surfaceMesh.geometry = buildSurface(info, result.surfaceBuffer);
+      surfaceMesh.scale.copy(points.scale);
+      surfaceMesh.position.copy(points.position);
+    }
 
     // Dot size: a little wider than the average gap between dots, so the ground reads as solid up close.
     const gap = Math.sqrt((footprintX * footprintZ) / count);
@@ -518,16 +661,16 @@ export function createTab(ctx) {
       material.needsUpdate = true;
     }
 
-    ground = buildGround(positions, count, info.scale, min, max);
+    ground = buildGround(positions, count, info.scale, min, max, colours);
+    topGrid = result.surfaceBuffer ? { ...info.surface, heights: new Int16Array(result.surfaceBuffer, 0, info.surface.n * info.surface.n) } : null;
     loaded_spawn = spawnPoint(info, min, max);
 
     const name = typeof info.name === 'string' && info.name ? info.name : place.label;
     const facts = Array.isArray(info.facts) ? info.facts.filter((f) => typeof f === 'string' && f.trim()).slice(0, 2) : [];
-    loaded = { id: place.id, name, count, worldSize, facts, fit, sizeX, sizeZ, spawn: loaded_spawn };
+    loaded = { id: place.id, name, count, worldSize, facts, fit, sizeX, sizeZ, spawn: loaded_spawn, hasSurface, floatCount, scaleK: info.scale, slab: place.slab };
     if (walkTitle) walkTitle.setText(name);
     budget = 1;
     slowFor = 0;
-    geometry.setDrawRange(0, count);
 
     if (titlePanel) titlePanel.setText(name);
     if (namePlate) {
@@ -545,9 +688,12 @@ export function createTab(ctx) {
 
     material.opacity = 0;
     material.transparent = true;
+    surfaceMaterial.opacity = 0;
+    surfaceMaterial.transparent = true;
     fade = 0;
     fadeDir = 1;
     points.visible = true;
+    applyView();
 
     ctx.log('explore_visited', { place: name, id: place.id });
     sayFacts(loaded);
@@ -711,6 +857,7 @@ export function createTab(ctx) {
       if (fade === 1) {
         fadeDir = 0;
         material.transparent = false;   // back to the cheap opaque pass
+        surfaceMaterial.transparent = false;
       }
     }
     if (pending && fadeDir <= 0 && (fade === 0 || !points.visible)) {
@@ -718,8 +865,9 @@ export function createTab(ctx) {
       pending = null;
       swapIn(next);
     }
-    if (fadeDir < 0 && !material.transparent) material.transparent = true;
+    if (fadeDir < 0 && !material.transparent) { material.transparent = true; surfaceMaterial.transparent = true; }
     material.opacity = fade;
+    surfaceMaterial.opacity = fade;
 
     if (loaded && points.visible) {
       // In the headset, if frames start to take too long, draw fewer dots (they are in random order, so the
@@ -730,12 +878,14 @@ export function createTab(ctx) {
         if (slowFor > 1.5) {
           budget = Math.max(0.4, budget * 0.8);
           slowFor = 0;
-          points.geometry.setDrawRange(0, Math.floor(loaded.count * budget));
+          applyView();
         }
       } else {
         slowFor = 0;
       }
-      material.size = (loaded.worldSize / Math.sqrt(budget)) * scale * activeProjection() * (walking ? 0.6 : 1);
+      // The hanging dots in the smooth view are few and sit on a solid surface: draw them a little bigger.
+      const hanging = smoothView && loaded.hasSurface && !walking ? 1.5 : 1;
+      material.size = (loaded.worldSize / Math.sqrt(budget)) * scale * activeProjection() * (walking ? 0.6 : 1) * hanging;
       maxDotPx.value = walking ? 22 : 56;
     }
   }
@@ -751,15 +901,16 @@ export function createTab(ctx) {
   }
 
   /** Lowest dot in every 2 m cell (the ground, the water, a roof seen from above), gaps filled from neighbours. */
-  function buildGround(positions, count, k, min, max) {
+  function buildGround(positions, count, k, min, max, colours) {
     const cell = GROUND_CELL;
     const nx = Math.max(1, Math.ceil((max[0] - min[0]) / cell) + 1);
     const nz = Math.max(1, Math.ceil((max[2] - min[2]) / cell) + 1);
     const cells = new Float32Array(nx * nz).fill(Infinity);
+    const lowest = new Int32Array(nx * nz).fill(-1);    // which dot is the lowest in each cell (for its colour)
     for (let i = 0; i < count; i++) {
       const x = positions[i * 3] * k, y = positions[i * 3 + 1] * k, z = positions[i * 3 + 2] * k;
       const c = Math.floor((z - min[2]) / cell) * nx + Math.floor((x - min[0]) / cell);
-      if (y < cells[c]) cells[c] = y;
+      if (y < cells[c]) { cells[c] = y; lowest[c] = i; }
     }
     // Fill empty cells (calm water, shadowed ground) from filled neighbours, a few rings at a time.
     for (let pass = 0; pass < 40; pass++) {
@@ -785,7 +936,81 @@ export function createTab(ctx) {
       if (!empty) break;
     }
     for (let c = 0; c < cells.length; c++) if (cells[c] === Infinity) cells[c] = 0;
-    return { cells, nx, nz, cell, minX: min[0], minZ: min[2], maxX: max[0], maxZ: max[2] };
+    // Bare ground: where thinning left only canopy dots, the lowest dot is a treetop. An opening (minimum, then
+    // maximum, over about 18 m) removes anything narrower than that (tree crowns, small buildings) and keeps
+    // large landforms such as a butte or a hill.
+    const filter = (src, pick, r) => {
+      const tmp = new Float32Array(src.length), out = new Float32Array(src.length);
+      for (let zi = 0; zi < nz; zi++) {
+        for (let xi = 0; xi < nx; xi++) {
+          let v = src[zi * nx + xi];
+          for (let d = -r; d <= r; d++) { const x2 = xi + d; if (x2 >= 0 && x2 < nx) v = pick(v, src[zi * nx + x2]); }
+          tmp[zi * nx + xi] = v;
+        }
+      }
+      for (let zi = 0; zi < nz; zi++) {
+        for (let xi = 0; xi < nx; xi++) {
+          let v = tmp[zi * nx + xi];
+          for (let d = -r; d <= r; d++) { const z2 = zi + d; if (z2 >= 0 && z2 < nz) v = pick(v, tmp[z2 * nx + xi]); }
+          out[zi * nx + xi] = v;
+        }
+      }
+      return out;
+    };
+    const opened = filter(filter(cells, Math.min, 4), Math.max, 4);
+    cells.set(opened);
+    return { cells, nx, nz, cell, minX: min[0], minZ: min[2], maxX: max[0], maxZ: max[2], lowest, colours };
+  }
+
+  /**
+   * The walking ground: one mesh over the ground grid (at most 320 cells a side), coloured by the lowest dot in
+   * each cell, in the same int16 units as the dots. Cells with no dot take a neighbour's colour.
+   */
+  function buildGroundMesh(g, scaleK, slabColour) {
+    const step = Math.max(1, Math.ceil(Math.max(g.nx, g.nz) / 320));
+    const mx = Math.ceil(g.nx / step), mz = Math.ceil(g.nz / step);
+    const pos = new Float32Array(mx * mz * 3), col = new Float32Array(mx * mz * 3);
+    const toLinear = (c) => (c <= 0.04045 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4));
+    const slab = new THREE.Color(slabColour);
+    for (let j = 0; j < mz; j++) {
+      for (let i = 0; i < mx; i++) {
+        const gi = Math.min(g.nx - 1, i * step), gj = Math.min(g.nz - 1, j * step);
+        const v = j * mx + i;
+        pos[v * 3] = (g.minX + (gi + 0.5) * g.cell) / scaleK;
+        pos[v * 3 + 1] = g.cells[gj * g.nx + gi] / scaleK - 0.03 / scaleK;   // a hair under the dots on the ground
+        pos[v * 3 + 2] = (g.minZ + (gj + 0.5) * g.cell) / scaleK;
+        // the lowest dot in this cell or the nearest cell that has one
+        let dot = -1;
+        for (let r = 0; r <= 3 && dot < 0; r++) {
+          for (let dj = -r; dj <= r && dot < 0; dj++) {
+            for (let di = -r; di <= r && dot < 0; di++) {
+              const a = gi + di, b = gj + dj;
+              if (a >= 0 && b >= 0 && a < g.nx && b < g.nz) dot = g.lowest[b * g.nx + a];
+            }
+          }
+        }
+        if (dot >= 0 && g.colours) {
+          for (let c = 0; c < 3; c++) col[v * 3 + c] = toLinear(g.colours[dot * 3 + c] / 255) * 0.92;
+        } else {
+          col[v * 3] = slab.r; col[v * 3 + 1] = slab.g; col[v * 3 + 2] = slab.b;
+        }
+      }
+    }
+    const index = new Uint32Array((mx - 1) * (mz - 1) * 6);
+    let t = 0;
+    for (let j = 0; j < mz - 1; j++) {
+      for (let i = 0; i < mx - 1; i++) {
+        const a = j * mx + i, b = a + 1, c = a + mx, d = c + 1;
+        index[t++] = a; index[t++] = c; index[t++] = b;
+        index[t++] = b; index[t++] = c; index[t++] = d;
+      }
+    }
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+    geo.setAttribute('color', new THREE.BufferAttribute(col, 3));
+    geo.setIndex(new THREE.BufferAttribute(index, 1));
+    geo.computeBoundingSphere();
+    return geo;
   }
 
   /** Ground height in metres at (x, z) in the place's metres (bilinear between cells). */
@@ -797,6 +1022,23 @@ export function createTab(ctx) {
     const tx = fx - x0, tz = fz - z0;
     const a = g.cells[z0 * g.nx + x0], b = g.cells[z0 * g.nx + x1], c = g.cells[z1 * g.nx + x0], d = g.cells[z1 * g.nx + x1];
     return (a + (b - a) * tx) + ((c + (d - c) * tx) - (a + (b - a) * tx)) * tz;
+  }
+
+  /** Height of the top of everything (treetops, roofs) at (x, z), from the smooth surface; null without one. */
+  function topAt(x, z) {
+    const g = topGrid;
+    if (!g) return null;
+    const i = Math.min(g.n - 1, Math.max(0, Math.floor((x - g.min) / g.cell)));
+    const j = Math.min(g.n - 1, Math.max(0, Math.floor((z - g.min) / g.cell)));
+    return g.heights[j * g.n + i] * g.scale;
+  }
+
+  /** Open ground: on land, and not under a tree or inside a building (the surface is close to the ground there). */
+  function openGround(x, z) {
+    const gy = groundAt(x, z);
+    if (gy <= 1.5) return false;
+    const top = topAt(x, z);
+    return top === null || top - gy < 2.5;
   }
 
   /**
@@ -812,6 +1054,14 @@ export function createTab(ctx) {
         const back = THREE.MathUtils.clamp(size * share, 60, 320);
         for (let k = 0; k < 12; k++) {
           const a = (k % 2 ? 1 : -1) * Math.ceil(k / 2) * (Math.PI / 6);   // south first, then either side
+          const x = mark.x + Math.sin(a) * back, z = mark.z + Math.cos(a) * back;
+          if (inside(x, z) && openGround(x, z)) return { x, z, lookX: mark.x, lookZ: mark.z };
+        }
+      }
+      for (const share of [0.3, 0.22, 0.15, 0.4]) {         // no open ground: any land will do
+        const back = THREE.MathUtils.clamp(size * share, 60, 320);
+        for (let k = 0; k < 12; k++) {
+          const a = (k % 2 ? 1 : -1) * Math.ceil(k / 2) * (Math.PI / 6);
           const x = mark.x + Math.sin(a) * back, z = mark.z + Math.cos(a) * back;
           if (inside(x, z) && groundAt(x, z) > 1.5) return { x, z, lookX: mark.x, lookZ: mark.z };
         }
@@ -830,6 +1080,15 @@ export function createTab(ctx) {
   function startWalking() {
     if (!entered || !loaded || walking || pending) return;
     walking = true;
+    if (!groundBuilt && ground) {
+      groundMesh.geometry.dispose();
+      groundMesh.geometry = buildGroundMesh(ground, loaded.scaleK, loaded.slab);
+      groundMesh.scale.copy(points.scale);
+      groundMesh.position.copy(points.position);
+      groundBuilt = true;
+    }
+    groundMaterial.opacity = 1;
+    applyView();
     held.left = held.right = null;
     grab.count = 0;
     const life = 1 / loaded.fit;                     // pivot scale at which one metre of the place is one metre
@@ -864,6 +1123,7 @@ export function createTab(ctx) {
   function stopWalking(quiet = false) {
     if (!walking) return;
     walking = false;
+    applyView();
     if (walkUi) walkUi.visible = false;
     setColumnsVisible(true);
     if (ctx.input && ctx.input.state) ctx.input.state.desktopMoveEnabled = true;

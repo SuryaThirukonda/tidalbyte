@@ -1,5 +1,10 @@
-// File storage (Vercel Blob, public store). Neon stores no files, only the URLs returned here.
+// File storage. Neon stores no files, only the URLs returned here.
+// On Netlify new files go to Netlify Blobs (store "files") and are served by GET /api/files/<path> (see
+// api/files.js). Elsewhere, and for files saved before the move, Vercel Blob (BLOB_READ_WRITE_TOKEN): those URLs
+// are absolute and keep working.
 import { put, head } from '@vercel/blob';
+import { getStore } from '@netlify/blobs';
+import { platform } from './runtime.js';
 import { createHash, randomBytes } from 'node:crypto';
 import { UserError } from './http.js';
 
@@ -40,8 +45,31 @@ export function randomName() {
   return randomBytes(12).toString('hex');
 }
 
+/** The Netlify Blobs store for files, when this request runs on Netlify; null elsewhere. */
+export function netlifyFiles() {
+  const p = platform();
+  if (!p || !p.netlify) return null;
+  try {
+    return getStore({ name: 'files', consistency: 'strong' });
+  } catch {
+    return null;
+  }
+}
+
+/** The address a Netlify Blobs file is served at: absolute, because the Unity game fetches these too. */
+function filesUrl(pathname) {
+  const p = platform();
+  const site = (p && p.siteUrl) || '';
+  return `${site.replace(/\/$/, '')}/api/files/${pathname.split('/').map(encodeURIComponent).join('/')}`;
+}
+
 /** Stores bytes at an exact path and returns the public URL. */
 export async function save(pathname, bytes, contentType) {
+  const files = netlifyFiles();
+  if (files) {
+    await files.set(pathname, bytes, { metadata: { contentType } });
+    return filesUrl(pathname);
+  }
   if (!process.env.BLOB_READ_WRITE_TOKEN) throw new UserError('File storage is not set up yet.', 503);
   const blob = await put(pathname, bytes, {
     access: 'public',
@@ -55,6 +83,15 @@ export async function save(pathname, bytes, contentType) {
 
 /** The public URL of a stored file, or null if it is not there (or storage cannot be asked). */
 export async function find(pathname) {
+  const files = netlifyFiles();
+  if (files) {
+    try {
+      const meta = await files.getMetadata(pathname);
+      if (meta) return filesUrl(pathname);
+    } catch {
+      /* fall through to the old store */
+    }
+  }
   if (!process.env.BLOB_READ_WRITE_TOKEN) return null;
   try {
     const blob = await head(pathname);

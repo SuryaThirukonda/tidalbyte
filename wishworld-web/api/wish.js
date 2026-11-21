@@ -5,6 +5,7 @@
 // instead, so a wish always becomes a gift. The headset fetches the spoken version itself from /api/tts.
 import { route, send, body, text, roomCode, UserError } from './_lib/http.js';
 import { ensureRoom, insertGift, giftJson } from './_lib/db.js';
+import { resolveProfile } from './_lib/profiles.js';
 import { pickCreature } from './_lib/haiku.js';
 
 export default route('POST', async (req, res) => {
@@ -17,7 +18,9 @@ export default route('POST', async (req, res) => {
   // The one slow call (it never throws), alongside making sure the room exists.
   const [picked] = await Promise.all([pickCreature(wish, sender), ensureRoom(room)]);
 
+  const profile = await resolveProfile(room, b.profile_id);   // who the gift is for (the default if not said)
   const row = await insertGift({
+    profile_id: profile.id,
     room_code: room,
     sender: picked.sender,
     kind: 'creature',

@@ -7,6 +7,13 @@
   functions = "netlify/functions"
   command = ""
 
+# Every /api route goes to the one API function (a rewrite: the address in the browser stays /api/...).
+[[redirects]]
+  from = "/api/*"
+  to = "/.netlify/functions/api/:splat"
+  status = 200
+  force = true
+
 [functions]
   node_bundler = "esbuild"
   # sharp loads a native binary per platform, so it is copied in rather than bundled. The Linux build

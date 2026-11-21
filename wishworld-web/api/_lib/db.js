@@ -39,14 +39,16 @@ export function giftJson(row) {
     job_id: row.job_id,
     status: row.status,
     opened_at: row.opened_at,
+    profile_id: row.profile_id === null || row.profile_id === undefined ? null : Number(row.profile_id),
   };
 }
 
 export async function insertGift(g) {
   const rows = await sql`
-    insert into gifts (room_code, sender, kind, wish, option_id, message, image_url, audio_url, model_url, job_id, status)
+    insert into gifts (room_code, sender, kind, wish, option_id, message, image_url, audio_url, model_url, job_id, status, profile_id)
     values (${g.room_code}, ${g.sender ?? null}, ${g.kind}, ${g.wish ?? null}, ${g.option_id ?? null}, ${g.message ?? null},
-            ${g.image_url ?? null}, ${g.audio_url ?? null}, ${g.model_url ?? null}, ${g.job_id ?? null}, ${g.status ?? 'ready'})
+            ${g.image_url ?? null}, ${g.audio_url ?? null}, ${g.model_url ?? null}, ${g.job_id ?? null}, ${g.status ?? 'ready'},
+            ${g.profile_id ?? null})
     returning *`;
   return rows[0];
 }
@@ -56,9 +58,10 @@ export async function getGift(id) {
   return rows[0] || null;
 }
 
-export async function logEvent(roomCode, type, detail = {}) {
+export async function logEvent(roomCode, type, detail = {}, profileId = null) {
   const rows = await sql`
-    insert into events (room_code, type, detail) values (${roomCode}, ${type}, ${JSON.stringify(detail)}::jsonb)
+    insert into events (room_code, type, detail, profile_id)
+    values (${roomCode}, ${type}, ${JSON.stringify(detail)}::jsonb, ${profileId})
     returning id`;
   return Number(rows[0].id);
 }

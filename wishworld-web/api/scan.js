@@ -11,6 +11,7 @@ import { waitUntil } from './_lib/runtime.js';
 import sharp from 'sharp';
 import { route, send, body, text, roomCode, base64Bytes, UserError } from './_lib/http.js';
 import { ensureRoom, insertGift, giftJson } from './_lib/db.js';
+import { resolveProfile } from './_lib/profiles.js';
 import { save, randomName } from './_lib/store.js';
 import { safeSender } from './_lib/safety.js';
 import { nameCompanion, companionOf } from './_lib/mesh/job.js';
@@ -108,7 +109,9 @@ export default route('POST', async (req, res) => {
     ensureRoom(room),
   ]);
 
+  const profile = await resolveProfile(room, b.profile_id);   // who the gift is for (the default if not said)
   const row = await insertGift({
+    profile_id: profile.id,
     room_code: room,
     sender,
     kind: 'mesh',

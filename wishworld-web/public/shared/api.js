@@ -92,6 +92,23 @@ function setRoom(code) {
   return clean;
 }
 
+// ---------- profiles ----------
+// A room can hold several children. The chosen one is remembered per room on this device; null means "the
+// room's default profile" (the server decides which that is). Everything sent or asked for carries it.
+
+const profileKey = () => 'wishworld.profile.' + room();
+
+function profile() {
+  const v = Number(stored(profileKey()));
+  return Number.isSafeInteger(v) && v > 0 ? v : null;
+}
+
+function setProfile(id) {
+  const v = Number(id);
+  store(profileKey(), Number.isSafeInteger(v) && v > 0 ? String(v) : '');
+  return profile();
+}
+
 // ---------- requests ----------
 
 async function request(method, path, payload, { timeoutMs = 30000 } = {}) {
@@ -155,6 +172,27 @@ export const api = {
   /** Switch rooms (and remember it). Throws if the code is not 3 to 8 letters or numbers. */
   setRoom,
 
+  /** The chosen child profile's id in this room, or null for the room's default. */
+  profile,
+
+  /** Choose a profile (remembered per room on this device). -> the id */
+  setProfile,
+
+  /** The room's profiles, the default first. -> [{ id, name, icon, settings, is_default }] */
+  async getProfiles() {
+    return (await get('/api/profiles?' + query({ room: room() }))).profiles || [];
+  },
+
+  /** Add a profile. icon: "color:#rrggbb" or "animal:fox" (fox owl bear cat whale turtle penguin rabbit dog unicorn). */
+  async createProfile({ name, icon } = {}) {
+    return (await post('/api/profiles', { room: room(), name, icon })).profile;
+  },
+
+  /** Save some of a profile's settings (merged with what is there). -> profile */
+  async saveProfileSettings(id, settings) {
+    return (await post('/api/profiles', { room: room(), id, settings }, { timeoutMs: 15000 })).profile;
+  },
+
   /** Make a new room and switch to it. -> { code, child_name } */
   async createRoom(childName) {
     const made = await post('/api/rooms', { childName: childName || undefined });
@@ -164,12 +202,12 @@ export const api = {
 
   /** Send a wish. -> gift (kind "creature": option_id is a creature id, message is safe to show and speak) */
   async sendWish({ sender, text } = {}) {
-    return (await post('/api/wish', { room: room(), sender, text })).gift;
+    return (await post('/api/wish', { room: room(), sender, text, profile_id: profile() ?? undefined })).gift;
   },
 
   /** Send a note, with an optional voice recording (a Blob from MediaRecorder). -> gift (kind "letter") */
   async sendLetter({ sender, text, audioBlob } = {}) {
-    const payload = { room: room(), sender, text };
+    const payload = { room: room(), sender, text, profile_id: profile() ?? undefined };
     if (audioBlob) {
       payload.audio = await blobToBase64(audioBlob);
       payload.audioType = audioBlob.type || 'audio/webm';
@@ -186,6 +224,7 @@ export const api = {
     const payload = {
       room: room(),
       sender,
+      profile_id: profile() ?? undefined,
       image: await blobToBase64(blobs[0]),
       imageType: (blobs[0] && blobs[0].type) || 'image/jpeg',
     };
@@ -200,7 +239,7 @@ export const api = {
 
   /** Ready gifts with id above `after`, oldest first, 50 at most. -> { gifts, latest, pending } (pending = ids still being built) */
   async getGifts(after = 0) {
-    return get('/api/gifts?' + query({ room: room(), after: Number(after) || 0 }));
+    return get('/api/gifts?' + query({ room: room(), after: Number(after) || 0, profile: profile() ?? undefined }));
   },
 
   /** Mark a gift as opened by the child (the parent sees it in Inbox). -> gift */
@@ -211,21 +250,27 @@ export const api = {
   /** Log activity for the parent's Inbox. Never throws: on failure it resolves to { ok: false }. */
   async logEvent(type, detail) {
     try {
-      const done = await post('/api/events', { room: room(), type, detail: detail || {} }, { timeoutMs: 15000 });
+      const done = await post('/api/events', { room: room(), type, detail: detail || {}, profile_id: profile() ?? undefined }, { timeoutMs: 15000 });
       return { ok: true, id: done.id };
     } catch {
       return { ok: false, id: null };
     }
   },
 
-  /** The room's saved companions (they follow the child in every tab). -> [companion] oldest first */
+  /** The chosen profile's saved companions (they follow the child in every tab). -> [companion] oldest first */
   async getCompanions() {
-    return (await get('/api/companions?' + query({ room: room() }))).companions || [];
+    return (await get('/api/companions?' + query({ room: room(), profile: profile() ?? undefined }))).companions || [];
+  },
+
+  /** Buddies for the Settings tab: saved companions and this profile's gifts that could be. -> { companions, gifts } */
+  async getBuddies() {
+    return get('/api/companions?' + query({ room: room(), profile: profile() ?? undefined, all: 1 }));
   },
 
   /** Keep a companion: { giftId } for a scanned toy, or { toy: 'bubby' }. -> companion */
   async saveCompanion({ giftId, toy } = {}) {
     const payload = toy ? { room: room(), toy } : { room: room(), gift_id: giftId };
+    if (profile()) payload.profile_id = profile();
     return (await post('/api/companions', payload, { timeoutMs: 15000 })).companion;
   },
 
@@ -280,7 +325,8 @@ export const api = {
     let cursor = fromNow ? null : Math.max(0, Number(after) || 0); // highest id dealt with; null = not known yet
     let floor = cursor || 0; // ids at or below this were there before we started
     let lookback = null; // while a scan is being built: ask again from just below it
-    let watching = room();
+    const watchKey = () => room() + '|' + (profile() ?? '');
+    let watching = watchKey();
     let stopped = false;
     let busy = false;
     let timer = null;
@@ -319,9 +365,9 @@ export const api = {
       busy = true;
       let more = false;
       try {
-        if (room() !== watching) {
-          // The page switched rooms: start again in the new one.
-          watching = room();
+        if (watchKey() !== watching) {
+          // The page switched rooms or profiles: start again.
+          watching = watchKey();
           seen.clear();
           awaited.clear();
           cursor = fromNow ? null : 0;
@@ -329,8 +375,9 @@ export const api = {
           lookback = null;
         }
         const asked = watching;
-        const ask = (from) => get('/api/gifts?' + query({ room: asked, after: from }));
-        const current = () => !stopped && room() === asked;
+        const askedRoom = room(), askedProfile = profile() ?? undefined;
+        const ask = (from) => get('/api/gifts?' + query({ room: askedRoom, after: from, profile: askedProfile }));
+        const current = () => !stopped && watchKey() === asked;
 
         if (cursor === null) {
           const now = await ask(999999999999); // nothing comes back; we only want `latest`

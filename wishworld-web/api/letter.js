@@ -5,6 +5,7 @@
 // (it is the sender's own voice and is not transcribed or checked here).
 import { route, send, body, text, roomCode, base64Bytes, UserError } from './_lib/http.js';
 import { ensureRoom, insertGift, giftJson } from './_lib/db.js';
+import { resolveProfile } from './_lib/profiles.js';
 import { checkLetter } from './_lib/haiku.js';
 import { save, audioType, randomName } from './_lib/store.js';
 
@@ -26,7 +27,9 @@ export default route('POST', async (req, res) => {
     ensureRoom(room),
   ]);
 
+  const profile = await resolveProfile(room, b.profile_id);   // who the gift is for (the default if not said)
   const row = await insertGift({
+    profile_id: profile.id,
     room_code: room,
     sender: checked.sender,
     kind: 'letter',

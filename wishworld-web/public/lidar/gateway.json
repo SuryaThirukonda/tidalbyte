@@ -52,5 +52,16 @@
     "ground": 365129,
     "water": 48887
   },
-  "baseCell": 0.0
+  "baseCell": 0.0,
+  "surface": {
+    "file": "gateway.surface.bin",
+    "n": 320,
+    "cell": 1.5625,
+    "min": -250.0,
+    "scale": 0.01
+  },
+  "floating": {
+    "file": "gateway.floating.bin",
+    "count": 2253
+  }
 }

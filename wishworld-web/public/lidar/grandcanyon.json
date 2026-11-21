@@ -45,5 +45,12 @@
     "ground": 357033,
     "water": 0
   },
-  "baseCell": 2.27
+  "baseCell": 2.27,
+  "surface": {
+    "file": "grandcanyon.surface.bin",
+    "n": 320,
+    "cell": 4.6875,
+    "min": -750.0,
+    "scale": 0.05
+  }
 }

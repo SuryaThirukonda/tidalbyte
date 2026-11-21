@@ -48,5 +48,12 @@
     "ground": 141817,
     "water": 172253
   },
-  "baseCell": 1.846
+  "baseCell": 1.846,
+  "surface": {
+    "file": "niagara.surface.bin",
+    "n": 320,
+    "cell": 3.9062,
+    "min": -625.0,
+    "scale": 0.02
+  }
 }
