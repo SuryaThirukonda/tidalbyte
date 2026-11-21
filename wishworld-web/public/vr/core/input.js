@@ -95,6 +95,9 @@ export function createInput({ renderer, scene, camera, rig, dom, isImmersive }) 
      *  (good for menus); false floats it on the cursor ray at `reach` metres, as Unity does for blades. */
     desktopPointerMode: true,
     desktopMoveEnabled: true,
+    /** Desktop preview: false stops a left-drag on open space from turning the view (a tab that uses the drag
+     *  itself, such as Snow Hoops' aim). Right-drag still looks. The shell sets it back on every tab switch. */
+    desktopLookEnabled: true,
     reach: 0.5,
     keys: new Set(),
     desktop: !isImmersive(),
@@ -421,7 +424,7 @@ export function createInput({ renderer, scene, camera, rig, dom, isImmersive }) 
       updateDesktopPointer();                       // hover what is under the cursor right now
       const onTarget = Boolean(h.hover);
       selectStart(h);
-      if (!onTarget) { desk.looking = true; desk.lookButton = 0; }
+      if (!onTarget && state.desktopLookEnabled) { desk.looking = true; desk.lookButton = 0; }
     } else if (event.button === 2) {
       squeezeStart(h);
       desk.looking = true; desk.lookButton = 2;
