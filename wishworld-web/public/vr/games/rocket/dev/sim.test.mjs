@@ -6,6 +6,9 @@ import { ROOM, SKY, H, createState, stepFixed } from '../flight.js';
 import { attitudeTarget } from '../attitude.js';
 import { crossesRing, rollMatches } from '../rings.js';
 import { DEG, qRotate } from '../math.js';
+import { MISSIONS } from '../missions.js';
+import { createRun, stepRun } from '../run.js';
+import { autopilot } from '../autopilot.js';
 
 const failures = [];
 export function check(ok, what) {
@@ -76,6 +79,33 @@ check(near(noseOf(attitudeTarget({ pitch: 30 * DEG, yaw: 90 * DEG, roll: 0 }, AL
   }
   check(!rollMatches(slot, flat), 'a slot at 60 degrees does not fit an unrolled rocket');
   check(Boolean(fits) && crossesRing([0, 0.6, -1.2], [0, 0.6, -1.4], slot, fits), 'rolled to match, the rocket fits through the slot');
+}
+
+console.log('missions');
+check(MISSIONS.length === 6, 'six missions');
+check(MISSIONS.slice(0, 4).every((m) => m.place === 'room') && MISSIONS.slice(4).every((m) => m.place === 'sky'), 'four in the room, two in the sky');
+check(MISSIONS.every((m, i) => i === 0 || ['pitch', 'yaw', 'roll'].every((k) => !MISSIONS[i - 1].unlocked[k] || m.unlocked[k])), 'unlocks only ever grow');
+check(MISSIONS.every((m) => m.rings.every((r) => Math.abs(Math.hypot(...r.facing) - 1) < 1e-6)), 'every ring faces along a unit vector');
+const paramsFor = (m) => (m.place === 'sky' ? SKY : ROOM);
+MISSIONS.forEach((m, i) => {
+  const run = createRun(m, paramsFor(m));
+  let t = 0;
+  while (!run.won && !run.failed && t < 40) { stepRun(run, autopilot(run), 1 / 60); t += 1 / 60; }
+  check(run.won, `mission ${i + 1} (${m.id}) ${run.won ? `won in ${t.toFixed(1)} s` : `not won: ${run.reason || 'timed out'}, ring ${run.next} of ${m.rings.length}`}`);
+});
+{
+  const run = createRun(MISSIONS[3], ROOM);            // every control unlocked
+  const away = { angles: { pitch: 50 * DEG, yaw: 90 * DEG, roll: 0 }, thrust: true };   // off to the left, away from the slot
+  for (let t = 0; t < 30 && !run.failed && !run.won; t += 1 / 60) {
+    away.thrust = run.state.pos[1] < 0.5;
+    stepRun(run, away, 1 / 60);
+  }
+  check(run.failed && (run.reason === 'far' || run.reason === 'landed'), `flying away fails (${run.reason})`);
+}
+{
+  const run = createRun(MISSIONS[0], ROOM);
+  for (let t = 0; t < 10 && !run.failed; t += 1 / 60) stepRun(run, { angles: { pitch: 0, yaw: 0, roll: 0 }, thrust: t < 0.3 }, 1 / 60);
+  check(run.failed && run.reason === 'landed', 'a short hop that misses the ring fails as landed');
 }
 
 // Later tasks append their sections above this line.

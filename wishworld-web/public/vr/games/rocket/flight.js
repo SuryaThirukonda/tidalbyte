@@ -23,7 +23,7 @@ export const ROOM = {
 };
 /** The sky field: half real scale, so the course fits inside about 120 m. */
 export const SKY = {
-  gravity: 6, thrust: 13, waterSeconds: 6,
+  gravity: 6, thrust: 13, waterSeconds: 9,
   drag: 0.03, chuteDrag: 0.6, chuteAt: 2,
   finLift: 1.6, turnRate: 90 * DEG, minAuthority: 0.2, authoritySpeed: 12,
   floorY: 0, padRadius: 2.5, bounds: 160,
