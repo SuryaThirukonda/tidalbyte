@@ -859,6 +859,8 @@ never for menu buttons. If the heard sentence is made of nothing but preset word
 ```
 POST https://api.anthropic.com/v1/messages          (WishWorldServiceConfig.claudeEndpoint)
 x-api-key: <key>
+anthropic-version: 2026-10-21
+anthropic-beta: server-side-fallback-2026-07-01      (only when the model name does not contain "haiku")
 Content-Type: application/json
 timeout: 15 s
 

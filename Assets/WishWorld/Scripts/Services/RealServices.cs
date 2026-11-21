@@ -209,7 +209,9 @@ namespace WishWorld
     /// </summary>
     public class ClaudeCommandInterpreter : ICommandInterpreter
     {
+        const string ApiVersion = "2026-10-21";
         // If Claude's safety checks decline a request, the API retries it on a fallback model inside the same call.
+        const string FallbackBeta = "server-side-fallback-2026-07-01";
         readonly WishWorldServiceConfig cfg;
 
         [Serializable] class Block { public string type; public string text; }
@@ -306,6 +308,8 @@ namespace WishWorld
             using (var req = Json.Post(cfg.claudeEndpoint, body))
             {
                 req.SetRequestHeader("x-api-key", cfg.claudeApiKey);
+                req.SetRequestHeader("anthropic-version", ApiVersion);
+                if (fallback) req.SetRequestHeader("anthropic-beta", FallbackBeta);
                 req.timeout = 15;
                 yield return req.SendWebRequest();
                 LastSeconds = Time.realtimeSinceStartup - started;
