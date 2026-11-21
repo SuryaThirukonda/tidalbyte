@@ -896,3 +896,68 @@ passed.
 ### Not checked
 
 On a headset: thumbstick walking and turning, comfort, and the frame rate at life size.
+
+## Snow Hoops (web headset game)
+
+A Wii Sports Resort style 3-point contest in the web headset view, where the ball is a toy the child scanned. Tab
+`hoops` (`public/vr/tabs/hoops.js`), game in `public/vr/games/hoops/` (start with `game.js`; every number is in
+`rules.js`). A card in the hub's Games menu between Frost Slice and Snow Circuit.
+
+- **Pick your ball.** On entering: the room's saved companions (newest five, from `api.getCompanions()`) and Bubby,
+  each turning above its button, and **Scan something new**, which runs the existing `createToyScan` flow unchanged
+  (viewfinder, phone Scan tab, Bubby on a second press or after 150 s). A new scan also joins the companions, as in
+  the Reef. A companion already following is cloned from the live object; others load through `/shared/models.js`.
+- **The ball.** Any model is cloned, scaled so its largest side is 0.24 m and centred on its pivot
+  (`ballshape.js`). Physics always uses a 0.24 m sphere. The 5 rack balls share the model's geometry and materials;
+  the money ball (5th of each rack) uses one shared gold copy of the materials with a slow glow. A scan of ~19,000
+  triangles shows 3 balls on the rack at once (70,000-triangle budget); Bubby shows all 5.
+- **Throwing.** Hold grip near the front rack ball (waist height, by the right hand; reaching to the left side moves
+  the rack there), swing, let go. Release velocity = least-squares slope of the held point over the last 90 ms
+  (`tracker.js`). Aim assist: a throw going up, faster than 2 m/s and within 35 degrees of the hoop is blended 35% toward
+  the ideal 55-degree arc. Let go gently by the rack and the ball goes back. Haptics on grab, release, swish, rim.
+- **Physics** (`physics.js`, hand-written): gravity, light drag, 1/240 s substeps; rim = 24 segments, backboard =
+  bounded plane, floor; a basket = the centre passing down through the opening.
+- **Contest** (`contest.js`): 5 racks x 5 balls at 5 spots on a 4.2 m arc (left corner, left wing, top, right wing,
+  right corner); 1 point, money ball 2, max 30; 60 s clock that keeps running during the white-fade move to the next
+  spot (`rig.setHome`, facing the hoop); balls in the air at the buzzer still count (3 s grace).
+- **Kid-sized court** (agreed): rim 2.6 m high (real: 3.05 m), arc 4.2 m (real: 6.75 m), real rim and ball size.
+- **Sound**: the shell's buzz (buzzer), pop (grab), chime (money basket), success (end); the project has no swish or
+  rim clank, so those and a board thud are short recipes made in `sfx.js`. Guide lines: the intro and the end line are
+  short fixed text-to-speech lines; "Go!" and "Ooh, gold!" (money ball) are recorded lines.
+- **Desktop**: press to pick up, drag up for power (a third of the screen is the ideal speed) and sideways to aim
+  (a dotted aim line shows the first 0.45 s), let go to shoot. New `input.state.desktopLookEnabled` (default true,
+  reset on every tab switch) lets a tab turn off left-drag look; Snow Hoops turns it off during a round.
+- Pointer rays and companions are off during a round and come back after it. Surroundings: `setEnvironment(null)` and
+  snowfall. One particle system (the basket sparkles).
+
+### Checked
+
+- `public/vr/games/hoops/dev/rules.test.mjs` (Node, `node --import ./three-loader.mjs rules.test.mjs`): the ideal arc
+  swishes from all five spots; 80% falls short, 115% goes long; a ball rising through the hoop does not count; rim
+  and board bounces; aim assist moves exactly 35% and leaves side, downward and gentle throws alone; the tracker
+  returns a swing's speed; scoring (1 / money 2, a ball counts once), rack progression, the 2.5 s rack wait, a perfect
+  round = 30, the clock and buzzer grace; a 19,200-triangle off-centre model comes out 0.2400 m and centred, clones
+  share geometry and materials, money balls share one gold material. All passed.
+- `public/vr/games/hoops/dev/check.mjs` in the real shell (desktop preview, headless Chrome, `?standins=1`), all
+  five scenarios passed with 0 console errors and 0 warnings:
+  `pick` (a real click on a ball; 0.24 m, centred, 3 rack balls for the 19,220-triangle stand-in; a mouse
+  press-drag-release throw went in; a scripted hand path through the tracker was measured exactly and assisted),
+  `scoring` (5 ideal shots = 6 points with the money ball, move to the left wing, 5 short shots = 0, on to rack 3),
+  `timer` (`?round=12`: one buzzer, "Time!", results, intro and "Go!" spoken), `autoplay` (`?autoplay=1&round=20`:
+  16 shots, 6 in, peak 14 draw calls and 79,000 triangles), `again` (Play again by mouse; leaving restores pointers,
+  mouse look and companions; three leave/return cycles hold 22 geometries and 14 textures).
+- `public/vr/dev/test/shell.test.mjs`: all shell checks passed. Frost Slice `check.mjs again --shell`: passed.
+- The hub's Games menu shows the three cards.
+
+### Not checked
+
+- **Nothing was run on a headset.** Grip grabbing, the release velocity from real controller tracking, haptics, rack
+  height and reach, comfort of the fades, and 72 fps on a Quest 2 are untested. Headless Chrome frame rates are not
+  headset numbers.
+- **Throw strength.** The ideal arc from every spot needs about 7.6 m/s at release, which may be hard for a child.
+  If it is, the levers in `rules.js` are `THROW.assist`, `COURT.arcRadius` / `rimHeight`, or adding a throw multiplier.
+- **Real scans and the server.** The checks ran against a static local server with `?standins=1` (Bubby and a
+  procedural 19,220-triangle stand-in). Loading saved companions from `/api/companions`, and the "Scan something new"
+  path from the phone into this tab, were not run here (the scan code itself is the Reef's, unchanged).
+- AR passthrough (the court is moved around the player instead of the rig), the left-hand rack switch with real
+  controllers, the shell's play mode (pointer lock), and sound (all checks ran muted).
