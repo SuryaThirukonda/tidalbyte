@@ -108,4 +108,21 @@ async function triposr(image, mime, { deadline, onStatus }) {
   return assertGlb(await space.download(glbFrom(out, 'triposr')), 'triposr');
 }
 
-export const ROUTES = { sf3d, trellis, triposr, trellism: trellisMulti };
+/**
+ * The team's own GPU (tools/brev/gen3d.py): TRELLIS from one photo, with no queue and no daily allowance.
+ * Only when BREV_3D_URL is set; the photo is sent as it is, the model comes back as a .glb.
+ */
+async function brev(image, mime, { deadline }) {
+  const base = process.env.BREV_3D_URL;
+  if (!base) throw Object.assign(new SpaceError('brev: BREV_3D_URL is not set'), { skip: true });
+  const res = await fetch(base.replace(/\/$/, '') + '/image3d', {
+    method: 'POST',
+    headers: { 'content-type': mime || 'image/jpeg', 'x-key': process.env.BREV_3D_KEY || '' },
+    body: image,
+    signal: AbortSignal.timeout(Math.max(1000, deadline - Date.now())),
+  });
+  if (!res.ok) throw new SpaceError(`brev: HTTP ${res.status}`);
+  return assertGlb(Buffer.from(await res.arrayBuffer()), 'brev');
+}
+
+export const ROUTES = { brev, sf3d, trellis, triposr, trellism: trellisMulti };

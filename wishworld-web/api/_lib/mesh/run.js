@@ -105,6 +105,14 @@ export async function runScan(row, image, mime, { end = Date.now() + 60000, rela
           quotaGone = Boolean(err && err.quota);
         }
       }
+      // The team's GPU first, when it is running (TRELLIS, about 20 s, no allowance to run out).
+      if (process.env.BREV_3D_URL && allowed('brev') && routesEnd - Date.now() > 30000) {
+        await setStage(id, 'brev');
+        try {
+          await attempt('brev', 'brev', id, image, mime, Math.min(routesEnd - 9000, Date.now() + 60000));
+          return;
+        } catch { /* on to the free routes */ }
+      }
       if (allowed('sf3d') && routesEnd - Date.now() > 8000) {
         await setStage(id, 'sf3d');
         try {

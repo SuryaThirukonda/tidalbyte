@@ -11,8 +11,8 @@ export function createGuide({ scene, ui, audio, rig }) {
   const holder = new THREE.Group();
   holder.name = 'GuideCaption';
   const bubble = ui.makePanel({
-    name: 'Caption', width: 1.0, height: 0.2, style: 'bubble', fill: colors.panel, radius: 0.06, border: 0.007,
-    labels: [{ text: '', size: 0.042, font: 'body', color: colors.slate, w: 0.92, h: 0.16 }],
+    name: 'Caption', width: 0.86, height: 0.17, style: 'bubble', fill: colors.panel, radius: 0.06, border: 0.007,
+    labels: [{ text: '', size: 0.038, font: 'body', color: colors.slate, w: 0.79, h: 0.14 }],
   });
   holder.add(bubble);
   holder.visible = false;
@@ -32,8 +32,10 @@ export function createGuide({ scene, ui, audio, rig }) {
   function place() {
     rig.viewerPosition(_head);
     rig.viewerForwardFlat(_fwd);
-    holder.position.set(_head.x + _fwd.x * 1.1, _head.y - 0.5, _head.z + _fwd.z * 1.1);
-    holder.rotation.set(-24 * Math.PI / 180, Math.atan2(-_fwd.x, -_fwd.z), 0, 'YXZ');   // facing the viewer, tilted back
+    // Under the menus and boards (21 to 30 degrees below eye level): clear of the hub's bottom row of cards and
+    // still inside a laptop's view.
+    holder.position.set(_head.x + _fwd.x * 1.05, _head.y - 0.5, _head.z + _fwd.z * 1.05);
+    holder.rotation.set(-28 * Math.PI / 180, Math.atan2(-_fwd.x, -_fwd.z), 0, 'YXZ');   // facing the viewer, tilted back
   }
 
   return {

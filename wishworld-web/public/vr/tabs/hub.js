@@ -18,7 +18,7 @@ import { colors } from '/vr/core/theme.js';
 export const meta = { id: 'hub', label: 'Hub', order: 0 };
 
 const MENU_DISTANCE = 1.8;       // HubController.MenuDistance
-const MENU_HEIGHT = 1.38;
+const MENU_HEIGHT = 1.52;        // a little above Unity's 1.38, so the guide's caption fits under the bottom row
 const DEG = Math.PI / 180;
 
 const WELCOME = 'Welcome to WishWorld! Pick a card to begin.';
