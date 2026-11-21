@@ -31,9 +31,17 @@ const SETTLE_SECONDS = 0.5;
 const WAIT_SECONDS = 150;          // the server gives a scan two minutes, then makes it a library creature
 const RECENT_MS = 10 * 60 * 1000;  // an unopened scan this recent is the toy being shown
 const FRAME = 0.40, ARM = 0.09, THICK = 0.011, BAR = 0.30;
-const LINE_HOLD = 'Hold your toy up in front of me!';
-const LINE_PHONE = 'Take a picture of your toy with the phone!';
-const LINE_GREETING2 = "I can't wait to learn new things together. Where should we go first?";
+/** What the scan says and shows. createToyScan({ words }) overrides any of these (the Bottle Rocket does). */
+const WORDS = {
+  hold: 'Hold your toy up in front of me!',
+  phone: 'Take a picture of your toy with the phone!',
+  hint: 'Take a picture of your toy with the phone',
+  scanning: 'Scanning your toy...',
+  waiting: 'Waiting for a picture from the phone...',
+  greeting: "Hi {child}! I'm {name}! I'm so excited to be on this adventure with you!",
+  greeting2: "I can't wait to learn new things together. Where should we go first?",
+  noName: 'your toy',
+};
 const NO_NAME = 'friend';
 
 const _head = new THREE.Vector3(), _fwd = new THREE.Vector3();
@@ -50,9 +58,9 @@ export function isScanGift(gift) {
 }
 
 /** "Honey, a golden teddy bear" -> "Honey". */
-function toyName(gift) {
+function toyName(gift, noName = WORDS.noName) {
   const first = String((gift && gift.wish) || '').split(',')[0].trim();
-  return first && first.length <= 24 ? first : 'your toy';
+  return first && first.length <= 24 ? first : noName;
 }
 
 /**
@@ -64,8 +72,11 @@ function toyName(gift) {
  *   setScanView(on)           hide or show the tab's own things while the viewfinder is up
  *   setStatus(text)           the tab's status line
  *   onBusy(busy, waiting)     the tab relabels its button
+ *   words                     optional: overrides for WORDS (what the scan says and shows)
+ *   fallbackToy()             optional: returns { model, name, greeting, greeting2 } to use instead of Bubby
  */
-export function createToyScan({ ctx, ui, audio, rig, parent, takeToy, setScanView = () => {}, setStatus = () => {}, onBusy = () => {} }) {
+export function createToyScan({ ctx, ui, audio, rig, parent, takeToy, setScanView = () => {}, setStatus = () => {}, onBusy = () => {}, words = {}, fallbackToy = null }) {
+  const w = { ...WORDS, ...words };
   const used = new Set();          // gift ids already brought in by a scan
   let run = null;                  // the scan in progress
   let childName = '';
@@ -175,16 +186,20 @@ export function createToyScan({ ctx, ui, audio, rig, parent, takeToy, setScanVie
     return null;
   }
 
+  function prepared() {
+    if (fallbackToy) return { gift: null, ...fallbackToy() };
+    return { model: buildBubby(0.3), gift: null, name: BUBBY.name, greeting: BUBBY.greeting, greeting2: BUBBY.greeting2 };
+  }
   async function loadToy(gift) {
-    if (!gift) return { model: buildBubby(0.3), gift: null, name: BUBBY.name, greeting: BUBBY.greeting, greeting2: BUBBY.greeting2 };
-    const name = toyName(gift);
-    const greeting = `Hi {child}! I'm ${name}! I'm so excited to be on this adventure with you!`;
+    if (!gift) return prepared();
+    const name = toyName(gift, w.noName);
+    const greeting = w.greeting.replace('{name}', name);
     try {
       const model = gift.kind === 'mesh' ? await loadModelUrl(gift.model_url, 0.3) : await loadCreature(gift.option_id);
-      return { model, gift, name, greeting, greeting2: LINE_GREETING2 };
+      return { model, gift, name, greeting, greeting2: w.greeting2 };
     } catch (err) {
-      console.warn('[wishworld] toy scan: the scanned toy could not be loaded, Bubby comes instead.', err && err.message);
-      return { model: buildBubby(0.3), gift: null, name: BUBBY.name, greeting: BUBBY.greeting, greeting2: BUBBY.greeting2 };
+      console.warn('[wishworld] toy scan: the scanned toy could not be loaded, the prepared one comes instead.', err && err.message);
+      return prepared();
     }
   }
 
@@ -219,7 +234,7 @@ export function createToyScan({ ctx, ui, audio, rig, parent, takeToy, setScanVie
     if (ctx.api && typeof ctx.api.getInbox === 'function' && !childName) {
       ctx.api.getInbox().then((inbox) => { if (inbox && inbox.child_name) childName = String(inbox.child_name).trim().slice(0, 24); }).catch(() => {});
     }
-    audio.speak(ready ? LINE_HOLD : LINE_PHONE);
+    audio.speak(ready ? w.hold : w.phone);
     rig.fadeTo(1, 0.22).then(() => {
       if (run !== r) return;
       setScanView(true);
@@ -233,10 +248,10 @@ export function createToyScan({ ctx, ui, audio, rig, parent, takeToy, setScanVie
     rig.viewerPosition(_head); rig.viewerForwardFlat(_fwd);
     finder.position.set(_head.x + _fwd.x * 0.7, _head.y + 0.04, _head.z + _fwd.z * 0.7);
     finder.rotation.set(0, Math.atan2(_head.x - finder.position.x, _head.z - finder.position.z), 0);
-    hint.setText(ready ? '' : 'Take a picture of your toy with the phone');
+    hint.setText(ready ? '' : w.hint);
     finder.visible = true;
     ui.popIn(finder);
-    setStatus(ready ? 'Scanning your toy...' : 'Waiting for a picture from the phone...');
+    setStatus(ready ? w.scanning : w.waiting);
   }
 
   async function arrive(r) {
@@ -273,7 +288,7 @@ export function createToyScan({ ctx, ui, audio, rig, parent, takeToy, setScanVie
     const child = childName || NO_NAME;
     setStatus(`${toy.name} is here!`);
     ctx.log('toy_scanned', { name: toy.name, gift: toy.gift ? toy.gift.id : undefined, prepared: !toy.gift });
-    audio.speak(toy.greeting.replace('{child}', child)).then(() => (run === r || !run ? audio.speak(toy.greeting2) : null));
+    audio.speak(toy.greeting.replace('{child}', child)).then(() => ((run === r || !run) && toy.greeting2 ? audio.speak(toy.greeting2) : null));
     run = null;
     onBusy(false, false);
   }
