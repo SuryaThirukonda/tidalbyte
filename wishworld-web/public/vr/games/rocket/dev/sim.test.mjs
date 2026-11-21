@@ -3,6 +3,9 @@
 // Prints PASS or FAIL per check and exits 1 if anything failed.
 
 import { ROOM, SKY, H, createState, stepFixed } from '../flight.js';
+import { attitudeTarget } from '../attitude.js';
+import { crossesRing, rollMatches } from '../rings.js';
+import { DEG, qRotate } from '../math.js';
 
 const failures = [];
 export function check(ok, what) {
@@ -42,6 +45,37 @@ for (const [name, p, limit] of [['room', ROOM, 0.6], ['sky', SKY, 4]]) {
   const s = createState({ pos: [1, 0.3, 0], launched: true, vel: [0, -0.5, 0], water: 0 });
   fly(ROOM, 8, { target: UPRIGHT, thrust: false }, s);
   check(s.landed && s.landedOn === 'floor' && Math.abs(s.pos[1] - ROOM.floorY) < 1e-9, 'room: away from the pad it lands on the floor');
+}
+
+console.log('attitude and rings');
+const ALL = { pitch: true, yaw: true, roll: true }, NONE = { pitch: false, yaw: false, roll: false };
+const near = (a, b, e = 1e-3) => a.every((x, i) => Math.abs(x - b[i]) < e);
+const noseOf = (q) => qRotate([0, 0, 0], [0, 1, 0], q);
+const finOf = (q) => qRotate([0, 0, 0], [1, 0, 0], q);
+check(near(noseOf(attitudeTarget({ pitch: 30 * DEG, yaw: 0, roll: 0 }, NONE)), [0, 1, 0]), 'locked pitch does nothing');
+check(near(noseOf(attitudeTarget({ pitch: 30 * DEG, yaw: 0, roll: 0 }, ALL)), [0, 0.866, -0.5]), 'pitch tips the nose forward');
+check(near(noseOf(attitudeTarget({ pitch: 30 * DEG, yaw: 90 * DEG, roll: 0 }, ALL)), [-0.5, 0.866, 0]), 'yaw turns the nose left');
+{
+  const a = attitudeTarget({ pitch: 30 * DEG, yaw: 0, roll: 0 }, ALL), b = attitudeTarget({ pitch: 30 * DEG, yaw: 0, roll: 60 * DEG }, ALL);
+  check(near(noseOf(a), noseOf(b)) && !near(finOf(a), finOf(b)), 'roll spins the fins, not the nose');
+}
+{
+  const ring = { at: [0, 0.6, -1.2], facing: [0, 0, -1], radius: 0.28 };
+  const q = [0, 0, 0, 1];
+  check(crossesRing([0, 0.6, -1.1], [0, 0.6, -1.3], ring, q), 'through the centre of a ring counts');
+  check(!crossesRing([0.4, 0.6, -1.1], [0.4, 0.6, -1.3], ring, q), 'outside the ring does not count');
+  check(!crossesRing([0, 0.6, -1.3], [0, 0.6, -1.1], ring, q), 'through the ring backwards does not count');
+}
+{
+  const slot = { at: [0, 0.6, -1.3], facing: [0, 0, -1], radius: 0.35, slot: { width: 0.5, height: 0.16, angle: 60 } };
+  const flat = attitudeTarget({ pitch: 80 * DEG, yaw: 0, roll: 0 }, ALL);
+  let fits = null;
+  for (let r = -180; r <= 180 && !fits; r += 5) {
+    const q = attitudeTarget({ pitch: 80 * DEG, yaw: 0, roll: r * DEG }, ALL);
+    if (rollMatches(slot, q)) fits = q;
+  }
+  check(!rollMatches(slot, flat), 'a slot at 60 degrees does not fit an unrolled rocket');
+  check(Boolean(fits) && crossesRing([0, 0.6, -1.2], [0, 0.6, -1.4], slot, fits), 'rolled to match, the rocket fits through the slot');
 }
 
 // Later tasks append their sections above this line.
