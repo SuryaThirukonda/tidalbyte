@@ -32,14 +32,20 @@ SAFETY_MODEL="${SAFETY_MODEL:-nvidia/Llama-3.1-Nemotron-Safety-Guard-8B-v3}"
 VENV="$HOME/ww-venv"
 [ -x "$VENV/bin/python" ] || python3 -m venv "$VENV"
 "$VENV/bin/pip" install -q --upgrade pip
-"$VENV/bin/pip" install -q "vllm>=0.10" fastapi uvicorn diffusers transformers accelerate gradio_client
+# vLLM 0.11 runs on PyTorch built for CUDA 12.8; newer vLLM needs a CUDA 13 driver, which Brev's VMs do not have yet.
+"$VENV/bin/pip" install -q "vllm==0.11.0" "transformers>=4.56,<5" ninja
+# vLLM compiles a few kernels at start-up: ninja from the venv, nvcc from the machine's CUDA toolkit.
+CUDA_HOME="${CUDA_HOME:-$(ls -d /usr/local/cuda-12* 2>/dev/null | tail -1)}"; export CUDA_HOME
+export PATH="$VENV/bin:$CUDA_HOME/bin:$PATH"
+[ "${WITH_3D:-0}" = "1" ] && "$VENV/bin/pip" install -q fastapi uvicorn diffusers accelerate gradio_client
 
 serve() { # model port share-of-memory extra-args...
   local model="$1" port="$2" share="$3"; shift 3
   nohup "$VENV/bin/vllm" serve "$model" --port "$port" --api-key "$API_KEY" --max-model-len 4096 \
-    --gpu-memory-utilization "$share" --trust-remote-code "$@" > "$LOGS/$port.log" 2>&1 &
+    --gpu-memory-utilization "$share" --trust-remote-code --enforce-eager "$@" > "$LOGS/$port.log" 2>&1 &
 }
-# Nemotron Nano 2 is a hybrid Mamba model: its card asks for a float32 Mamba cache.
+# Nemotron Nano 2 is a hybrid Mamba model: its card asks for a float32 Mamba cache. --enforce-eager (no CUDA graphs)
+# avoids a start-up memory check that fails on this model with vLLM 0.11; warm requests still take about a second.
 serve "$PLAN_MODEL" 8000 0.5 --mamba_ssm_cache_dtype float32
 for _ in $(seq 1 120); do curl -sf -H "Authorization: Bearer $API_KEY" http://localhost:8000/v1/models >/dev/null && break; sleep 5; done
 serve "$SAFETY_MODEL" 8001 0.42
